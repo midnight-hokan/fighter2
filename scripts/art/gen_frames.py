@@ -21,6 +21,7 @@
 #   art-work/frames/<cid>/raw/<动画名>_<帧号>.png    抠图前原图（绿幕背景，RGB）
 
 import json
+import os
 import zlib
 import requests
 import time
@@ -347,7 +348,9 @@ def main():
             hint=POSE_HINTS.get(a, ""),
             frame_desc=describe_frame(data["anims"][a]["frames"][i]),
         )
-        seed = (20261101 + int(cid[1:]) * 100000 + zlib.crc32((a + "_" + str(i)).encode()) % 90000 + 1000) & 0x7FFFFFFF
+        # SEED_SALT 环境变量：重试时换 salt 跳到新种子簇（同 salt=确定性复现，
+        # 直接重跑会出同样的失败图，必须换簇才有效）
+        seed = (20261101 + int(cid[1:]) * 100000 + zlib.crc32((a + "_" + str(i)).encode()) % 90000 + int(os.environ.get("SEED_SALT", "0")) * 7919 + 1000) & 0x7FFFFFFF
         raw_p = "f2raw_%s_%s_%02d" % (cid, safe, i)
         fin_p = "f2fin_%s_%s_%02d" % (cid, safe, i)
         ok = False
