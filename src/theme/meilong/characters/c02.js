@@ -1,18 +1,20 @@
-// 炭守「深井守望者」— charge（R1 原创角色）
-// 由 scripts/gen-characters.mjs 生成；数据格式见 docs/角色数据格式.md
+// 罗铮「矿山救护队员」— charge（黑岭煤矿角色）
+// 由 scripts/gen-characters.mjs 生成；数据格式见 docs/角色数据格式.md；身份与故事见 docs/故事设定.md
 export default {
   "id": "c02",
-  "name": "炭守",
-  "title": "深井守望者",
-  "style": "中年矿工，体格敦实，穿厚皮褂，护目镜推在额头上，双掌老茧厚得能挡火花",
+  "name": "罗铮",
+  "title": "矿山救护队员",
+  "style": "三十五岁救护中队老队员，橙红色救护服，背正压氧气呼吸器，面罩推在额头上，腰挂救援钩和绳索，体格敦实",
   "archetype": "charge",
   "stage": "s01",
   "colors": {
-    "primary": "#b5651d",
-    "secondary": "#e8d5a3",
+    "primary": "#e05a2b",
+    "secondary": "#f0ead6",
     "skin": "#c9986a"
   },
-  "ending": "深井的灯灭那天，炭守第一次走出黑暗。他抬头看见满天星子，才知道井外的世界从来不是黑的。",
+  "intro": "我的本事是从险区里带人出来，不是在擂台上表演。不过，今天破个例。",
+  "story": "传言改造后井下人少了，救护队要缩编。他不服：\"人少了，救援就不要了？\"他要用擂台证明，救护队的本事一样也不能丢。",
+  "ending": "智能化之后，救护队不但没缩编，还配上了无人机和井下机器人，罗铮成了第一任技术教官。他第一堂课对新队员说：\"机器能进去，人也得能进去。\"",
   "stats": {
     "health": 1050,
     "walkF": 2,
@@ -24,7 +26,7 @@ export default {
   },
   "normals": {
     "st.lp": {
-      "name": "刺拳",
+      "name": "快拳",
       "startup": 4,
       "active": 3,
       "recovery": 7,
@@ -61,7 +63,7 @@ export default {
       "anim": "punch"
     },
     "st.hp": {
-      "name": "重拳",
+      "name": "救护重拳",
       "startup": 8,
       "active": 4,
       "recovery": 20,
@@ -96,7 +98,7 @@ export default {
       "anim": "kick"
     },
     "st.mk": {
-      "name": "中段踢",
+      "name": "侧踹",
       "startup": 7,
       "active": 3,
       "recovery": 14,
@@ -113,7 +115,7 @@ export default {
       "anim": "kick"
     },
     "st.hk": {
-      "name": "回旋踢",
+      "name": "钩踢",
       "startup": 10,
       "active": 4,
       "recovery": 22,
@@ -131,7 +133,7 @@ export default {
       "anim": "highkick"
     },
     "cr.lp": {
-      "name": "蹲刺拳",
+      "name": "蹲快拳",
       "startup": 4,
       "active": 2,
       "recovery": 7,
@@ -185,7 +187,7 @@ export default {
       "anim": "upper"
     },
     "cr.lk": {
-      "name": "蹲踢",
+      "name": "低踢",
       "startup": 5,
       "active": 3,
       "recovery": 9,
@@ -223,7 +225,7 @@ export default {
       "anim": "lowkick"
     },
     "cr.hk": {
-      "name": "大扫堂",
+      "name": "钩扫腿",
       "startup": 9,
       "active": 4,
       "recovery": 24,
@@ -242,7 +244,7 @@ export default {
       "anim": "sweep"
     },
     "j.lp": {
-      "name": "跳刺拳",
+      "name": "跳拳",
       "startup": 4,
       "active": 6,
       "recovery": 4,
@@ -327,7 +329,7 @@ export default {
       "anim": "kick"
     },
     "j.hk": {
-      "name": "跳重踢",
+      "name": "跳旋踢",
       "startup": 8,
       "active": 5,
       "recovery": 8,
@@ -345,16 +347,16 @@ export default {
     }
   },
   "throw": {
-    "name": "腕吊摔",
+    "name": "担架摔",
     "damage": 130,
     "stun": 10
   },
   "specials": [
     {
       "id": "baokong",
-      "name": "爆空弹",
+      "name": "抛救生绳",
       "input": "[4]6P",
-      "desc": "后蓄力前放，压缩瓦斯气团（飞行道具）",
+      "desc": "后蓄力前放，抛出救生绳（飞行道具）",
       "startup": 14,
       "active": 1,
       "recovery": 34,
@@ -375,9 +377,9 @@ export default {
     },
     {
       "id": "tanshui",
-      "name": "炭水击",
+      "name": "照明信号弹",
       "input": "[4]6K",
-      "desc": "后蓄力前放，贴地煤水波，下段",
+      "desc": "后蓄力前放，贴地飞出的照明信号弹，下段",
       "startup": 18,
       "active": 1,
       "recovery": 40,
@@ -399,9 +401,9 @@ export default {
     },
     {
       "id": "chongtianshan",
-      "name": "冲天闪",
+      "name": "救援钩上挑",
       "input": "[2]8K",
-      "desc": "下蓄力上放，对空上勾，起手无敌",
+      "desc": "下蓄力上放，救援钩对空上挑，起手无敌",
       "startup": 6,
       "active": 10,
       "recovery": 26,
@@ -427,9 +429,9 @@ export default {
   "supers": [
     {
       "id": "longxuantan",
-      "name": "龙旋炭钻",
+      "name": "生命通道",
       "input": "236236P",
-      "desc": "全身压缩瓦斯，冲拳钻地突进",
+      "desc": "展开生命通道，冲拳钻地突进",
       "startup": 8,
       "active": 26,
       "recovery": 32,

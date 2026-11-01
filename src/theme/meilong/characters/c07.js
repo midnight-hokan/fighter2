@@ -1,18 +1,20 @@
-// 铜首「顶梁大汉」— power（R1 原创角色）
-// 由 scripts/gen-characters.mjs 生成；数据格式见 docs/角色数据格式.md
+// 霍兰「澡堂管理员」— power（黑岭煤矿角色）
+// 由 scripts/gen-characters.mjs 生成；数据格式见 docs/角色数据格式.md；身份与故事见 docs/故事设定.md
 export default {
   "id": "c07",
-  "name": "铜首",
-  "title": "顶梁大汉",
-  "style": "顶梁工大汉，铜色工装，手臂粗得像支柱，眼皮很少抬，一拳下去地面掉煤渣",
+  "name": "霍兰",
+  "title": "澡堂管理员",
+  "style": "四十六岁高壮结实，蓝色工作服外套防水围裙，脚穿高筒胶靴，肩搭白毛巾，腰挂一大串更衣柜钥匙，手持长柄大拖把",
   "archetype": "power",
   "stage": "s04",
   "colors": {
-    "primary": "#722f37",
-    "secondary": "#caa06a",
+    "primary": "#8a5a3a",
+    "secondary": "#4a7fa5",
     "skin": "#a9765a"
   },
-  "ending": "支柱立住了，铜首弯下腰。他顶过一万根柱子，第一次，顶住的是自己的心。",
+  "intro": "洗干净了没？没洗干净的，别想上我的擂台。",
+  "story": "二十多年前最后一届擂台，她是唯一打进决赛的女人，在最后一场输给了林啸的父亲。她不是想报仇，就是一直想知道：\"如果那天我没输，会怎么样？\"",
+  "ending": "霍兰捧着头灯，去林啸家敲了门。林啸的父亲开门，两人对视了很久，一起笑了出来。那天夜里，澡堂破例开到天亮，热水管够，全矿的人都来了。",
   "stats": {
     "health": 1080,
     "walkF": 1.6,
@@ -24,7 +26,7 @@ export default {
   },
   "normals": {
     "st.lp": {
-      "name": "刺拳",
+      "name": "快拳",
       "startup": 5,
       "active": 3,
       "recovery": 7,
@@ -96,7 +98,7 @@ export default {
       "anim": "kick"
     },
     "st.mk": {
-      "name": "中段踢",
+      "name": "侧踹",
       "startup": 7,
       "active": 3,
       "recovery": 14,
@@ -113,7 +115,7 @@ export default {
       "anim": "kick"
     },
     "st.hk": {
-      "name": "回旋踢",
+      "name": "旋踢",
       "startup": 10,
       "active": 4,
       "recovery": 22,
@@ -131,7 +133,7 @@ export default {
       "anim": "highkick"
     },
     "cr.lp": {
-      "name": "蹲刺拳",
+      "name": "蹲快拳",
       "startup": 4,
       "active": 2,
       "recovery": 7,
@@ -185,7 +187,7 @@ export default {
       "anim": "upper"
     },
     "cr.lk": {
-      "name": "蹲踢",
+      "name": "低踢",
       "startup": 5,
       "active": 3,
       "recovery": 9,
@@ -223,7 +225,7 @@ export default {
       "anim": "lowkick"
     },
     "cr.hk": {
-      "name": "大扫堂",
+      "name": "扫堂腿",
       "startup": 9,
       "active": 4,
       "recovery": 24,
@@ -242,7 +244,7 @@ export default {
       "anim": "sweep"
     },
     "j.lp": {
-      "name": "跳刺拳",
+      "name": "跳拳",
       "startup": 4,
       "active": 6,
       "recovery": 4,
@@ -327,7 +329,7 @@ export default {
       "anim": "kick"
     },
     "j.hk": {
-      "name": "跳重踢",
+      "name": "跳旋踢",
       "startup": 8,
       "active": 5,
       "recovery": 8,
@@ -345,16 +347,16 @@ export default {
     }
   },
   "throw": {
-    "name": "石投",
+    "name": "拖把摔",
     "damage": 140,
     "stun": 12
   },
   "specials": [
     {
       "id": "chongtiant",
-      "name": "冲天突",
+      "name": "蒸汽冲天",
       "input": "623P",
-      "desc": "升龙式重拳，起手无敌，击飞",
+      "desc": "长柄大拖把对空抡扫，起手无敌，击飞",
       "startup": 8,
       "active": 12,
       "recovery": 28,
@@ -383,9 +385,9 @@ export default {
     },
     {
       "id": "zhongdanluo",
-      "name": "重弹落",
+      "name": "木盆扣顶",
       "input": "421P",
-      "desc": "后下下后砸落拳，下段击倒",
+      "desc": "后下下后木盆大扣，下段击倒",
       "startup": 14,
       "active": 10,
       "recovery": 30,
@@ -406,9 +408,9 @@ export default {
     },
     {
       "id": "zhongkeng",
-      "name": "重坑踹",
+      "name": "拖把横扫",
       "input": "214K",
-      "desc": "下后下踹翻，击倒",
+      "desc": "下后下长柄拖把横扫踹翻，击倒",
       "startup": 12,
       "active": 6,
       "recovery": 32,
@@ -430,9 +432,9 @@ export default {
   "supers": [
     {
       "id": "tongshoulong",
-      "name": "顶梁破石",
-      "input": "623623P",
-      "desc": "顶梁之拳，重压突进",
+      "name": "开闸放水",
+      "input": "214214P",
+      "desc": "高压水管连环冲击，重压突进",
       "startup": 12,
       "active": 28,
       "recovery": 38,

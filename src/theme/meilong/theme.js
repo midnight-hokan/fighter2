@@ -8,6 +8,8 @@ export default {
   subtitle: 'COAL DRAGON FIST',
   roster: ROSTER,
   stages: STAGES,
+  // 街机最后一关（docs/故事设定.md）：固定沈清；玩家选沈清时最后一关为林啸
+  finalBoss: { boss: 'c08', ifBoss: 'c01' },
   palette: { ui: '#f2c14e', uiDark: '#1a1410', accent: '#c8452c' },
   audio: {
     title: 'assets/meilong/audio/title.ogg',

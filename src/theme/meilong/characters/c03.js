@@ -1,18 +1,20 @@
-// 钢驮「运矿巨汉」— grappler（R1 原创角色）
-// 由 scripts/gen-characters.mjs 生成；数据格式见 docs/角色数据格式.md
+// 雷钧「机电队长」— grappler（黑岭煤矿角色）
+// 由 scripts/gen-characters.mjs 生成；数据格式见 docs/角色数据格式.md；身份与故事见 docs/故事设定.md
 export default {
   "id": "c03",
-  "name": "钢驮",
-  "title": "运矿巨汉",
-  "style": "身高两米的运矿工，钢架背心配厚底工靴，肩宽得像一辆矿车，走路带起煤尘",
+  "name": "雷钧",
+  "title": "机电队长",
+  "style": "四十二岁全矿最魁梧的人，络腮胡，厚实工装领口立起，肩上缠一圈电缆，腰挂大扳手，手上绝缘手套",
   "archetype": "grappler",
   "stage": "s06",
   "colors": {
-    "primary": "#5a6b7a",
-    "secondary": "#9aa7b4",
+    "primary": "#4a4f57",
+    "secondary": "#c98a3d",
     "skin": "#b98a5e"
   },
-  "ending": "最后一车煤拉上井的那天，钢驮解下了挽具。他这辈子拉的都是别人的路，从今往后，拉自己的。",
+  "intro": "来，让我看看你的接线牢不牢。",
+  "story": "智能化改造要换掉他亲手维护了二十年的老设备。他心里想要的是：改造的设备，得由他的人来管。",
+  "ending": "新设备进矿那天，厂家工程师来培训，讲到一半，雷钧举手指出了说明书上的两处错误。三个月后，他成了矿上智能装备维护中心的主任。",
   "stats": {
     "health": 1150,
     "walkF": 1.8,
@@ -24,7 +26,7 @@ export default {
   },
   "normals": {
     "st.lp": {
-      "name": "刺拳",
+      "name": "快拳",
       "startup": 4,
       "active": 3,
       "recovery": 7,
@@ -61,7 +63,7 @@ export default {
       "anim": "punch"
     },
     "st.hp": {
-      "name": "重拳",
+      "name": "扳手重击",
       "startup": 9,
       "active": 4,
       "recovery": 20,
@@ -96,7 +98,7 @@ export default {
       "anim": "kick"
     },
     "st.mk": {
-      "name": "中段踢",
+      "name": "侧踹",
       "startup": 7,
       "active": 3,
       "recovery": 14,
@@ -113,7 +115,7 @@ export default {
       "anim": "kick"
     },
     "st.hk": {
-      "name": "回旋踢",
+      "name": "缆线旋踢",
       "startup": 11,
       "active": 4,
       "recovery": 22,
@@ -131,7 +133,7 @@ export default {
       "anim": "highkick"
     },
     "cr.lp": {
-      "name": "蹲刺拳",
+      "name": "蹲快拳",
       "startup": 4,
       "active": 2,
       "recovery": 7,
@@ -167,7 +169,7 @@ export default {
       "anim": "punch"
     },
     "cr.hp": {
-      "name": "上勾拳",
+      "name": "扳手勾拳",
       "startup": 7,
       "active": 5,
       "recovery": 22,
@@ -185,7 +187,7 @@ export default {
       "anim": "upper"
     },
     "cr.lk": {
-      "name": "蹲踢",
+      "name": "低踢",
       "startup": 5,
       "active": 3,
       "recovery": 9,
@@ -223,7 +225,7 @@ export default {
       "anim": "lowkick"
     },
     "cr.hk": {
-      "name": "大扫堂",
+      "name": "电缆扫堂",
       "startup": 9,
       "active": 4,
       "recovery": 24,
@@ -242,7 +244,7 @@ export default {
       "anim": "sweep"
     },
     "j.lp": {
-      "name": "跳刺拳",
+      "name": "跳拳",
       "startup": 4,
       "active": 6,
       "recovery": 4,
@@ -327,7 +329,7 @@ export default {
       "anim": "kick"
     },
     "j.hk": {
-      "name": "跳重踢",
+      "name": "跳旋踢",
       "startup": 8,
       "active": 5,
       "recovery": 8,
@@ -345,16 +347,16 @@ export default {
     }
   },
   "throw": {
-    "name": "黑推摔",
+    "name": "电缆抱摔",
     "damage": 150,
     "stun": 12
   },
   "specials": [
     {
       "id": "zhongdan",
-      "name": "重弹摔",
+      "name": "电缆缠摔",
       "input": "360P",
-      "desc": "一圈指令投，抱摔砸地",
+      "desc": "一圈指令投，电缆缠抱摔砸地",
       "startup": 8,
       "active": 2,
       "recovery": 30,
@@ -366,9 +368,9 @@ export default {
     },
     {
       "id": "suiluo",
-      "name": "碎落",
+      "name": "扳手砸",
       "input": "421P",
-      "desc": "后下下后砸落，下段击倒",
+      "desc": "后下下后大扳手下砸，下段击倒",
       "startup": 10,
       "active": 8,
       "recovery": 26,
@@ -389,7 +391,7 @@ export default {
     },
     {
       "id": "kengtai",
-      "name": "坑台旋",
+      "name": "绝缘靴踹",
       "input": "214K",
       "desc": "扫堂腿，下段击倒",
       "startup": 8,
@@ -414,7 +416,7 @@ export default {
   "supers": [
     {
       "id": "chaozhong",
-      "name": "超重摔",
+      "name": "高压送电",
       "input": "236236K",
       "desc": "扛起对手整圈砸地，下段",
       "startup": 10,

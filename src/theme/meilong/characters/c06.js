@@ -1,18 +1,20 @@
-// 青锋「快镐手」— speed（R1 原创角色）
-// 由 scripts/gen-characters.mjs 生成；数据格式见 docs/角色数据格式.md
+// 方萤「矿灯房女工」— speed（黑岭煤矿角色）
+// 由 scripts/gen-characters.mjs 生成；数据格式见 docs/角色数据格式.md；身份与故事见 docs/故事设定.md
 export default {
   "id": "c06",
-  "name": "青锋",
-  "title": "快镐手",
-  "style": "瘦长的年轻镐手，轻便皮靴短褂，肩上斜背短镐，出手快得像一阵穿巷的风",
+  "name": "方萤",
+  "title": "矿灯房女工",
+  "style": "二十一岁娇小身形，灯房蓝色工作服系浅色围裙，两手各拎一盏矿灯，口袋插充电线",
   "archetype": "speed",
   "stage": "s01",
   "colors": {
-    "primary": "#46c8d8",
-    "secondary": "#1f4e5f",
+    "primary": "#3d8bb5",
+    "secondary": "#f0ead6",
     "skin": "#d8a377"
   },
-  "ending": "青锋跑到矿道尽头，回头看了一眼，没有停。他觉得只要跑得够快，黑夜就追不上他。",
+  "intro": "你的灯，是我充的电。",
+  "story": "她听说头灯里面装的，是黑岭第一盏灯的原装灯头。她从十五岁起就想亲手修一修那盏灯，让它再亮一次。",
+  "ending": "方萤捧着头灯回到灯房，用了一整夜把它修好了。六十周年庆典上，头灯在矿史馆里重新亮起来。后来智能矿灯进矿，她成了矿上第一个\"智能矿灯管理员\"，徽章上的编号是 001。",
   "stats": {
     "health": 980,
     "walkF": 3.4,
@@ -24,7 +26,7 @@ export default {
   },
   "normals": {
     "st.lp": {
-      "name": "刺拳",
+      "name": "快拳",
       "startup": 3,
       "active": 3,
       "recovery": 7,
@@ -96,7 +98,7 @@ export default {
       "anim": "kick"
     },
     "st.mk": {
-      "name": "中段踢",
+      "name": "侧踹",
       "startup": 6,
       "active": 3,
       "recovery": 14,
@@ -113,7 +115,7 @@ export default {
       "anim": "kick"
     },
     "st.hk": {
-      "name": "回旋踢",
+      "name": "旋踢",
       "startup": 9,
       "active": 4,
       "recovery": 22,
@@ -131,7 +133,7 @@ export default {
       "anim": "highkick"
     },
     "cr.lp": {
-      "name": "蹲刺拳",
+      "name": "蹲快拳",
       "startup": 3,
       "active": 2,
       "recovery": 7,
@@ -185,7 +187,7 @@ export default {
       "anim": "upper"
     },
     "cr.lk": {
-      "name": "蹲踢",
+      "name": "低踢",
       "startup": 4,
       "active": 3,
       "recovery": 9,
@@ -223,7 +225,7 @@ export default {
       "anim": "lowkick"
     },
     "cr.hk": {
-      "name": "大扫堂",
+      "name": "扫堂腿",
       "startup": 8,
       "active": 4,
       "recovery": 24,
@@ -242,7 +244,7 @@ export default {
       "anim": "sweep"
     },
     "j.lp": {
-      "name": "跳刺拳",
+      "name": "跳拳",
       "startup": 3,
       "active": 6,
       "recovery": 4,
@@ -327,7 +329,7 @@ export default {
       "anim": "kick"
     },
     "j.hk": {
-      "name": "跳重踢",
+      "name": "跳旋踢",
       "startup": 7,
       "active": 5,
       "recovery": 8,
@@ -345,14 +347,14 @@ export default {
     }
   },
   "throw": {
-    "name": "立吊摔",
+    "name": "灯绳摔",
     "damage": 105,
     "stun": 8
   },
   "specials": [
     {
       "id": "shanfengt",
-      "name": "闪风突",
+      "name": "充电冲刺",
       "input": "63214P",
       "desc": "后下前下前快拳，高速突进",
       "startup": 6,
@@ -378,7 +380,7 @@ export default {
     },
     {
       "id": "feihua",
-      "name": "飞花",
+      "name": "灯链旋",
       "input": "41236K",
       "desc": "下后下前跃起回旋踢",
       "startup": 7,
@@ -404,7 +406,7 @@ export default {
     },
     {
       "id": "jifengdan",
-      "name": "疾风弹",
+      "name": "双灯连闪",
       "input": "236P",
       "desc": "短程快弹，飞行道具，存在时间短",
       "startup": 9,
@@ -429,9 +431,9 @@ export default {
   "supers": [
     {
       "id": "jifenglong",
-      "name": "疾风贯针",
-      "input": "6321463214P",
-      "desc": "化风连续突刺，高速贯穿",
+      "name": "万灯齐明",
+      "input": "236236P",
+      "desc": "双灯满电，化风连续突刺，高速贯穿",
       "startup": 5,
       "active": 26,
       "recovery": 26,

@@ -1,18 +1,20 @@
-// 灯郎「掌灯人」— zoner（R1 原创角色）
-// 由 scripts/gen-characters.mjs 生成；数据格式见 docs/角色数据格式.md
+// 苏红「宣传科主任」— zoner（黑岭煤矿角色）
+// 由 scripts/gen-characters.mjs 生成；数据格式见 docs/角色数据格式.md；身份与故事见 docs/故事设定.md
 export default {
   "id": "c05",
-  "name": "灯郎",
-  "title": "掌灯人",
-  "style": "清瘦的掌灯老人，灰布长袍，背一根旧灯杆，眼神像灯油一样平静",
+  "name": "苏红",
+  "title": "宣传科主任",
+  "style": "三十四岁干练短发，红袖章，一手铁皮大喇叭，背上斜插一卷红色横幅",
   "archetype": "zoner",
   "stage": "s03",
   "colors": {
-    "primary": "#ffcc33",
-    "secondary": "#8a5a20",
+    "primary": "#c0392b",
+    "secondary": "#f0ead6",
     "skin": "#d9a878"
   },
-  "ending": "灯油烧尽那天，路也走到了头。灯郎把灯杆一放，说：这条路，我亲自走完了。",
+  "intro": "这一场，我要上头版。",
+  "story": "她负责六十周年的庆典宣传，本来只是来报道擂台的。结果写稿写到一半发现：黑岭六十年的故事里，几乎没有女人的名字。她把稿子一扔，自己报了名。",
+  "ending": "苏红赢下擂台，主持了黑岭六十周年的庆典。她在矿史馆里加了一面新墙，上面写满了黑岭六十年来所有女工、女技术员、女干部的名字。第一个名字是澡堂的霍兰，第二个是她自己。",
   "stats": {
     "health": 1050,
     "walkF": 2,
@@ -24,7 +26,7 @@ export default {
   },
   "normals": {
     "st.lp": {
-      "name": "刺拳",
+      "name": "快拳",
       "startup": 4,
       "active": 3,
       "recovery": 7,
@@ -61,7 +63,7 @@ export default {
       "anim": "punch"
     },
     "st.hp": {
-      "name": "重拳",
+      "name": "挥臂重拳",
       "startup": 8,
       "active": 4,
       "recovery": 20,
@@ -96,7 +98,7 @@ export default {
       "anim": "kick"
     },
     "st.mk": {
-      "name": "中段踢",
+      "name": "侧踹",
       "startup": 7,
       "active": 3,
       "recovery": 14,
@@ -113,7 +115,7 @@ export default {
       "anim": "kick"
     },
     "st.hk": {
-      "name": "回旋踢",
+      "name": "旋踢",
       "startup": 10,
       "active": 4,
       "recovery": 22,
@@ -131,7 +133,7 @@ export default {
       "anim": "highkick"
     },
     "cr.lp": {
-      "name": "蹲刺拳",
+      "name": "蹲快拳",
       "startup": 4,
       "active": 2,
       "recovery": 7,
@@ -185,7 +187,7 @@ export default {
       "anim": "upper"
     },
     "cr.lk": {
-      "name": "蹲踢",
+      "name": "低踢",
       "startup": 5,
       "active": 3,
       "recovery": 9,
@@ -223,7 +225,7 @@ export default {
       "anim": "lowkick"
     },
     "cr.hk": {
-      "name": "大扫堂",
+      "name": "横幅扫腿",
       "startup": 9,
       "active": 4,
       "recovery": 24,
@@ -242,7 +244,7 @@ export default {
       "anim": "sweep"
     },
     "j.lp": {
-      "name": "跳刺拳",
+      "name": "跳拳",
       "startup": 4,
       "active": 6,
       "recovery": 4,
@@ -327,7 +329,7 @@ export default {
       "anim": "kick"
     },
     "j.hk": {
-      "name": "跳重踢",
+      "name": "跳旋踢",
       "startup": 8,
       "active": 5,
       "recovery": 8,
@@ -345,16 +347,16 @@ export default {
     }
   },
   "throw": {
-    "name": "灯挑摔",
+    "name": "横幅摔",
     "damage": 110,
     "stun": 8
   },
   "specials": [
     {
       "id": "denghuadan",
-      "name": "灯花弹",
+      "name": "喇叭声波",
       "input": "236K",
-      "desc": "灯芯弹，飞行道具，速度快",
+      "desc": "大喇叭声波，飞行道具，速度快",
       "startup": 12,
       "active": 1,
       "recovery": 28,
@@ -375,9 +377,9 @@ export default {
     },
     {
       "id": "daiteng",
-      "name": "大镫弹",
+      "name": "标语封顶",
       "input": "623K",
-      "desc": "大镫慢弹，飞行道具，命中击退大",
+      "desc": "高抛标语横幅，飞行道具，命中击退大",
       "startup": 18,
       "active": 1,
       "recovery": 38,
@@ -399,9 +401,9 @@ export default {
     },
     {
       "id": "dengzhuo",
-      "name": "灯啄",
+      "name": "横幅横扫",
       "input": "214P",
-      "desc": "近身快速戳拳，可取消",
+      "desc": "近身快速横扫，可取消",
       "startup": 6,
       "active": 3,
       "recovery": 14,
@@ -423,9 +425,9 @@ export default {
   "supers": [
     {
       "id": "denghuadrag",
-      "name": "灯花澜",
+      "name": "全矿广播",
       "input": "236236K",
-      "desc": "灯杆挥出巨浪火弹，飞行道具",
+      "desc": "全矿广播，挥出巨型声波弹，飞行道具",
       "startup": 14,
       "active": 1,
       "recovery": 40,

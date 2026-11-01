@@ -1,18 +1,20 @@
-// 灰雁「赶路人」— balanced（R1 原创角色）
-// 由 scripts/gen-characters.mjs 生成；数据格式见 docs/角色数据格式.md
+// 沈清「矿医院医生」— balanced（黑岭煤矿角色）
+// 由 scripts/gen-characters.mjs 生成；数据格式见 docs/角色数据格式.md；身份与故事见 docs/故事设定.md
 export default {
   "id": "c08",
-  "name": "灰雁",
-  "title": "赶路人",
-  "style": "灰袍赶路人，背灯拄木杖，脚程不快不慢，像矿道尽头永远飞不走的那只灰雁",
+  "name": "沈清",
+  "title": "矿医院医生",
+  "style": "三十五岁清瘦冷静，白大褂外套工作马甲，戴安全帽，听诊器挂脖子，腰挂红十字急救包，袖口别一排银针",
   "archetype": "balanced",
   "stage": "s05",
   "colors": {
-    "primary": "#7b5ea7",
-    "secondary": "#cfc4e0",
+    "primary": "#c9cdd4",
+    "secondary": "#cc3344",
     "skin": "#d3a982"
   },
-  "ending": "雁群往南飞，灰雁跟着飞。路还很长，但他不再一个人走，灯就够亮了。",
+  "intro": "放松。只是例行检查。",
+  "story": "她不想参赛，是被矿长\"请\"来把守最后一关的。不过她心里清楚：擂台上每一个人的身体，她都要亲眼看着。",
+  "ending": "沈清赢了所有人，把头灯放回矿史馆，然后在擂台记录本上写下了每个人的体检意见：罗铮的腰、雷钧的血压、严正的旧伤、霍兰的膝盖……最后一行写着：\"全员合格。下次比武，请提前预约体检。\"",
   "stats": {
     "health": 1000,
     "walkF": 2.3,
@@ -24,7 +26,7 @@ export default {
   },
   "normals": {
     "st.lp": {
-      "name": "刺拳",
+      "name": "快拳",
       "startup": 4,
       "active": 3,
       "recovery": 7,
@@ -96,7 +98,7 @@ export default {
       "anim": "kick"
     },
     "st.mk": {
-      "name": "中段踢",
+      "name": "侧踹",
       "startup": 7,
       "active": 3,
       "recovery": 14,
@@ -113,7 +115,7 @@ export default {
       "anim": "kick"
     },
     "st.hk": {
-      "name": "回旋踢",
+      "name": "旋踢",
       "startup": 10,
       "active": 4,
       "recovery": 22,
@@ -131,7 +133,7 @@ export default {
       "anim": "highkick"
     },
     "cr.lp": {
-      "name": "蹲刺拳",
+      "name": "蹲快拳",
       "startup": 4,
       "active": 2,
       "recovery": 7,
@@ -185,7 +187,7 @@ export default {
       "anim": "upper"
     },
     "cr.lk": {
-      "name": "蹲踢",
+      "name": "低踢",
       "startup": 5,
       "active": 3,
       "recovery": 9,
@@ -223,7 +225,7 @@ export default {
       "anim": "lowkick"
     },
     "cr.hk": {
-      "name": "大扫堂",
+      "name": "扫堂腿",
       "startup": 9,
       "active": 4,
       "recovery": 24,
@@ -242,7 +244,7 @@ export default {
       "anim": "sweep"
     },
     "j.lp": {
-      "name": "跳刺拳",
+      "name": "跳拳",
       "startup": 4,
       "active": 6,
       "recovery": 4,
@@ -327,7 +329,7 @@ export default {
       "anim": "kick"
     },
     "j.hk": {
-      "name": "跳重踢",
+      "name": "跳旋踢",
       "startup": 8,
       "active": 5,
       "recovery": 8,
@@ -345,16 +347,16 @@ export default {
     }
   },
   "throw": {
-    "name": "两手提摔",
+    "name": "按压摔",
     "damage": 120,
     "stun": 10
   },
   "specials": [
     {
       "id": "huiyan",
-      "name": "灰炎弹",
+      "name": "银针连射",
       "input": "236P",
-      "desc": "杖尖灯焰弹，飞行道具",
+      "desc": "袖口银针连射，飞行道具",
       "startup": 14,
       "active": 1,
       "recovery": 32,
@@ -375,9 +377,9 @@ export default {
     },
     {
       "id": "huihe",
-      "name": "灰鹤蹴",
+      "name": "急救突进",
       "input": "214K",
-      "desc": "下后下跃起回旋踢",
+      "desc": "下后下跃起回旋踢，跃起突进",
       "startup": 10,
       "active": 8,
       "recovery": 22,
@@ -402,9 +404,9 @@ export default {
     },
     {
       "id": "huayan",
-      "name": "华炎蹴",
+      "name": "点穴上挑",
       "input": "623K",
-      "desc": "上挑旋踢，对空",
+      "desc": "点穴手法上挑旋踢，对空",
       "startup": 9,
       "active": 8,
       "recovery": 30,
@@ -431,9 +433,9 @@ export default {
   "supers": [
     {
       "id": "huiyanlong",
-      "name": "灰雁龙卷",
+      "name": "妙手回春",
       "input": "214214P",
-      "desc": "杖挥灰焰龙卷，中距离贯穿",
+      "desc": "银针龙卷，中距离贯穿",
       "startup": 14,
       "active": 10,
       "recovery": 40,

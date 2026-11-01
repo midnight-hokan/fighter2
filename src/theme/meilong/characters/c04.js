@@ -1,18 +1,20 @@
-// 火萤「灯廊灯女」— rushdown（R1 原创角色）
-// 由 scripts/gen-characters.mjs 生成；数据格式见 docs/角色数据格式.md
+// 严正「安监科主任」— rushdown（黑岭煤矿角色）
+// 由 scripts/gen-characters.mjs 生成；数据格式见 docs/角色数据格式.md；身份与故事见 docs/故事设定.md
 export default {
   "id": "c04",
-  "name": "火萤",
-  "title": "灯廊灯女",
-  "style": "精瘦的灯女，短工装束腰系灯带，马尾扎得高，动作快得像窜动的火苗",
+  "name": "严正",
+  "title": "安监科主任",
+  "style": "四十八岁精干中年，白色安全帽，左臂\"安全监察\"袖标，手持瓦斯检测仪，胸袋永远插着罚单本",
   "archetype": "rushdown",
   "stage": "s02",
   "colors": {
-    "primary": "#2e8b7a",
-    "secondary": "#f5f0dc",
+    "primary": "#7d8a97",
+    "secondary": "#c0392b",
     "skin": "#e6b98d"
   },
-  "ending": "火萤把灯廊最后一盏灯点亮的时候，光不亮，但整条矿道的人都看见路了。她说这就够了。",
+  "intro": "你这个站位，已经构成违章了。",
+  "story": "恢复擂台的消息一出，他第一个跳出来反对。反对无效，他干脆报名：\"那我就进去盯着，谁敢违章，我当场叫停。\"",
+  "ending": "严正捧着头灯，在全矿大会上第一次讲了自己被困的那十一个小时。最后他说：\"以后井下的人少了，这是我干安监这么多年，最想看到的事。\"台下安静了很久，然后掌声响了起来。",
   "stats": {
     "health": 1080,
     "walkF": 2.8,
@@ -24,7 +26,7 @@ export default {
   },
   "normals": {
     "st.lp": {
-      "name": "刺拳",
+      "name": "快拳",
       "startup": 3,
       "active": 3,
       "recovery": 7,
@@ -61,7 +63,7 @@ export default {
       "anim": "punch"
     },
     "st.hp": {
-      "name": "重拳",
+      "name": "检测重击",
       "startup": 8,
       "active": 4,
       "recovery": 20,
@@ -96,7 +98,7 @@ export default {
       "anim": "kick"
     },
     "st.mk": {
-      "name": "中段踢",
+      "name": "侧踹",
       "startup": 7,
       "active": 3,
       "recovery": 14,
@@ -113,7 +115,7 @@ export default {
       "anim": "kick"
     },
     "st.hk": {
-      "name": "回旋踢",
+      "name": "监察旋踢",
       "startup": 10,
       "active": 4,
       "recovery": 22,
@@ -131,7 +133,7 @@ export default {
       "anim": "highkick"
     },
     "cr.lp": {
-      "name": "蹲刺拳",
+      "name": "蹲快拳",
       "startup": 3,
       "active": 2,
       "recovery": 7,
@@ -185,7 +187,7 @@ export default {
       "anim": "upper"
     },
     "cr.lk": {
-      "name": "蹲踢",
+      "name": "低踢",
       "startup": 4,
       "active": 3,
       "recovery": 9,
@@ -223,7 +225,7 @@ export default {
       "anim": "lowkick"
     },
     "cr.hk": {
-      "name": "大扫堂",
+      "name": "罚单扫堂",
       "startup": 9,
       "active": 4,
       "recovery": 24,
@@ -242,7 +244,7 @@ export default {
       "anim": "sweep"
     },
     "j.lp": {
-      "name": "跳刺拳",
+      "name": "跳拳",
       "startup": 4,
       "active": 6,
       "recovery": 4,
@@ -327,7 +329,7 @@ export default {
       "anim": "kick"
     },
     "j.hk": {
-      "name": "跳重踢",
+      "name": "跳旋踢",
       "startup": 8,
       "active": 5,
       "recovery": 8,
@@ -345,14 +347,14 @@ export default {
     }
   },
   "throw": {
-    "name": "膝挂摔",
+    "name": "按倒摔",
     "damage": 130,
     "stun": 10
   },
   "specials": [
     {
       "id": "denghua",
-      "name": "萤火蹴",
+      "name": "隐患排查",
       "input": "214P",
       "desc": "下前滑步踢，突进压制",
       "startup": 8,
@@ -378,7 +380,7 @@ export default {
     },
     {
       "id": "shanguang",
-      "name": "闪光旋",
+      "name": "当场整改",
       "input": "41236P",
       "desc": "下后下前跃起旋踢，起手无敌，对空",
       "startup": 9,
@@ -409,7 +411,7 @@ export default {
     },
     {
       "id": "jifenghua",
-      "name": "窜火踢",
+      "name": "停产整顿",
       "input": "236K",
       "desc": "前冲扫踢，快速接压",
       "startup": 10,
@@ -437,9 +439,9 @@ export default {
   "supers": [
     {
       "id": "huaying",
-      "name": "火灵旋",
+      "name": "一票否决",
       "input": "214214P",
-      "desc": "化作火灵连续突刺",
+      "desc": "罚单翻飞，连续突刺",
       "startup": 6,
       "active": 24,
       "recovery": 28,

@@ -34,6 +34,14 @@ let mode = 'test';
 let arcade = null;
 let arcadePlayer = null;
 let arcadeScreen = null;
+let arcadeIntroFrames = 0; // 第 1 战开场白倒计时（rAF 帧），>0 时游戏冻结
+
+// 擂台最后一关（docs/故事设定.md）：永远沈清；玩家选沈清时最后一关为林啸
+function finalBossId(player) {
+  const fb = theme.finalBoss;
+  if (!fb) return undefined;
+  return player === fb.boss ? fb.ifBoss : fb.boss;
+}
 const LEVEL_LABEL = { easy: '简单', normal: '普通', hard: '困难' };
 const DUMMY = ['站立', '蹲下', '全防', '跳跃', '电脑'];
 let dummy = 0;
@@ -97,7 +105,7 @@ const menus = TEST_MODE ? null : new Menus(document.getElementById('menu-root'),
     if (m === 'arcade') {
       // 街机模式：P2 由电脑按 createArcade 的顺序安排，选人页上的 P2 光标忽略
       arcadePlayer = characters[0];
-      arcade = createArcade({ roster: theme.roster, player: arcadePlayer, seed: Date.now() % 100000 });
+      arcade = createArcade({ roster: theme.roster, player: arcadePlayer, seed: Date.now() % 100000, finalBoss: finalBossId(arcadePlayer) });
       characters = [arcadePlayer, arcade.current().opponent];
     } else {
       arcade = null;
@@ -110,10 +118,21 @@ const menus = TEST_MODE ? null : new Menus(document.getElementById('menu-root'),
       m === '2p' ? () => controls.read(1) : training ? dummyController : createAI(level, Date.now() % 1000, chars[1]),
     ];
     document.getElementById('hud-root').style.display = '';
-    running = true;
     audio.ensure();
     audio.playBgm(theme.stages[renderer.stageIndex].bgm);
-    hud.flashBanner(theme.text.round(1), 70);
+    if (m === 'arcade') {
+      // 第 1 战开场白（docs/故事设定.md）：显示所选角色开场白 + 参赛缘由，倒计时结束或 Enter 开打
+      const me = getCharacter(arcadePlayer);
+      showArcadeOverlay(`<div class="screen ending" data-arcade-overlay>
+        <h2>${me.name} · ${me.title}</h2>
+        <p class="ending-text">“${me.intro}”</p>
+        <p>${me.story}</p>
+        <div class="blink">Enter 开始战斗</div></div>`);
+      arcadeIntroFrames = 300;
+    } else {
+      running = true;
+      hud.flashBanner(theme.text.round(1), 70);
+    }
     draw(game.getState());
   },
 });
@@ -124,6 +143,8 @@ controls.onKey((code) => {
   // 菜单界面放标题音乐（有文件才放）
   if (!running && !audio.now && theme.audio?.title && !TEST_MODE) audio.playBgm({ file: theme.audio.title });
   if (code === 'F1') renderer.showBoxes = !renderer.showBoxes;
+  // 第 1 战开场白：Enter/空格 跳过
+  if (arcadeIntroFrames > 0 && (code === 'Enter' || code === 'Space')) { arcadeIntroFrames = 1; return; }
   if (arcadeScreen) {
     if (code === 'Enter') { if (arcadeScreen === 'continue') startArcadeRound(); else quitArcade(); }
     else if (code === 'KeyQ' || code === 'Escape') quitArcade();
@@ -141,6 +162,7 @@ function backToMenu() {
   running = false;
   arcade = null;
   arcadeScreen = null;
+  arcadeIntroFrames = 0;
   audio.stopBgm();
   if (theme.audio?.title) audio.playBgm({ file: theme.audio.title });
   document.getElementById('hud-root').style.display = 'none';
@@ -169,10 +191,21 @@ function startArcadeRound() {
   document.getElementById('hud-root').style.display = '';
   running = true;
   arcadeScreen = null;
+  arcadeIntroFrames = 0;
   hideArcadeOverlay();
   audio.ensure();
   audio.playBgm(theme.stages[renderer.stageIndex].bgm);
-  hud.flashBanner(`第 ${cur.stage} 战 · ${opp.name}（${LEVEL_LABEL[cur.level]}）`, 70);
+  hud.flashBanner(`第 ${cur.stage} 战 · ${opp.name}（${opp.title} · ${LEVEL_LABEL[cur.level]}）`, 70);
+  draw(game.getState());
+}
+
+// 第 1 战开场白倒计时结束：正式开始战斗
+function beginArcadeMatch() {
+  hideArcadeOverlay();
+  running = true;
+  const cur = arcade.current();
+  const opp = getCharacter(cur.opponent);
+  hud.flashBanner(`第 ${cur.stage} 战 · ${opp.name}（${opp.title} · ${LEVEL_LABEL[cur.level]}）`, 70);
   draw(game.getState());
 }
 
@@ -267,6 +300,11 @@ if (TEST_MODE) {
     acc += Math.min(now - last, 250);
     last = now;
     let state = null;
+    // 第 1 战开场白：按 rAF 帧倒计时（期间游戏冻结），结束开始战斗
+    if (arcadeIntroFrames > 0) {
+      arcadeIntroFrames--;
+      if (arcadeIntroFrames === 0) beginArcadeMatch();
+    }
     while (acc >= 1000 / 60) {
       if (running && !pause.open) state = tick();
       acc -= 1000 / 60;

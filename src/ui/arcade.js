@@ -6,13 +6,26 @@ import { createRng } from '../engine/rng.js';
 // 7 战难度曲线：第 1 战简单、第 7 战困难，单调不减
 export const LEVELS = ['easy', 'easy', 'normal', 'normal', 'hard', 'hard', 'hard'];
 
-export function createArcade({ roster, player, seed }) {
+export function createArcade({ roster, player, seed, finalBoss }) {
   const rng = createRng(seed);
-  const opponents = roster.filter(c => c.id !== player).map(c => c.id);
-  // Fisher–Yates 洗牌（走确定性 rng）
-  for (let i = opponents.length - 1; i > 0; i--) {
-    const j = rng.int(i + 1);
-    [opponents[i], opponents[j]] = [opponents[j], opponents[i]];
+  const others = roster.filter(c => c.id !== player).map(c => c.id);
+  // finalBoss：最后一关固定（docs/故事设定.md：第七战永远沈清，玩家是沈清时第七战林啸）。
+  // 其余 6 个对手照常洗牌，finalBoss 放最后。
+  let opponents;
+  if (finalBoss && others.includes(finalBoss)) {
+    const rest = others.filter(id => id !== finalBoss);
+    for (let i = rest.length - 1; i > 0; i--) {
+      const j = rng.int(i + 1);
+      [rest[i], rest[j]] = [rest[j], rest[i]];
+    }
+    opponents = [...rest, finalBoss];
+  } else {
+    opponents = others;
+    // Fisher–Yates 洗牌（走确定性 rng）
+    for (let i = opponents.length - 1; i > 0; i--) {
+      const j = rng.int(i + 1);
+      [opponents[i], opponents[j]] = [opponents[j], opponents[i]];
+    }
   }
   const byId = new Map(roster.map(c => [c.id, c]));
   let index = 0;
