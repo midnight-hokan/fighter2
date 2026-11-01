@@ -118,10 +118,12 @@ def blend_face(orig_rgba, new_rgb, m):
 
 def face_skin_ok(dec_rgb, m):
     """mask 核心区（m>0.5）里肤色像素占比：抓"脸没画出来/灰块残留"。
-    戴帽角色 bbox 可能含少量帽檐，阈值放宽到 0.20。"""
-    px = np.array(dec_rgb).astype(float) / 255.0
+    校准（2026-11-01）：本画风脸饱和度低，真人脸 ≈0.145，纯灰块 =0.000，
+    阈值取 0.10 留 40% 余量。戴帽角色帽檐（红/蓝）hue 也在 0–45 内会加分，可接受。"""
+    # _hsv_vec 内部会 /255，这里传 0-255 原值，勿预除
+    px = np.array(dec_rgb).astype(float)
     h, s, v = genc2._hsv_vec(px[m > 0.5])
-    skin = (h >= 5) * (h <= 50) * (s > 0.15) * (s < 0.8) * (v > 0.4)
+    skin = (h >= 0) * (h <= 45) * (s > 0.05) * (v > 0.35)
     return float(skin.mean())
 
 
@@ -176,8 +178,8 @@ def main():
                     if not good_p:
                         log("bad %s_%s [qc %s] try%d" % (cid, expr, why, attempt + 1))
                         continue
-                    if skin < 0.20:
-                        log("bad %s_%s [脸区肤色占比 %.2f < 0.20] try%d" % (cid, expr, skin, attempt + 1))
+                    if skin < 0.10:
+                        log("bad %s_%s [脸区肤色占比 %.3f < 0.10] try%d" % (cid, expr, skin, attempt + 1))
                         continue
                     if dry:
                         result.save(WORK / (prefix + "_preview.png"))
