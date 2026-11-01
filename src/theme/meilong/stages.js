@@ -57,7 +57,7 @@ export const STAGES = [
     bgm: { tempo: 144, key: 'G', scale: 'major', seed: 5 },
   },
   {
-    id: 's06', name: '万人坑斗场',
+    id: 's06', name: '井下斗场',
     sky: ['#0d1a11', '#26382a'],
     floor: { color: '#443a2c', line: '#61543e' },
     layers: [
