@@ -6,6 +6,7 @@ export default {
   "title": "顶梁大汉",
   "style": "顶梁工大汉，铜色工装，手臂粗得像支柱，眼皮很少抬，一拳下去地面掉煤渣",
   "archetype": "power",
+  "stage": "s04",
   "colors": {
     "primary": "#722f37",
     "secondary": "#caa06a",

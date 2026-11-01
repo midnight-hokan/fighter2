@@ -6,6 +6,7 @@ export default {
   "title": "赶路人",
   "style": "灰袍赶路人，背灯拄木杖，脚程不快不慢，像矿道尽头永远飞不走的那只灰雁",
   "archetype": "balanced",
+  "stage": "s05",
   "colors": {
     "primary": "#7b5ea7",
     "secondary": "#cfc4e0",

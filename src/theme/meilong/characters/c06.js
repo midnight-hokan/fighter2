@@ -6,6 +6,7 @@ export default {
   "title": "快镐手",
   "style": "瘦长的年轻镐手，轻便皮靴短褂，肩上斜背短镐，出手快得像一阵穿巷的风",
   "archetype": "speed",
+  "stage": "s01",
   "colors": {
     "primary": "#46c8d8",
     "secondary": "#1f4e5f",

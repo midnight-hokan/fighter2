@@ -6,6 +6,7 @@ export default {
   "title": "深井守望者",
   "style": "中年矿工，体格敦实，穿厚皮褂，护目镜推在额头上，双掌老茧厚得能挡火花",
   "archetype": "charge",
+  "stage": "s01",
   "colors": {
     "primary": "#b5651d",
     "secondary": "#e8d5a3",

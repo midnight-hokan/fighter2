@@ -6,6 +6,7 @@ export default {
   "title": "灯廊灯女",
   "style": "精瘦的灯女，短工装束腰系灯带，马尾扎得高，动作快得像窜动的火苗",
   "archetype": "rushdown",
+  "stage": "s02",
   "colors": {
     "primary": "#2e8b7a",
     "secondary": "#f5f0dc",

@@ -6,6 +6,7 @@ export default {
   title: '矿脉拳士',
   style: '黑色短褂、腰缠矿灯带的年轻拳手，出拳带火星',
   archetype: 'shoto',
+  stage: 's05',
   colors: { primary: '#c8452c', secondary: '#f2c14e', skin: '#e0ac7e' },
   ending: '烈岩打穿了最深的矿脉，却发现地火之下还有更强的对手在等他。他把矿灯系紧，转身走进了下一条巷道。',
   stats: { health: 1000, walkF: 2.4, walkB: 1.9, jumpV: 8.4, jumpH: 3.0, stunMax: 100, throwRange: 44 },

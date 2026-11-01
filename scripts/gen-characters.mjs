@@ -30,6 +30,7 @@ function makeNormals(cfg) {
 const CHARS = [
   {
     id: 'c02', name: '炭守', title: '深井守望者', archetype: 'charge',
+    stage: 's01',
     style: '中年矿工，体格敦实，穿厚皮褂，护目镜推在额头上，双掌老茧厚得能挡火花',
     colors: { primary: '#b5651d', secondary: '#e8d5a3', skin: '#c9986a' },
     ending: '深井的灯灭那天，炭守第一次走出黑暗。他抬头看见满天星子，才知道井外的世界从来不是黑的。',
@@ -56,6 +57,7 @@ const CHARS = [
   },
   {
     id: 'c03', name: '钢驮', title: '运矿巨汉', archetype: 'grappler',
+    stage: 's06',
     style: '身高两米的运矿工，钢架背心配厚底工靴，肩宽得像一辆矿车，走路带起煤尘',
     colors: { primary: '#5a6b7a', secondary: '#9aa7b4', skin: '#b98a5e' },
     ending: '最后一车煤拉上井的那天，钢驮解下了挽具。他这辈子拉的都是别人的路，从今往后，拉自己的。',
@@ -81,6 +83,7 @@ const CHARS = [
   },
   {
     id: 'c04', name: '火萤', title: '灯廊灯女', archetype: 'rushdown',
+    stage: 's02',
     style: '精瘦的灯女，短工装束腰系灯带，马尾扎得高，动作快得像窜动的火苗',
     colors: { primary: '#2e8b7a', secondary: '#f5f0dc', skin: '#e6b98d' },
     ending: '火萤把灯廊最后一盏灯点亮的时候，光不亮，但整条矿道的人都看见路了。她说这就够了。',
@@ -107,6 +110,7 @@ const CHARS = [
   },
   {
     id: 'c05', name: '灯郎', title: '掌灯人', archetype: 'zoner',
+    stage: 's03',
     style: '清瘦的掌灯老人，灰布长袍，背一根旧灯杆，眼神像灯油一样平静',
     colors: { primary: '#ffcc33', secondary: '#8a5a20', skin: '#d9a878' },
     ending: '灯油烧尽那天，路也走到了头。灯郎把灯杆一放，说：这条路，我亲自走完了。',
@@ -133,6 +137,7 @@ const CHARS = [
   },
   {
     id: 'c06', name: '青锋', title: '快镐手', archetype: 'speed',
+    stage: 's01',
     style: '瘦长的年轻镐手，轻便皮靴短褂，肩上斜背短镐，出手快得像一阵穿巷的风',
     colors: { primary: '#46c8d8', secondary: '#1f4e5f', skin: '#d8a377' },
     ending: '青锋跑到矿道尽头，回头看了一眼，没有停。他觉得只要跑得够快，黑夜就追不上他。',
@@ -159,6 +164,7 @@ const CHARS = [
   },
   {
     id: 'c07', name: '铜首', title: '顶梁大汉', archetype: 'power',
+    stage: 's04',
     style: '顶梁工大汉，铜色工装，手臂粗得像支柱，眼皮很少抬，一拳下去地面掉煤渣',
     colors: { primary: '#722f37', secondary: '#caa06a', skin: '#a9765a' },
     ending: '支柱立住了，铜首弯下腰。他顶过一万根柱子，第一次，顶住的是自己的心。',
@@ -185,6 +191,7 @@ const CHARS = [
   },
   {
     id: 'c08', name: '灰雁', title: '赶路人', archetype: 'balanced',
+    stage: 's05',
     style: '灰袍赶路人，背灯拄木杖，脚程不快不慢，像矿道尽头永远飞不走的那只灰雁',
     colors: { primary: '#7b5ea7', secondary: '#cfc4e0', skin: '#d3a982' },
     ending: '雁群往南飞，灰雁跟着飞。路还很长，但他不再一个人走，灯就够亮了。',
@@ -215,6 +222,7 @@ const CHARS = [
 for (const c of CHARS) {
   const out = {
     id: c.id, name: c.name, title: c.title, style: c.style, archetype: c.archetype,
+    stage: c.stage,
     colors: c.colors, ending: c.ending, stats: c.stats,
     normals: makeNormals(c.normals ?? {}),
     throw: c.throw,

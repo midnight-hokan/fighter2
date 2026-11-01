@@ -6,6 +6,7 @@ export default {
   "title": "掌灯人",
   "style": "清瘦的掌灯老人，灰布长袍，背一根旧灯杆，眼神像灯油一样平静",
   "archetype": "zoner",
+  "stage": "s03",
   "colors": {
     "primary": "#ffcc33",
     "secondary": "#8a5a20",

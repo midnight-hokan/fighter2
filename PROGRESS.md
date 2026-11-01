@@ -5,8 +5,8 @@
 | E1–E8 引擎 | ✅ 完成（框架自带，已锁定） | v2 框架 bbaf422 |
 | 自动发布 | ✅ 完成：post-commit 钩子（E1–E8 通过才发布）+ deploy.sh 仓库式发布 + 首页入口 + fighter2-web.service(8092) | 1d7e845 |
 | R1 8人阵容 | ✅ 完成：7 个原创角色（c02–c08），平衡矩阵 36%–71% 全在 20–80，generator 与 .js 同步 | 见提交 |
-| R2 场景/音乐 | 进行中 | |
-| R3 街机模式 | 未开始 | |
+| R2 场景/音乐 | ✅ 完成：6 个场景（矿井/灯廊夜市/炭湖夜渡/高炉之巅/星夜矿镇/万人坑斗场），各带专属配色+3 图层+独立 BGM，8 角色均有 stage 主场 | 见提交 |
+| R3 街机模式 | 进行中 | |
 | R4 收尾交付 | 未开始 | |
 
 ## 日志
@@ -15,3 +15,4 @@
 - 自动发布：仓库式链路（rsync → 远端站点仓库 commit+push → hokan-deploy --force → 线上 version.json 校验）已通；本机 8092 预览由 fighter2-web.service 托管（v1 在 8091、8090 是 Hermes 面板，均未动）。线上 https://midnighthokan.com/games/fighter2/
 - R1 初版 7 角色（炭守/钢驮/火萤/灯郎/青锋/铜首/灰雁），c02–c08 由 scripts/gen-characters.mjs 生成。
 - R1 平衡调参：初版矩阵钢驮 89%、火萤 21% 超界 → 多轮调参（钢驮摔技降伤+减击倒、火萤突进/投技/必杀补强、青锋闪风突补强、铜首重弹落/超必杀降伤、灰雁飞行道具减速+灰鹤蹴改击倒+超必杀降到校验下限 200、烈岩旋风镐补强）。终版矩阵：烈岩 43% / 炭守 54% / 钢驮 71% / 火萤 36% / 灯郎 43% / 青锋 46% / 铜首 57% / 灰雁 50%，全在 20–80。所有数值改动已回写 generator，重新生成校验与 .js 字节一致。r1-roster 11/11 全绿。
+- R2：stages.js 扩到 6 场景（保留 s01 废弃矿井，新增 s02 灯廊夜市/s03 炭湖夜渡/s04 高炉之巅/s05 星夜矿镇/s06 万人坑斗场），每场景 2 色天空+地面配色+≥3 图层（mountains/beams/lamps/buildings/pillars/stars/crowd）+独立 BGM（tempo 96–162，key/scale/seed 互不相同）。8 角色各加 stage 主场字段（c02–c08 在 generator 定义里，c01 手改），覆盖全部 6 场景。注意：playwright 跑 8092 的 dist/，改完源码必须先 vite build 再跑 e2e。

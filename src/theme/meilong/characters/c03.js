@@ -6,6 +6,7 @@ export default {
   "title": "运矿巨汉",
   "style": "身高两米的运矿工，钢架背心配厚底工靴，肩宽得像一辆矿车，走路带起煤尘",
   "archetype": "grappler",
+  "stage": "s06",
   "colors": {
     "primary": "#5a6b7a",
     "secondary": "#9aa7b4",
