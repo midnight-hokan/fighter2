@@ -24,3 +24,39 @@ test('A1 精灵图：8 人全部加载成功，画出来互不相同', async ({ 
   expect(warns.filter(w => /精灵图/.test(w))).toEqual([]);
   expect(errors).toEqual([]);
 });
+
+test('A1 抠图质量：每帧身体不透明（没有被抠成半透明/只剩安全帽）', async ({ page }) => {
+  await openTestMode(page);
+  await page.evaluate(() => window.__game.assetsReady());
+  const stats = await page.evaluate(async () => {
+    const man = await (await fetch('assets/manifest.json')).json();
+    const out = {};
+    for (const [id, path] of Object.entries(Object.values(man)[0] ?? {})) {
+      const j = await (await fetch(path)).json();
+      const img = new Image();
+      img.src = path.slice(0, path.lastIndexOf('/') + 1) + j.image;
+      await img.decode();
+      const c = document.createElement('canvas');
+      c.width = img.width; c.height = img.height;
+      const g = c.getContext('2d');
+      g.drawImage(img, 0, 0);
+      const counts = [];
+      const all = new Set(Object.values(j.animations).flatMap(a => a.frames));
+      for (const f of all) {
+        const x = (f % j.columns) * j.frameW, y = Math.floor(f / j.columns) * j.frameH;
+        const d = g.getImageData(x, y, j.frameW, j.frameH).data;
+        let n = 0;
+        for (let i = 3; i < d.length; i += 4) if (d[i] > 200) n++;
+        counts.push(n / (j.frameW * j.frameH));
+      }
+      counts.sort((a, b) => a - b);
+      out[id] = { median: counts[Math.floor(counts.length / 2)], p10: counts[Math.floor(counts.length / 10)] };
+    }
+    return out;
+  });
+  // 128×128 帧里一个身高约 90px 的完整人物，实心像素一般占 12% 以上；只剩安全帽和手套时不到 2%
+  for (const [id, s] of Object.entries(stats)) {
+    expect(s.median, `${id} 帧的中位不透明面积太小：身体被抠掉了`).toBeGreaterThan(0.07);
+    expect(s.p10, `${id} 有一成以上的帧几乎是空的`).toBeGreaterThan(0.035);
+  }
+});

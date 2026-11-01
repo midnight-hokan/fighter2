@@ -5,7 +5,7 @@
     "scripts/check.mjs": "0018d2ed5eb01f7b02dd6dc2101d47c2b8bab2fc874f2f91989327e596bb4e89",
     "scripts/lock-tests.mjs": "dfd95a7b41585a3d2d9d396ccac94d6cf1afbf1df52b95d6daa52d457e105653",
     "tests/e2e/_util.js": "70b57ae4486cf83b93e51d4d832f138679736d732017d14a162535c8d2eefb58",
-    "tests/e2e/a1-sprites.spec.js": "0229bf28602c09a871f6e313ca89106d31c488897b6ff05609eac4546b934d9a",
+    "tests/e2e/a1-sprites.spec.js": "36491a81b16abd2ea5bb4e48b7e633c189a15048a17fbbd72e5e1119d5310558",
     "tests/e2e/a2-stage-art.spec.js": "824d0788695d5aaa39cf60a8b1727b8d14d3afdea125dbfc646cad1940b513a4",
     "tests/e2e/a3-audio.spec.js": "ebdf657dd474252cdc8a48f7731cd4bc1a06e71b2d1139671b9e2cc19709ae07",
     "tests/e2e/c3-cutscene.spec.js": "dc3c6e4f77d81a3409bb715015d07bab035b7838e56b2c4b81b96f31a732d175",
