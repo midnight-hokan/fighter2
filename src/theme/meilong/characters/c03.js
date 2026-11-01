@@ -367,8 +367,8 @@ export default {
     {
       "id": "suiluo",
       "name": "碎落",
-      "input": "425P",
-      "desc": "下后上前砸落，下段击倒",
+      "input": "421P",
+      "desc": "后下下后砸落，下段击倒",
       "startup": 10,
       "active": 8,
       "recovery": 26,

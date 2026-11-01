@@ -379,8 +379,8 @@ export default {
     {
       "id": "feihua",
       "name": "飞花",
-      "input": "425K",
-      "desc": "下后上跃起回旋踢",
+      "input": "41236K",
+      "desc": "下后下前跃起回旋踢",
       "startup": 7,
       "active": 8,
       "recovery": 16,

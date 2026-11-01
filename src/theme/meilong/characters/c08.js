@@ -376,8 +376,8 @@ export default {
     {
       "id": "huihe",
       "name": "灰鹤蹴",
-      "input": "425K",
-      "desc": "下后上跃起回旋踢",
+      "input": "214K",
+      "desc": "下后下跃起回旋踢",
       "startup": 10,
       "active": 8,
       "recovery": 22,
@@ -432,7 +432,7 @@ export default {
     {
       "id": "huiyanlong",
       "name": "灰雁龙",
-      "input": "214236P",
+      "input": "214214P",
       "desc": "杖挥灰焰龙卷，中距离贯穿",
       "startup": 14,
       "active": 10,

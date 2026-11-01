@@ -384,8 +384,8 @@ export default {
     {
       "id": "zhongdanluo",
       "name": "重弹落",
-      "input": "425P",
-      "desc": "下后上砸落拳，下段击倒",
+      "input": "421P",
+      "desc": "后下下后砸落拳，下段击倒",
       "startup": 14,
       "active": 10,
       "recovery": 30,
@@ -407,7 +407,7 @@ export default {
     {
       "id": "zhongkeng",
       "name": "重坑踹",
-      "input": "624K",
+      "input": "214K",
       "desc": "下后下踹翻，击倒",
       "startup": 12,
       "active": 6,
