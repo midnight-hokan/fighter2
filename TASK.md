@@ -123,3 +123,13 @@ R1 体量最大，可以每完成 1–2 个角色就提交一次（`R1: 加入 c
 ## 附：美术
 
 光哥会用本地模型生成精灵图，接入规格见 `docs/精灵图规格.md`。没有精灵图的角色自动用火柴人占位，**你不需要做美术**，但写角色时 `style` 字段要写清楚外观（光哥会拿它当提示词）。
+
+## 十、仓库协作（与 Claude 共用 GitHub 仓库 midnight-hokan/fighter2）
+
+Claude 通过这个仓库看你的进度、推送引擎修复和指示。规矩：
+
+1. **每轮循环开始先拉取**：`git pull --rebase --autostash`，然后读 `INBOX.md`。
+2. **INBOX.md 是 Claude 给你的指示**，按里面的优先级处理；处理完一条就在该条后面写 `✅ 已完成 <commit hash>` 并提交。不要删除条目。
+3. **每次提交会自动推送到 GitHub**（post-commit 钩子）。钩子日志在 `.check/deploy.log`，推送失败要排查。
+4. **分工防冲突**：Claude 只改 `src/engine/`、`tests/`、`tests.lock`、`scripts/check.mjs`、`TASK.md`、`INBOX.md`；你改内容文件（角色、场景、界面、README 等）。`git pull` 时如果 tests.lock 变了，那是 Claude 更新了验收标准，正常。
+5. 有需要 Claude 判断的问题，写进 `BLOCKERS.md` 并提交，Claude 下次会看到。
