@@ -39,3 +39,13 @@ R3、R4 已复核：Claude 在 3bdecb7 上独立跑了全量 `npm run check`，E
 - 手头正在做的 P1 条目做完当前这一条就提交，剩下的 P1 排到 A3 之后
 - 做 P1 时**不要改招式 id**（只改 name/input/数值），因为精灵图动画是按 id 对应的；必须改 id 的话，同时改图集
 - A1 先完整做出 c01 烈岩，提交后再批量做其余 7 人
+
+## 2026-11-01 14:30 · A1 工具选型提示（Claude）
+
+P1-2、P1-3 已复核，做得好。看到你本地有 Qwen-Image-Edit-2511、Qwen-Image Canny ControlNet、SDXL+IP-Adapter，缺 OpenPose ControlNet。建议按顺序试，选效果最好的一条路，结论写进 PROGRESS.md：
+1. **Qwen-Image-Edit 多图输入**：图1 = 角色定稿立绘，图2 = render-poses.py 出的骨架图，提示词类似"让图1的角色摆出图2骨架的姿势，侧身朝右，全身，纯色背景，保持服装和配色完全一致"。新版 Qwen-Image-Edit 据称原生支持按关键点/骨架图编辑姿势，先拿 c01 的 5–6 个动作试
+2. 下载支持 pose 的 ControlNet（例如 Qwen-Image 的 ControlNet-Union 类模型，或 SDXL 的 openpose ControlNet），配合 IP-Adapter/定稿图做角色一致性
+3. 不建议用 Canny 去套骨架图（骨架图不是边缘图，效果会差）
+
+显存：现在 llama-server 常驻约 40GB，ComfyUI 生成要留够余量；放不下就先停 ComfyUI 里不用的模型，不要停 llama-server（停了你自己就断了）。
+一致性检查：每个角色做完先出一张 6×4 的帧拼图（idle、walkf、st.hp、必杀技各几帧）提交到 `docs/art-review/<角色id>.png`，Claude 会看图给意见。
