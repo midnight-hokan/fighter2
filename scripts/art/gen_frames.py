@@ -200,8 +200,11 @@ def main():
         todo = [(a, i) for a in anims for i in range(len(data["anims"][a]["frames"]))]
 
     (FRAMES / cid).mkdir(parents=True, exist_ok=True)
+    HB = ROOT / ".check" / "heartbeat"
     n = 0
     for a, i in todo:
+        HB.parent.mkdir(exist_ok=True)
+        HB.touch()
         safe = a.replace(".", "_")
         out = FRAMES / cid / (safe + "_" + format(i, "02d") + ".png")
         pose = POSE_IMG / cid / (safe + "_" + format(i, "02d") + ".png")
