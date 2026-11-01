@@ -1,0 +1,27 @@
+{
+  "note": "受保护文件清单，由 npm run lock-tests 生成。大炮不得修改。",
+  "files": {
+    "playwright.config.js": "199852e47d67e234ef648daa015e9f27675ac42e4c79391232b49761ab79f854",
+    "scripts/check.mjs": "8916f9d820c9f40829ad4ee3b6515e7f4e3ae4b838342169f296c3028194b828",
+    "scripts/lock-tests.mjs": "dfd95a7b41585a3d2d9d396ccac94d6cf1afbf1df52b95d6daa52d457e105653",
+    "tests/e2e/_util.js": "70b57ae4486cf83b93e51d4d832f138679736d732017d14a162535c8d2eefb58",
+    "tests/e2e/e8-ui.spec.js": "91758de55b65a490eb35f86d5ca8d91fc95fcfa845fc0c9875962e69003cd961",
+    "tests/e2e/r2-stages.spec.js": "c2734f812cadbdffeeec7b04b655c7ba0a7dc5c943e21a05a14c7e9c498a07a9",
+    "tests/e2e/r3-arcade.spec.js": "f4cb8c42b03e7cf984f9a19ba43656fef9495153dd5a76b2162e0e342bf0141c",
+    "tests/e2e/r4-delivery.spec.js": "617968f700afd1c61d052e7d3a62f4395160b37fb8c2bd30c81d0330f3ae0601",
+    "tests/unit/_fixtures.js": "74b199e63096a9489b4d08a29efeb061e5c2b61ece9cb3f337eb75ebf9d07433",
+    "tests/unit/e1-input.test.js": "e5abc4ce078088c6b51fa78125ee870cc17dad2ce4c409ce2fb56b29d602b572",
+    "tests/unit/e2-normals.test.js": "0ba53cee26effb31fd5e0b7a04fac5d3ae7fd093c18ed001c3a4821a40adf356",
+    "tests/unit/e3-throw-dizzy.test.js": "9be9ceb8042a905110ea685db447e217568763471869f66f6daf44bcc115548b",
+    "tests/unit/e4-specials.test.js": "2d4b1160d76e1bb9229182f41ddfb723a4d2646db61ee8054e615f760266a3db",
+    "tests/unit/e5-meter.test.js": "4733b195568661621ac16989db744ed853ddb59584e3e731474d777465c7f0ea",
+    "tests/unit/e6-rounds.test.js": "bed4c80e59415e5a4b7916a83acbb332b8ea40a5e94aca08ef7721d0a7fe8741",
+    "tests/unit/e7-ai.test.js": "dfae42a32bf3ff51e984731c79802c2e7875a19821e9e016de44dcce70988910",
+    "tests/unit/e8-content.test.js": "fdbe3b16c7836ff52aac65c257305ec5a8563bff8c9c6255412ca176a610dc65",
+    "tests/unit/r1-roster.test.js": "821389c6ca17fa9bcd95713f2d39bf416cfa3bfb8e6bb6aae58551757c31d4a5",
+    "tests/unit/r2-stages.test.js": "682d5f573f8f942088e2701ffc3fc5b9ed7252c577e9f259df8d3826980e8b6c",
+    "tests/unit/r3-arcade.test.js": "424d96d18ee737bc4c87c5ca480a996f9298ee2b7a93e31ef12a3a349631653c",
+    "tests/unit/r4-delivery.test.js": "9e129d068ccb1a2e4c29a30fd0c6b3222f24e5b3435d7a98db9c933ff88a260e",
+    "vite.config.js": "f4ec640edd27b83b6da1838570bd8bca1a398067d607967744e0ed6f1d444c7c"
+  }
+}

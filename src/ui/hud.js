@@ -1,0 +1,77 @@
+// HUD（DOM 叠加层，保证中文清晰）：血条、计时、胜局、气槽（豆）、爆气计时、连击数、回合提示、训练信息。
+import { METER } from '../engine/constants.js';
+
+export class Hud {
+  constructor(root, theme) {
+    this.theme = theme;
+    root.innerHTML = `
+      <div class="hud" data-testid="hud">
+        <div class="side p1">
+          <div class="bar"><div class="red" data-testid="hpred-p1"></div><div class="fill" data-testid="hp-p1"></div></div>
+          <div class="name" data-testid="name-p1"></div>
+          <div class="wins" data-testid="wins-p1"></div>
+        </div>
+        <div class="timer" data-testid="timer">99</div>
+        <div class="side p2">
+          <div class="bar"><div class="red" data-testid="hpred-p2"></div><div class="fill" data-testid="hp-p2"></div></div>
+          <div class="name" data-testid="name-p2"></div>
+          <div class="wins" data-testid="wins-p2"></div>
+        </div>
+      </div>
+      <div class="combo p1" data-testid="combo-p1"></div>
+      <div class="combo p2" data-testid="combo-p2"></div>
+      <div class="power p1"><span class="stocks" data-testid="stocks-p1">0</span><div class="gauge"><div class="gfill" data-testid="gauge-p1"></div></div><div class="maxbar" data-testid="max-p1"></div></div>
+      <div class="power p2"><span class="stocks" data-testid="stocks-p2">0</span><div class="gauge"><div class="gfill" data-testid="gauge-p2"></div></div><div class="maxbar" data-testid="max-p2"></div></div>
+      <div class="banner" data-testid="banner"></div>
+      <div class="training" data-testid="training-info"></div>`;
+    this.q = (id) => root.querySelector(`[data-testid="${id}"]`);
+    this.red = [1, 1];
+    this.comboShow = [0, 0];
+    this.comboText = ['', ''];
+    this.bannerTimer = 0;
+    this.bannerText = '';
+    this.lastMove = null;
+  }
+
+  flashBanner(text, frames = 60) { this.bannerText = text; this.bannerTimer = frames; }
+
+  update(state, names, extra = {}) {
+    const T = this.theme.text;
+    for (const e of state.events) {
+      if (e.type === 'hit' && e.combo >= 2) { this.comboText[e.attacker] = `${e.combo} 连击`; this.comboShow[e.attacker] = 70; }
+      if (e.type === 'round') this.flashBanner(T.round(e.number), 70);
+      if (e.type === 'super') this.flashBanner(e.sdm ? 'MAX 超必杀！' : '超必杀！', 40);
+    }
+    state.fighters.forEach((f, i) => {
+      const k = i === 0 ? 'p1' : 'p2';
+      const ratio = Math.max(0, f.hp / f.maxHp);
+      this.red[i] = Math.max(ratio, this.red[i] - 0.006);
+      if (this.red[i] < ratio) this.red[i] = ratio;
+      this.q(`hp-${k}`).style.width = `${ratio * 100}%`;
+      this.q(`hpred-${k}`).style.width = `${this.red[i] * 100}%`;
+      this.q(`name-${k}`).textContent = names[i];
+      this.q(`wins-${k}`).textContent = '★'.repeat(state.round.wins[i]);
+      this.q(`stocks-${k}`).textContent = String(f.meter.stocks);
+      this.q(`gauge-${k}`).style.width = `${(f.meter.gauge / METER.perStock) * 100}%`;
+      this.q(`max-${k}`).style.width = `${(f.meter.max / METER.maxModeFrames) * 100}%`;
+      const c = this.q(`combo-${k}`);
+      c.textContent = this.comboShow[i]-- > 0 ? this.comboText[i] : '';
+    });
+    this.q('timer').textContent = state.training ? '∞' : String(state.round.timer);
+    const r = state.round;
+    let banner = '';
+    if (r.matchOver) banner = r.matchWinner === 'draw' ? T.draw : T.win(names[r.matchWinner]);
+    else if (r.over) banner = r.winner === 'draw' ? T.draw : state.round.timerFrames === 0 ? T.timeUp : T.ko;
+    else if (this.bannerTimer > 0) { banner = this.bannerText; this.bannerTimer--; }
+    this.q('banner').textContent = banner;
+
+    const info = this.q('training-info');
+    if (state.training) {
+      for (const f of state.fighters) if (f.index === 0 && f.move && f.move.frame === 1) this.lastMove = f.move;
+      const m = this.lastMove;
+      info.textContent = `训练模式　对手：${extra.dummy ?? ''}　${m ? `｜上一招 ${extra.moveName?.(m.id) ?? m.id}：发生 ${m.startup} 持续 ${m.active} 总 ${m.total} 帧` : ''}　｜F1 判定框　F2 对手行为　Esc 出招表`;
+    } else {
+      info.textContent = '';
+    }
+  }
+}

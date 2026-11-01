@@ -1,0 +1,121 @@
+// 音效与背景音乐：全部用 WebAudio 现场合成，不使用音频文件。
+// 浏览器要求用户交互后才能出声：首次按键 / 点击时调用 ensure()。M 键静音。
+import { createRng } from '../engine/rng.js';
+
+function tone(ctx, out, f0, f1, dur, type = 'square', vol = 0.15, delay = 0) {
+  const t = ctx.currentTime + delay;
+  const o = ctx.createOscillator();
+  const g = ctx.createGain();
+  o.type = type;
+  o.frequency.setValueAtTime(f0, t);
+  o.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t + dur);
+  g.gain.setValueAtTime(vol, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  o.connect(g).connect(out);
+  o.start(t);
+  o.stop(t + dur + 0.02);
+}
+
+function noise(ctx, out, dur, vol = 0.2) {
+  const len = Math.floor(ctx.sampleRate * dur);
+  const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = (((i * 7919) % 2003) / 1001 - 1) * (1 - i / len);
+  const s = ctx.createBufferSource();
+  const g = ctx.createGain();
+  g.gain.value = vol;
+  s.buffer = buf;
+  s.connect(g).connect(out);
+  s.start();
+}
+
+// 事件类型 → 合成函数
+export const SOUNDS = {
+  hit: (c, o, e) => { noise(c, o, 0.08, 0.25); tone(c, o, e?.damage > 80 ? 160 : 240, 60, 0.12, 'square', 0.18); },
+  block: (c, o) => tone(c, o, 900, 500, 0.06, 'triangle', 0.15),
+  throw: (c, o) => { noise(c, o, 0.15, 0.25); tone(c, o, 120, 50, 0.25, 'sawtooth', 0.15); },
+  projectile: (c, o) => tone(c, o, 220, 880, 0.25, 'sawtooth', 0.12),
+  super: (c, o) => { tone(c, o, 300, 1200, 0.5, 'sawtooth', 0.15); tone(c, o, 600, 2400, 0.5, 'square', 0.06, 0.05); },
+  max: (c, o) => tone(c, o, 200, 800, 0.4, 'square', 0.15),
+  stock: (c, o) => { tone(c, o, 880, 880, 0.06, 'square', 0.1); tone(c, o, 1320, 1320, 0.08, 'square', 0.1, 0.07); },
+  ko: (c, o) => { noise(c, o, 0.4, 0.3); tone(c, o, 300, 40, 0.9, 'sawtooth', 0.2); },
+  round: (c, o) => tone(c, o, 523, 523, 0.15, 'square', 0.12),
+  roll: (c, o) => noise(c, o, 0.12, 0.12),
+  gc: (c, o) => tone(c, o, 700, 200, 0.2, 'square', 0.15),
+  knockdown: (c, o) => noise(c, o, 0.2, 0.2),
+};
+
+const SCALES = { minor: [0, 2, 3, 5, 7, 8, 10], major: [0, 2, 4, 5, 7, 9, 11], dorian: [0, 2, 3, 5, 7, 9, 10], pentatonic: [0, 3, 5, 7, 10] };
+const KEYS = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+
+// 根据 bgm 描述生成一段 16 拍循环：{ tempo, key, scale, seed }
+export function composeBgm(bgm) {
+  const r = createRng(bgm.seed ?? 1);
+  const scale = SCALES[bgm.scale] ?? SCALES.minor;
+  const root = 45 + (KEYS[bgm.key] ?? 9);
+  const bass = [];
+  const lead = [];
+  const prog = [0, 0, 5, 3].map(d => d % scale.length);
+  for (let bar = 0; bar < 4; bar++) {
+    for (let s = 0; s < 8; s++) {
+      bass.push(root + scale[prog[bar]] - 12 + (s % 2 ? 12 : 0));
+      lead.push(r.next() < 0.7 ? root + 12 + scale[Math.floor(r.next() * scale.length)] + (r.next() < 0.2 ? 12 : 0) : null);
+    }
+  }
+  return { tempo: bgm.tempo ?? 132, bass, lead };
+}
+
+const midi = (n) => 440 * 2 ** ((n - 69) / 12);
+
+export class Audio {
+  constructor() {
+    this.ctx = null;
+    this.out = null;
+    this.muted = false;
+    this.log = [];
+    this.bgmTimer = null;
+  }
+
+  ensure() {
+    if (this.ctx || typeof AudioContext === 'undefined') return this.ctx;
+    this.ctx = new AudioContext();
+    this.out = this.ctx.createGain();
+    this.out.gain.value = this.muted ? 0 : 0.6;
+    this.out.connect(this.ctx.destination);
+    return this.ctx;
+  }
+
+  toggleMute() {
+    this.muted = !this.muted;
+    if (this.out) this.out.gain.value = this.muted ? 0 : 0.6;
+    return this.muted;
+  }
+
+  handle(events) {
+    for (const e of events) {
+      if (!SOUNDS[e.type]) continue;
+      this.log.push(e.type);
+      if (this.log.length > 300) this.log.shift();
+      if (this.ctx?.state === 'running') SOUNDS[e.type](this.ctx, this.out, e);
+    }
+  }
+
+  playBgm(bgm) {
+    this.stopBgm();
+    if (!bgm) return;
+    const song = composeBgm(bgm);
+    let step = 0;
+    const tick = () => {
+      if (this.ctx?.state === 'running' && !this.muted) {
+        const b = song.bass[step % song.bass.length];
+        const l = song.lead[step % song.lead.length];
+        tone(this.ctx, this.out, midi(b), midi(b), 0.12, 'triangle', 0.08);
+        if (l) tone(this.ctx, this.out, midi(l), midi(l), 0.1, 'square', 0.035);
+      }
+      step++;
+    };
+    this.bgmTimer = setInterval(tick, 60000 / song.tempo / 2);
+  }
+
+  stopBgm() { if (this.bgmTimer) clearInterval(this.bgmTimer); this.bgmTimer = null; }
+}
