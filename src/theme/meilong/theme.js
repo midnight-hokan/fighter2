@@ -9,6 +9,19 @@ export default {
   roster: ROSTER,
   stages: STAGES,
   palette: { ui: '#f2c14e', uiDark: '#1a1410', accent: '#c8452c' },
+  audio: {
+    title: 'assets/meilong/audio/title.ogg',
+    sfx: {
+      hit: 'assets/meilong/audio/sfx_hit.ogg',
+      block: 'assets/meilong/audio/sfx_block.ogg',
+      throw: 'assets/meilong/audio/sfx_throw.ogg',
+      projectile: 'assets/meilong/audio/sfx_projectile.ogg',
+      super: 'assets/meilong/audio/sfx_super.ogg',
+      ko: 'assets/meilong/audio/sfx_ko.ogg',
+      round: 'assets/meilong/audio/sfx_round.ogg',
+      knockdown: 'assets/meilong/audio/sfx_knockdown.ogg',
+    },
+  },
   text: {
     pressStart: '按 Enter 开始',
     select: '选择角色',
