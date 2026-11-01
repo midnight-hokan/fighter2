@@ -8,6 +8,8 @@ import { Audio, SOUNDS } from './render/audio.js';
 import { Hud } from './ui/hud.js';
 import { Controls } from './ui/controls.js';
 import { Menus, Pause } from './ui/menus.js';
+import { createArcade } from './ui/arcade.js';
+import { ROUND } from './engine/constants.js';
 
 // eslint-disable-next-line no-undef
 const VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : 'dev';
@@ -27,6 +29,11 @@ let chars = game.chars.map(c => c.def);
 let controllers = [() => ({}), () => ({})];
 let running = false;
 let mode = 'test';
+// 街机模式状态：arcade 为 createArcade 实例（非街机模式为 null）；arcadeScreen 是当前覆盖画面（接关/结局）
+let arcade = null;
+let arcadePlayer = null;
+let arcadeScreen = null;
+const LEVEL_LABEL = { easy: '简单', normal: '普通', hard: '困难' };
 const DUMMY = ['站立', '蹲下', '全防', '跳跃', '电脑'];
 let dummy = 0;
 const queued = [[], []];
@@ -85,8 +92,16 @@ const menus = TEST_MODE ? null : new Menus(document.getElementById('menu-root'),
   onStart: ({ characters, mode: m }) => {
     mode = m;
     const training = m === 'training';
+    if (m === 'arcade') {
+      // 街机模式：P2 由电脑按 createArcade 的顺序安排，选人页上的 P2 光标忽略
+      arcadePlayer = characters[0];
+      arcade = createArcade({ roster: theme.roster, player: arcadePlayer, seed: Date.now() % 100000 });
+      characters = [arcadePlayer, arcade.current().opponent];
+    } else {
+      arcade = null;
+    }
     newGame({ characters, seed: Date.now() % 100000, training });
-    const level = m.startsWith('cpu-') ? m.slice(4) : 'normal';
+    const level = m === 'arcade' ? arcade.current().level : (m.startsWith('cpu-') ? m.slice(4) : 'normal');
     dummyAI = createAI('normal', 99, chars[1]);
     controllers = [
       () => controls.read(0),
@@ -105,6 +120,11 @@ controls.onKey((code) => {
   audio.ensure();
   if (code === 'KeyM') audio.toggleMute();
   if (code === 'F1') renderer.showBoxes = !renderer.showBoxes;
+  if (arcadeScreen) {
+    if (code === 'Enter') { if (arcadeScreen === 'continue') startArcadeRound(); else quitArcade(); }
+    else if (code === 'KeyQ' || code === 'Escape') quitArcade();
+    return;
+  }
   if (!running || TEST_MODE) return;
   if (code === 'F2' && game.training) dummy = (dummy + 1) % DUMMY.length;
   if (code === 'Escape') pause.toggle(chars);
@@ -115,9 +135,79 @@ window.addEventListener('pointerdown', () => audio.ensure());
 function backToMenu() {
   pause.close();
   running = false;
+  arcade = null;
+  arcadeScreen = null;
   audio.stopBgm();
   document.getElementById('hud-root').style.display = 'none';
   menus?.show();
+}
+
+// —— 街机模式 ——
+
+function hideArcadeOverlay() {
+  document.querySelectorAll('#menu-root [data-arcade-overlay]').forEach(el => el.remove());
+}
+
+function showArcadeOverlay(html) {
+  hideArcadeOverlay();
+  const el = document.createElement('div');
+  el.innerHTML = html;
+  document.getElementById('menu-root').appendChild(el.firstElementChild);
+}
+
+// 开下一战 / 接关再战：newGame 会按对手 stage 切场景
+function startArcadeRound() {
+  const cur = arcade.current();
+  const opp = getCharacter(cur.opponent);
+  newGame({ characters: [arcadePlayer, cur.opponent], seed: Date.now() % 100000 });
+  controllers[1] = createAI(cur.level, Date.now() % 1000, chars[1]);
+  document.getElementById('hud-root').style.display = '';
+  running = true;
+  arcadeScreen = null;
+  hideArcadeOverlay();
+  audio.ensure();
+  audio.playBgm(theme.stages[renderer.stageIndex].bgm);
+  hud.flashBanner(`第 ${cur.stage} 战 · ${opp.name}（${LEVEL_LABEL[cur.level]}）`, 70);
+  draw(game.getState());
+}
+
+// 输了：接关画面（Enter 再战同一对手，Q 回标题）
+function showContinueScreen() {
+  const cur = arcade.current();
+  const opp = getCharacter(cur.opponent);
+  running = false;
+  arcadeScreen = 'continue';
+  audio.stopBgm();
+  showArcadeOverlay(`<div class="screen ending" data-testid="continue" data-arcade-overlay>
+    <h2>第 ${cur.stage} 战 · 败</h2>
+    <p>对手 ${opp.name}（${LEVEL_LABEL[cur.level]}）—— 接关后对手不变</p>
+    <div class="blink">Enter 接关再战　｜　Q 返回标题</div></div>`);
+}
+
+// 7 战全胜：结局画面（Enter 回标题）
+function showEndingScreen() {
+  running = false;
+  arcadeScreen = 'ending';
+  audio.stopBgm();
+  showArcadeOverlay(`<div class="screen ending" data-testid="ending" data-arcade-overlay>
+    <h2>通关 · ${getCharacter(arcadePlayer).name}</h2>
+    <p class="ending-text">${arcade.ending()}</p>
+    <div class="blink">按 Enter 返回标题</div></div>`);
+}
+
+function quitArcade() {
+  arcade = null;
+  arcadeScreen = null;
+  hideArcadeOverlay();
+  backToMenu();
+}
+
+// 比赛结束（matchOver）后按胜负推进街机流程
+function handleArcadeResult() {
+  const r = arcade.report(game.round.matchWinner === 0 ? 'win' : 'lose');
+  if (r === 'next') startArcadeRound();
+  else if (r === 'continue') showContinueScreen();
+  else showEndingScreen();
 }
 
 window.__game = {
@@ -143,6 +233,13 @@ window.__game = {
   isRunning: () => running,
   mode: () => mode,
   pauseOpen: () => pause.open,
+  // 街机模式测试接口：当前战况（非街机模式返回 null）；arcadeWin 强制玩家赢下当前这一战
+  arcade: () => (arcade ? { index: arcade.index, opponent: arcade.current().opponent, level: arcade.current().level } : null),
+  arcadeWin: () => {
+    if (!arcade || !running || game.round.over || game.round.matchOver) return;
+    game.round.wins[0] = Math.max(game.round.wins[0], ROUND.winsToMatch - 1);
+    game.debug.setHp(1, 0);
+  },
   bench: (frames = 300) => {
     const times = [];
     for (let k = 0; k < frames; k++) { const t0 = performance.now(); draw(tick()); times.push(performance.now() - t0); }
@@ -168,9 +265,10 @@ if (TEST_MODE) {
       acc -= 1000 / 60;
     }
     if (running) draw(state ?? game.getState());
-    // 【R3 由大炮实现】街机模式：在这里接 createArcade（src/ui/arcade.js）——赢了进下一战，输了显示接关，
-    // 7 战全胜显示结局画面（data-testid="ending"），Enter 回标题。并在 window.__game 上加 arcade() / arcadeWin()。
-    if (running && game.round.matchOver && !pause.open) { if (++overTimer > 240) { overTimer = 0; backToMenu(); } } else overTimer = 0;
+    // 街机模式：比赛结束后按胜负推进——赢了进下一战、输了接关、7 战全胜进结局（留 90 帧给 KO 动画）
+    if (running && game.round.matchOver && !pause.open) {
+      if (++overTimer > (arcade ? 90 : 240)) { overTimer = 0; if (arcade) handleArcadeResult(); else backToMenu(); }
+    } else overTimer = 0;
     requestAnimationFrame(loop);
   };
   requestAnimationFrame(loop);

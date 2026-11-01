@@ -1,13 +1,14 @@
 // 标题页、选人页、暂停出招表。
 // 流程：标题（Enter）→ 选人：P1 用 WASD 移光标、Enter 确认 → P2/电脑 用方向键、Enter 确认 → 开打
 // 模式在选人页用 Q / E 切换（也可以鼠标点）。连按 3 次 Enter 用默认选项直接开打。
-// 【R3 由大炮实现】加入 { id: 'arcade', label: '街机模式' }（追加在最后，不要改动已有模式的顺序，测试依赖默认模式），街机模式下 P2 由电脑按顺序安排。
+// 街机模式（追加在最后）：P2 由电脑按 createArcade 的顺序与难度安排（src/ui/arcade.js）。
 export const MODES = [
   { id: 'cpu-normal', label: '对电脑·普通' },
   { id: 'cpu-hard', label: '对电脑·困难' },
   { id: 'cpu-easy', label: '对电脑·简单' },
   { id: '2p', label: '本地双人' },
   { id: 'training', label: '训练模式' },
+  { id: 'arcade', label: '街机模式' },
 ];
 
 const ARROWS = { 1: '↙', 2: '↓', 3: '↘', 4: '←', 6: '→', 7: '↖', 8: '↑', 9: '↗' };

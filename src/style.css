@@ -58,3 +58,8 @@ html, body { margin: 0; height: 100%; background: #0b0908; overflow: hidden; col
 .pause td { padding: 4px 6px; border-bottom: 1px solid #2a2018; vertical-align: top; }
 .pause td.cmd { color: #ffd23f; white-space: nowrap; font-size: 16px; }
 .pause td.desc { color: #9a8a76; font-size: 12px; }
+.ending { gap: 18px; text-align: center; }
+.ending h2 { margin: 0; font-size: 42px; letter-spacing: 6px; color: #fff3c4; text-shadow: 0 4px 0 #000; }
+.ending p { margin: 0; max-width: 70vw; font-size: 20px; line-height: 1.8; color: #f2c14e; }
+.ending .ending-text { white-space: pre-line; }
+.ending .blink { margin-top: 30px; font-size: 16px; color: #fff3c4; animation: blink 1s steps(2) infinite; }
