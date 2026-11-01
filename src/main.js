@@ -11,6 +11,7 @@ import { Controls } from './ui/controls.js';
 import { Menus, Pause } from './ui/menus.js';
 import { createArcade } from './ui/arcade.js';
 import { Cutscene } from './ui/cutscene.js';
+import { TouchPad, isTouchDevice, simpleSpecialFor } from './ui/touch.js';
 import { openingScenes, prologueScenes, preFightScenes, endingScenes } from './ui/storyflow.js';
 import { ROUND } from './engine/constants.js';
 
@@ -25,6 +26,19 @@ const renderer = new Renderer(canvas, theme);
 const hud = new Hud(document.getElementById('hud-root'), theme);
 const audio = new Audio();
 const controls = new Controls();
+// 触屏：摇杆和按键并入 P1 输入；"必杀"键按方向直接发动必杀技（简易出招）
+let pendingSpecial = null;
+const touch = isTouchDevice() ? new TouchPad(document.body, {
+  onKey: (code) => controls.listeners.forEach(fn => fn(code, {})),
+  onSpecial: (d) => {
+    if (!running) return;
+    const me = game.getState().fighters[0];
+    const fwd = d.x !== 0 && Math.sign(d.x) === Math.sign(me.facing);
+    const id = simpleSpecialFor(chars[0], { forward: fwd, back: d.x !== 0 && !fwd, down: d.y > 0 });
+    if (id) pendingSpecial = id;
+  },
+}) : null;
+if (touch) controls.extra = [() => touch.read(), null];
 const pause = new Pause(document.getElementById('pause-root'));
 // 过场：自动化测试（navigator.webdriver）和 ?test=1 下默认关闭，?cutscenes=1 或 __game.cutscenes(true) 强制打开
 const cutscene = new Cutscene(document.body, theme);
@@ -82,7 +96,9 @@ function newGame({ characters, seed = 1, training = false, p1x, p2x }) {
 }
 
 function frameInputs(state) {
-  return [0, 1].map(i => (queued[i].length ? queued[i].shift() : TEST_MODE ? {} : controllers[i](state, i)));
+  const ins = [0, 1].map(i => (queued[i].length ? queued[i].shift() : TEST_MODE ? {} : controllers[i](state, i)));
+  if (pendingSpecial) { ins[0] = { ...ins[0], special: pendingSpecial }; pendingSpecial = null; }
+  return ins;
 }
 
 function tick() {
@@ -181,6 +197,10 @@ controls.onKey((code) => {
   if (code === 'Backspace' && pause.open) backToMenu();
 });
 window.addEventListener('pointerdown', () => audio.ensure());
+// 触屏：街机模式的开场白 / 接关 / 结局画面，点一下 = Enter
+document.getElementById('menu-root').addEventListener('pointerdown', (e) => {
+  if (arcadeScreen || arcadeIntroFrames > 0) { e.preventDefault(); controls.listeners.forEach(fn => fn('Enter', {})); }
+});
 
 function backToMenu() {
   pause.close();
@@ -315,6 +335,7 @@ window.__game = {
   isRunning: () => running,
   mode: () => mode,
   pauseOpen: () => pause.open,
+  touch: () => !!touch,
   // 街机模式测试接口：当前战况（非街机模式返回 null）；arcadeWin 强制玩家赢下当前这一战
   arcade: () => (arcade ? { index: arcade.index, opponent: arcade.current().opponent, level: arcade.current().level } : null),
   arcadeWin: () => {
@@ -352,6 +373,7 @@ if (TEST_MODE) {
       acc -= 1000 / 60;
     }
     if (running) draw(state ?? game.getState());
+    touch?.setVisible(running && !cutscene.active);
     // 街机模式：比赛结束后按胜负推进——赢了进下一战、输了接关、7 战全胜进结局（留 90 帧给 KO 动画）
     if (running && game.round.matchOver && !pause.open) {
       if (++overTimer > (arcade ? 90 : 240)) { overTimer = 0; if (arcade) handleArcadeResult(); else backToMenu(); }

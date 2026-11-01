@@ -2,7 +2,7 @@
   "note": "受保护文件清单，由 npm run lock-tests 生成。大炮不得修改。",
   "files": {
     "playwright.config.js": "199852e47d67e234ef648daa015e9f27675ac42e4c79391232b49761ab79f854",
-    "scripts/check.mjs": "0018d2ed5eb01f7b02dd6dc2101d47c2b8bab2fc874f2f91989327e596bb4e89",
+    "scripts/check.mjs": "c68ed2cf2ca3458e9fe9b64fc782308417dc07d807ac2fd700f30dcf3636557c",
     "scripts/lock-tests.mjs": "dfd95a7b41585a3d2d9d396ccac94d6cf1afbf1df52b95d6daa52d457e105653",
     "tests/e2e/_util.js": "70b57ae4486cf83b93e51d4d832f138679736d732017d14a162535c8d2eefb58",
     "tests/e2e/a1-sprites.spec.js": "36491a81b16abd2ea5bb4e48b7e633c189a15048a17fbbd72e5e1119d5310558",
@@ -13,6 +13,7 @@
     "tests/e2e/r2-stages.spec.js": "c2734f812cadbdffeeec7b04b655c7ba0a7dc5c943e21a05a14c7e9c498a07a9",
     "tests/e2e/r3-arcade.spec.js": "f4cb8c42b03e7cf984f9a19ba43656fef9495153dd5a76b2162e0e342bf0141c",
     "tests/e2e/r4-delivery.spec.js": "617968f700afd1c61d052e7d3a62f4395160b37fb8c2bd30c81d0330f3ae0601",
+    "tests/e2e/u1-touch.spec.js": "0fe80f6a738814b8bbce2e805ef2b77c225195b2d62db92ecddf0d75dc6ff491",
     "tests/unit/_assets.js": "c83bb966db8d8285304d8609dc5779f617751e85211ef76ccf4862a0a06748e5",
     "tests/unit/_fixtures.js": "74b199e63096a9489b4d08a29efeb061e5c2b61ece9cb3f337eb75ebf9d07433",
     "tests/unit/a1-sprites.test.js": "1444f7bdfb91d92064b6be4e91295725b5a1d74575e6098ead18396cf72d47e9",
@@ -32,6 +33,7 @@
     "tests/unit/r2-stages.test.js": "682d5f573f8f942088e2701ffc3fc5b9ed7252c577e9f259df8d3826980e8b6c",
     "tests/unit/r3-arcade.test.js": "424d96d18ee737bc4c87c5ca480a996f9298ee2b7a93e31ef12a3a349631653c",
     "tests/unit/r4-delivery.test.js": "9e129d068ccb1a2e4c29a30fd0c6b3222f24e5b3435d7a98db9c933ff88a260e",
+    "tests/unit/u1-simple-input.test.js": "afe821f7a36a02b882696980d3c23e2432d33f0a462930ea13c40032966561e7",
     "vite.config.js": "f4ec640edd27b83b6da1838570bd8bca1a398067d607967744e0ed6f1d444c7c"
   }
 }

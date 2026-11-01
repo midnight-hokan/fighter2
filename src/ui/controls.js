@@ -21,6 +21,7 @@ export class Controls {
     window.addEventListener('keyup', (e) => this.down.delete(e.code));
     window.addEventListener('blur', () => this.down.clear());
     this.padPrev = [{}, {}];
+    this.extra = [null, null]; // 额外输入源（触屏），返回 { left, lp, ... }
   }
 
   onKey(fn) { this.listeners.push(fn); }
@@ -46,6 +47,6 @@ export class Controls {
   read(player) {
     const out = {};
     for (const [code, btn] of Object.entries(KEYMAP[player])) if (this.down.has(code)) out[btn] = true;
-    return { ...this.pad(player), ...out };
+    return { ...this.pad(player), ...(this.extra[player]?.() ?? {}), ...out };
   }
 }

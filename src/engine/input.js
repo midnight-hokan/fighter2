@@ -4,6 +4,8 @@ import { BUTTONS, PUNCHES, KICKS, INPUT, STRENGTH } from './constants.js';
 export function normalizeInput(raw = {}) {
   const out = {};
   for (const b of BUTTONS) out[b] = !!raw[b];
+  // 简易出招（触屏一键必杀）：special = 必杀技/超必杀的 id，只在按下的那一帧传入
+  if (typeof raw.special === 'string') out.special = raw.special;
   if (out.left && out.right) { out.left = false; out.right = false; }
   if (out.up && out.down) { out.up = false; out.down = false; }
   return out;

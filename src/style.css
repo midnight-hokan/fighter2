@@ -40,7 +40,7 @@ html, body { margin: 0; height: 100%; background: #0b0908; overflow: hidden; col
 .select .grid { display: grid; grid-template-columns: repeat(4, 150px); gap: 12px; }
 .select .card { position: relative; background: #1c1510; border: 3px solid #3a2c20; padding: 10px; text-align: center; cursor: pointer; }
 .select .card.active { border-color: #f2c14e; box-shadow: 0 0 16px #f2c14e88; }
-.select .portrait { height: 80px; position: relative; image-rendering: pixelated; }
+.select .portrait { height: 120px; position: relative; image-rendering: pixelated; }
 .select .belt { position: absolute; left: 0; right: 0; top: 44px; height: 8px; }
 .select .cname { margin-top: 8px; font-weight: 800; font-size: 18px; }
 .select .ctitle { font-size: 12px; color: #c9b79c; }
@@ -89,3 +89,39 @@ html, body { margin: 0; height: 100%; background: #0b0908; overflow: hidden; col
 .cs-text { font-size: 24px; line-height: 1.7; color: #fff3c4; white-space: pre-line; }
 .cs-box.narration .cs-text { color: #e8d9b8; font-style: italic; }
 .cs-hint { position: absolute; right: 3vw; top: 2vh; font-size: 13px; color: #8d7a63; z-index: 2; }
+
+/* —— 触屏（src/ui/touch.js） —— */
+body.touch { touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+#touch-root { position: fixed; inset: 0; pointer-events: none; z-index: 40; }
+#touch-root > * { pointer-events: auto; position: absolute; }
+.tp-stick { left: 3vw; bottom: 5vh; width: min(34vh, 160px); height: min(34vh, 160px); border-radius: 50%; background: rgba(255,255,255,.08); border: 2px solid rgba(242,193,78,.45); touch-action: none; }
+.tp-knob { position: absolute; left: 30%; top: 30%; width: 40%; height: 40%; border-radius: 50%; background: rgba(242,193,78,.55); pointer-events: none; }
+.tp-btns { right: 2vw; bottom: 4vh; display: grid; grid-template-columns: repeat(3, min(15vh, 64px)); gap: min(2vh, 10px); }
+.tp-btn { width: min(15vh, 64px); height: min(15vh, 64px); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 900;
+  background: rgba(200,69,44,.38); border: 2px solid rgba(255,243,196,.5); color: #fff3c4; touch-action: none; }
+.tp-lk, .tp-mk, .tp-hk { background: rgba(59,111,216,.38); }
+.tp-btn.on { filter: brightness(1.8); transform: scale(.94); }
+.tp-sp { grid-column: 1 / span 3; width: auto; border-radius: 32px; height: min(11vh, 46px); background: rgba(242,193,78,.45); color: #1a1410; }
+.tp-menu { right: 2vw; top: 24vh; width: 40px; height: 40px; border-radius: 8px; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; font-size: 22px; }
+.tp-rotate { inset: 0; display: none; align-items: center; justify-content: center; background: #0b0908; color: #f2c14e; font-size: 22px; z-index: 99; }
+@media (orientation: portrait) { body.touch .tp-rotate { display: flex; } }
+.select-ok { margin-top: 18px; padding: 10px 40px; border: 2px solid #f2c14e; border-radius: 6px; font-size: 20px; letter-spacing: 6px; cursor: pointer; }
+/* 小屏（手机横屏）：选人页压缩 */
+@media (max-height: 520px) {
+  .select h2, .select .hint { display: none; }
+  .select .grid { grid-template-columns: repeat(4, min(20vw, 130px)); gap: 6px; }
+  .select .card { padding: 4px; border-width: 2px; }
+  .select .portrait { height: min(14vh, 56px); }
+  .select .belt { top: 45%; height: 5px; }
+  .select .cname { margin-top: 2px; font-size: 14px; }
+  .select .ctitle { font-size: 10px; }
+  .select .modes { margin-top: 8px; gap: 4px; flex-wrap: wrap; justify-content: center; }
+  .select .mode { padding: 3px 8px; font-size: 12px; }
+  .select-ok { margin-top: 8px; padding: 6px 32px; font-size: 16px; }
+}
+.select .portrait { overflow: hidden; }
+.select .portrait .face { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 20%; image-rendering: auto; }
+.select .card:not(.active) .face { filter: saturate(.7) brightness(.8); }
+/* 触屏：底部被摇杆和按键占用，能量条挪到名字下方 */
+body.touch .power { bottom: auto; top: calc(env(safe-area-inset-top, 0px) + 64px); width: 28vw; }
+body.touch .power .stocks { font-size: 22px; }

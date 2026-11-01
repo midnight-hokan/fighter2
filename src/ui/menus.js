@@ -121,16 +121,18 @@ export class Menus {
     const cards = T.roster.map((c, i) => {
       const tags = [this.cursor[0] === i ? '<span class="tag p1">1P</span>' : '', this.cursor[1] === i ? '<span class="tag p2">2P</span>' : ''].join('');
       return `<div class="card${this.cursor[this.picking] === i ? ' active' : ''}" data-testid="char-${c.id}" data-i="${i}">
-        <div class="portrait" style="background:${c.colors?.primary ?? '#888'}"><div class="belt" style="background:${c.colors?.secondary ?? '#ddd'}"></div></div>
+        <div class="portrait" style="background:${c.colors?.primary ?? '#888'}"><div class="belt" style="background:${c.colors?.secondary ?? '#ddd'}"></div><img class="face" src="assets/${T.id}/select/${c.id}.jpg" alt="" onerror="this.remove()"></div>
         <div class="cname">${c.name}</div><div class="ctitle">${c.title}</div>${tags}</div>`;
     }).join('');
     const modes = MODES.map((m, i) => `<div class="mode${i === this.modeIndex ? ' on' : ''}" data-testid="mode-${m.id}" data-m="${i}">${m.label}</div>`).join('');
     const who = this.picking === 0 ? '1P 选择角色（WASD 移动，Enter 确认）' : (MODES[this.modeIndex].id === '2p' ? '2P 选择角色（方向键移动，Enter 确认）' : '选择对手（方向键移动，Enter 确认）');
     this.root.innerHTML = `<div class="screen select" data-testid="select-screen">
       <h2>${T.text.select}</h2><div class="grid">${cards}</div>
-      <div class="modes">${modes}</div><div class="hint">${who}　｜　Q / E 切换模式　｜　Esc 返回</div></div>`;
+      <div class="modes">${modes}</div><div class="select-ok" data-testid="select-ok">确定</div><div class="hint">${who}　｜　Q / E 切换模式　｜　Esc 返回</div></div>`;
     this.root.querySelectorAll('.card').forEach(el => { el.onclick = () => { this.cursor[this.picking] = Number(el.dataset.i); this.render(); }; });
     this.root.querySelectorAll('.mode').forEach(el => { el.onclick = () => { this.modeIndex = Number(el.dataset.m); this.render(); }; });
+    const ok = this.root.querySelector('.select-ok');
+    if (ok) ok.onclick = () => this.key('Enter');
   }
 }
 

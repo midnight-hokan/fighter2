@@ -30,7 +30,9 @@ export class Renderer {
   }
 
   resize() {
-    const scale = Math.max(1, Math.floor(Math.min(window.innerWidth / SCREEN.w, window.innerHeight / SCREEN.h)));
+    // 大屏用整数倍放大（像素锐利）；手机等小屏整数倍放不下时，按比例铺满
+    const fit = Math.min(window.innerWidth / SCREEN.w, window.innerHeight / SCREEN.h);
+    const scale = fit >= 2 ? Math.floor(fit) : Math.max(0.5, fit);
     this.scale = scale;
     this.canvas.style.width = `${SCREEN.w * scale}px`;
     this.canvas.style.height = `${SCREEN.h * scale}px`;

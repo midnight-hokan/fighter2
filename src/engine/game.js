@@ -234,6 +234,8 @@ export class Game {
       this._startMax(f);
       return true;
     }
+    // 简易出招：直接按 id 发动（触屏用；条件与搓招相同，超必杀要有豆）
+    if (last.input.special && this._trySimple(f, last.input.special)) return true;
     // 超必杀 / MAX 超必杀
     if (this._trySuper(f)) return true;
     // 必杀技
@@ -254,6 +256,15 @@ export class Game {
       const m = ch.normals[`${last.input.down ? 'cr' : 'st'}.${pick}`];
       if (m) { this._startMove(f, m); return true; }
     }
+    return false;
+  }
+
+  _trySimple(f, id) {
+    const ch = this.ch(f);
+    const sp = ch.specials.find(m => m.id === id);
+    if (sp) { this._startMove(f, resolveStrength(sp, 'm')); return true; }
+    const su = ch.supers.find(m => m.id === id);
+    if (su && f.meter.stocks >= 1) { this._startMove(f, resolveStrength(su, 'm'), { sdm: f.meter.max > 0 }); return true; }
     return false;
   }
 
