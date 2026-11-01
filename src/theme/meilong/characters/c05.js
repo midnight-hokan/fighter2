@@ -4,12 +4,12 @@ export default {
   "id": "c05",
   "name": "苏红",
   "title": "宣传科主任",
-  "style": "三十四岁干练短发，红袖章，一手铁皮大喇叭，背上斜插一卷红色横幅",
+  "style": "三十四岁干练短发女性，红色短夹克配深色长裤，红袖章，一手铁皮大喇叭，背上斜插一卷红色横幅",
   "archetype": "zoner",
   "stage": "s03",
   "colors": {
     "primary": "#c0392b",
-    "secondary": "#f0ead6",
+    "secondary": "#3f4557",
     "skin": "#d9a878"
   },
   "intro": "这一场，我要上头版。",

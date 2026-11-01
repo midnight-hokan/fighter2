@@ -4,12 +4,12 @@ export default {
   "id": "c04",
   "name": "严正",
   "title": "安监科主任",
-  "style": "四十八岁精干中年，白色安全帽，左臂\"安全监察\"袖标，手持瓦斯检测仪，胸袋永远插着罚单本",
+  "style": "四十八岁精干中年，白色安全帽，卡其色工装外套内穿亮黄色\"安全监察\"反光背心，左臂\"安全监察\"袖标，手持瓦斯检测仪，胸袋永远插着罚单本",
   "archetype": "rushdown",
   "stage": "s02",
   "colors": {
-    "primary": "#7d8a97",
-    "secondary": "#c0392b",
+    "primary": "#f0c020",
+    "secondary": "#9c8f6b",
     "skin": "#e6b98d"
   },
   "intro": "你这个站位，已经构成违章了。",
