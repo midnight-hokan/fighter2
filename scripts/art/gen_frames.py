@@ -189,9 +189,13 @@ def verify(out, pose_path):
 def main():
     cid = sys.argv[1]
     portrait = Path(sys.argv[2]).expanduser()
-    desc = sys.argv[sys.argv.index("--desc") + 1] if "--desc" in sys.argv else ""
+    has_desc = "--desc" in sys.argv
+    desc = sys.argv[sys.argv.index("--desc") + 1] if has_desc else None
     anims = sys.argv[sys.argv.index("--anim") + 1].split(",") if "--anim" in sys.argv else None
     data = json.load(open(POSES / (cid + ".json")))
+    if desc is None:
+        # 未显式传 --desc 时，用 pose JSON 里的 style（角色外形描述，随身份重设自动同步）
+        desc = data.get("style", "")
     if "--all" in sys.argv:
         todo = [(a, i) for a, anim in data["anims"].items() for i in range(len(anim["frames"]))]
     else:
