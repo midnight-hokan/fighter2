@@ -7,15 +7,19 @@ export class Hud {
     root.innerHTML = `
       <div class="hud" data-testid="hud">
         <div class="side p1">
-          <div class="bar"><div class="red" data-testid="hpred-p1"></div><div class="fill" data-testid="hp-p1"></div></div>
-          <div class="name" data-testid="name-p1"></div>
-          <div class="wins" data-testid="wins-p1"></div>
+          <div class="face-wrap"><img class="face" data-face="p1" alt=""></div>
+          <div class="info">
+            <div class="bar"><div class="red" data-testid="hpred-p1"></div><div class="fill" data-testid="hp-p1"></div></div>
+            <div class="row"><div class="name" data-testid="name-p1"></div><div class="wins" data-testid="wins-p1"></div></div>
+          </div>
         </div>
         <div class="timer" data-testid="timer">99</div>
         <div class="side p2">
-          <div class="bar"><div class="red" data-testid="hpred-p2"></div><div class="fill" data-testid="hp-p2"></div></div>
-          <div class="name" data-testid="name-p2"></div>
-          <div class="wins" data-testid="wins-p2"></div>
+          <div class="face-wrap"><img class="face" data-face="p2" alt=""></div>
+          <div class="info">
+            <div class="bar"><div class="red" data-testid="hpred-p2"></div><div class="fill" data-testid="hp-p2"></div></div>
+            <div class="row"><div class="name" data-testid="name-p2"></div><div class="wins" data-testid="wins-p2"></div></div>
+          </div>
         </div>
       </div>
       <div class="combo p1" data-testid="combo-p1"></div>
@@ -25,6 +29,11 @@ export class Hud {
       <div class="banner" data-testid="banner"></div>
       <div class="training" data-testid="training-info"></div>`;
     this.q = (id) => root.querySelector(`[data-testid="${id}"]`);
+    this.root = root;
+    this.faceId = ['', ''];
+    this.queue = [];      // 横幅队列：回合 → 开打
+    this.shownBanner = '';
+    this.shownCombo = ['', ''];
     this.red = [1, 1];
     this.comboShow = [0, 0];
     this.comboText = ['', ''];
@@ -33,13 +42,16 @@ export class Hud {
     this.lastMove = null;
   }
 
-  flashBanner(text, frames = 60) { this.bannerText = text; this.bannerTimer = frames; }
+  flashBanner(text, frames = 60) { this.bannerText = text; this.bannerTimer = frames; this.queue = []; }
+
+  // 重新触发弹出动画
+  pop(el) { el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); }
 
   update(state, names, extra = {}) {
     const T = this.theme.text;
     for (const e of state.events) {
       if (e.type === 'hit' && e.combo >= 2) { this.comboText[e.attacker] = `${e.combo} 连击`; this.comboShow[e.attacker] = 70; }
-      if (e.type === 'round') this.flashBanner(T.round(e.number), 70);
+      if (e.type === 'round') { this.flashBanner(T.round(e.number), 60); this.queue = [[T.fight, 40]]; }
       if (e.type === 'super') this.flashBanner(e.sdm ? 'MAX 超必杀！' : '超必杀！', 40);
     }
     state.fighters.forEach((f, i) => {
@@ -50,20 +62,39 @@ export class Hud {
       this.q(`hp-${k}`).style.width = `${ratio * 100}%`;
       this.q(`hpred-${k}`).style.width = `${this.red[i] * 100}%`;
       this.q(`name-${k}`).textContent = names[i];
-      this.q(`wins-${k}`).textContent = '★'.repeat(state.round.wins[i]);
+      this.q(`hp-${k}`).parentElement.classList.toggle('danger', ratio > 0 && ratio < 0.3);
+      if (this.faceId[i] !== f.charId) {
+        this.faceId[i] = f.charId;
+        const img = this.root.querySelector(`[data-face="${k}"]`);
+        img.style.visibility = 'hidden';
+        img.onload = () => { img.style.visibility = 'visible'; };
+        img.onerror = () => { img.style.visibility = 'hidden'; };
+        img.src = `assets/${this.theme.id}/select/${f.charId}.jpg`;
+      }
+      this.q(`wins-${k}`).textContent = '◆'.repeat(state.round.wins[i]);
       this.q(`stocks-${k}`).textContent = String(f.meter.stocks);
       this.q(`gauge-${k}`).style.width = `${(f.meter.gauge / METER.perStock) * 100}%`;
       this.q(`max-${k}`).style.width = `${(f.meter.max / METER.maxModeFrames) * 100}%`;
       const c = this.q(`combo-${k}`);
-      c.textContent = this.comboShow[i]-- > 0 ? this.comboText[i] : '';
+      const ct = this.comboShow[i]-- > 0 ? this.comboText[i] : '';
+      if (ct !== this.shownCombo[i]) { this.shownCombo[i] = ct; c.textContent = ct; this.pop(c); }
     });
     this.q('timer').textContent = state.training ? '∞' : String(state.round.timer);
     const r = state.round;
     let banner = '';
     if (r.matchOver) banner = r.matchWinner === 'draw' ? T.draw : T.win(names[r.matchWinner]);
     else if (r.over) banner = r.winner === 'draw' ? T.draw : state.round.timerFrames === 0 ? T.timeUp : T.ko;
-    else if (this.bannerTimer > 0) { banner = this.bannerText; this.bannerTimer--; }
-    this.q('banner').textContent = banner;
+    else if (this.bannerTimer > 0) {
+      banner = this.bannerText;
+      if (--this.bannerTimer === 0 && this.queue.length) { const [t, n] = this.queue.shift(); this.bannerText = t; this.bannerTimer = n; }
+    }
+    const b = this.q('banner');
+    if (banner !== this.shownBanner) {
+      this.shownBanner = banner;
+      b.textContent = banner;
+      b.classList.toggle('ko', banner === T.ko || banner === T.timeUp);
+      if (banner) this.pop(b);
+    }
 
     const info = this.q('training-info');
     if (state.training) {

@@ -11,6 +11,7 @@ import { Controls } from './ui/controls.js';
 import { Menus, Pause } from './ui/menus.js';
 import { createArcade } from './ui/arcade.js';
 import { Cutscene } from './ui/cutscene.js';
+import { Versus } from './ui/versus.js';
 import { TouchPad, isTouchDevice, simpleSpecialFor } from './ui/touch.js';
 import { openingScenes, prologueScenes, preFightScenes, endingScenes } from './ui/storyflow.js';
 import { ROUND } from './engine/constants.js';
@@ -44,6 +45,15 @@ const pause = new Pause(document.getElementById('pause-root'));
 const cutscene = new Cutscene(document.body, theme);
 let cutscenesOn = params.has('cutscenes') || (!navigator.webdriver && !TEST_MODE);
 const playStory = (scenes) => (cutscenesOn ? cutscene.play(scenes) : Promise.resolve());
+const versus = new Versus(document.body, theme);
+// 开打：过场开启时先播 VS 画面，再显示回合横幅、开始计时
+function startFight(bannerText) {
+  const go = () => { running = true; hud.flashBanner(bannerText, 60); hud.queue = [[theme.text.fight, 40]]; draw(game.getState()); };
+  if (!cutscenesOn) return go();
+  running = false;
+  const stage = theme.stages[renderer.stageIndex];
+  versus.play(chars[0], chars[1], { caption: stage?.name ?? '' }).then(go);
+}
 
 let game = new Game({ seed: 1, characters: [theme.roster[0], theme.roster[Math.min(1, theme.roster.length - 1)]] });
 let chars = game.chars.map(c => c.def);
@@ -121,7 +131,7 @@ function draw(state) {
 
 const menus = TEST_MODE ? null : new Menus(document.getElementById('menu-root'), theme, controls, {
   version: VERSION,
-  blocked: () => cutscene.active,
+  blocked: () => cutscene.active || versus.active,
   onStart: ({ characters, mode: m }) => {
     mode = m;
     const training = m === 'training';
@@ -157,8 +167,7 @@ const menus = TEST_MODE ? null : new Menus(document.getElementById('menu-root'),
         <div class="blink">Enter 开始战斗</div></div>`);
       arcadeIntroFrames = 300;
     } else {
-      running = true;
-      hud.flashBanner(theme.text.round(1), 70);
+      startFight(theme.text.round(1));
     }
     draw(game.getState());
   },
@@ -174,6 +183,7 @@ if (menus && cutscenesOn) {
 
 controls.onKey((code) => {
   audio.ensure();
+  if (versus.active) { if (code === 'Enter' || code === 'Space' || code === 'Escape') versus.input(); return; }
   if (cutscene.active) {
     if (code === 'Enter' || code === 'Space') cutscene.next();
     else if (code === 'Escape') cutscene.skip();
@@ -234,24 +244,20 @@ function startArcadeRound() {
   newGame({ characters: [arcadePlayer, cur.opponent], seed: Date.now() % 100000 });
   controllers[1] = createAI(cur.level, Date.now() % 1000, chars[1]);
   document.getElementById('hud-root').style.display = '';
-  running = true;
   arcadeScreen = null;
   arcadeIntroFrames = 0;
   hideArcadeOverlay();
   audio.ensure();
   audio.playBgm(theme.stages[renderer.stageIndex].bgm);
-  hud.flashBanner(`第 ${cur.stage} 战 · ${opp.name}（${opp.title} · ${LEVEL_LABEL[cur.level]}）`, 70);
-  draw(game.getState());
+  startFight(`第 ${cur.stage} 战 · ${opp.name}（${opp.title} · ${LEVEL_LABEL[cur.level]}）`);
 }
 
 // 第 1 战开场白倒计时结束：正式开始战斗
 function beginArcadeMatch() {
   hideArcadeOverlay();
-  running = true;
   const cur = arcade.current();
   const opp = getCharacter(cur.opponent);
-  hud.flashBanner(`第 ${cur.stage} 战 · ${opp.name}（${opp.title} · ${LEVEL_LABEL[cur.level]}）`, 70);
-  draw(game.getState());
+  startFight(`第 ${cur.stage} 战 · ${opp.name}（${opp.title} · ${LEVEL_LABEL[cur.level]}）`);
 }
 
 // 输了：接关画面（Enter 再战同一对手，Q 回标题）
@@ -336,6 +342,7 @@ window.__game = {
   mode: () => mode,
   pauseOpen: () => pause.open,
   touch: () => !!touch,
+  versus: () => versus.active,
   // 街机模式测试接口：当前战况（非街机模式返回 null）；arcadeWin 强制玩家赢下当前这一战
   arcade: () => (arcade ? { index: arcade.index, opponent: arcade.current().opponent, level: arcade.current().level } : null),
   arcadeWin: () => {
@@ -373,7 +380,7 @@ if (TEST_MODE) {
       acc -= 1000 / 60;
     }
     if (running) draw(state ?? game.getState());
-    touch?.setVisible(running && !cutscene.active);
+    touch?.setVisible(running && !cutscene.active && !versus.active);
     // 街机模式：比赛结束后按胜负推进——赢了进下一战、输了接关、7 战全胜进结局（留 90 帧给 KO 动画）
     if (running && game.round.matchOver && !pause.open) {
       if (++overTimer > (arcade ? 90 : 240)) { overTimer = 0; if (arcade) handleArcadeResult(); else backToMenu(); }

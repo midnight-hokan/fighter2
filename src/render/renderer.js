@@ -25,6 +25,7 @@ export class Renderer {
     this.flash = 0;
     this.darken = 0;
     this.frameCount = 0;
+    this.hitFlash = [0, 0]; // 被打中时角色闪白的剩余帧数
     this.resize();
     window.addEventListener('resize', () => this.resize());
   }
@@ -48,7 +49,8 @@ export class Renderer {
       if (e.type === 'hit' && (e.kind === 'super' || e.damage >= 90)) this.shake = Math.max(this.shake, e.kind === 'super' ? 8 : 4);
       if (e.type === 'super') { this.flash = 6; this.darken = 30; }
       if (e.type === 'max') this.flash = 4;
-      if (e.type === 'ko') this.shake = 10;
+      if (e.type === 'ko') { this.shake = 10; this.flash = 5; }
+      if (e.type === 'hit') this.hitFlash[e.defender] = e.kind === 'super' ? 5 : 3;
     }
 
     const [a, b] = state.fighters;
@@ -93,10 +95,15 @@ export class Renderer {
       ctx.fillStyle = 'rgba(255,90,40,0.35)';
       ctx.fillRect(x - 22, y - 104, 44, 106);
     }
+    const flash = this.hitFlash[f.index] > 0;
+    if (flash) this.hitFlash[f.index]--;
     if (atlas) {
-      atlas.draw(ctx, animKeyFor(f), f, x, y, mirrorSame);
+      atlas.draw(ctx, animKeyFor(f), f, x, y, mirrorSame, flash);
     } else {
+      ctx.save();
+      if (flash) ctx.filter = 'brightness(2.4)';
       this.drawPlaceholder(f, ch, x, y, mirrorSame);
+      ctx.restore();
     }
     if (f.action === 'dizzy') {
       ctx.fillStyle = '#ffe14d';

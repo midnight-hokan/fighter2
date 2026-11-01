@@ -64,13 +64,16 @@ class Atlas {
     return a.loop === false ? a.frames[Math.min(step, a.frames.length - 1)] : a.frames[step % a.frames.length];
   }
 
-  draw(ctx, key, f, x, y, alt) {
+  draw(ctx, key, f, x, y, alt, flash = false) {
     const j = this.json;
     const idx = this.frameIndex(key, f);
     const sx = (idx % j.columns) * j.frameW;
     const sy = Math.floor(idx / j.columns) * j.frameH;
     ctx.save();
-    if (alt) ctx.filter = 'hue-rotate(160deg) saturate(0.8)';
+    const filters = [];
+    if (alt) filters.push('hue-rotate(160deg) saturate(0.8)');
+    if (flash) filters.push('brightness(2.4)');
+    if (filters.length) ctx.filter = filters.join(' ');
     ctx.translate(x, y);
     if (f.facing < 0) ctx.scale(-1, 1);
     ctx.drawImage(this.image, sx, sy, j.frameW, j.frameH, -j.anchor.x, -j.anchor.y, j.frameW, j.frameH);
