@@ -12,6 +12,16 @@ declare -A NAME=( [c02]=罗铮 [c03]=雷钧 [c04]=严正 [c05]=苏红 [c06]=方�
 MARKER=.check/lite-frames.marker
 echo "=== LITE_FRAMES_START $(date '+%F %T') ==="
 
+# 心跳守护：本脚本运行期间每 5 分钟 touch .check/heartbeat。
+# 看门狗预检 (b) 靠心跳新鲜（mtime<600s）判断"有人活着/另有续跑在进行"，
+# 长批量帧期间保持心跳新鲜，看门狗就不会另起续跑撞车（TASK.md 第4/10节）。
+# 脚本退出（正常/INT/TERM）时 trap 杀掉守护，避免残留心跳让看门狗长期误判。
+HB=.check/heartbeat
+touch "$HB"
+( while :; do touch "$HB"; sleep 300; done ) &
+HB_PID=$!
+trap 'kill "$HB_PID" 2>/dev/null' EXIT INT TERM
+
 # 0) ComfyUI 探活（8188）
 ok=0
 for i in $(seq 1 30); do
