@@ -354,21 +354,21 @@ export default {
       "name": "灰炎弹",
       "input": "236P",
       "desc": "杖尖灯焰弹，飞行道具",
-      "startup": 12,
+      "startup": 14,
       "active": 1,
-      "recovery": 28,
-      "damage": 55,
-      "chip": 10,
-      "stun": 9,
-      "hitstun": 16,
-      "blockstun": 13,
+      "recovery": 32,
+      "damage": 48,
+      "chip": 8,
+      "stun": 8,
+      "hitstun": 15,
+      "blockstun": 12,
       "projectile": {
-        "speed": 3.8,
+        "speed": 2.8,
         "x": 32,
         "y": 56,
         "w": 24,
         "h": 16,
-        "life": 220
+        "life": 130
       },
       "anim": "fireball"
     },
@@ -380,11 +380,12 @@ export default {
       "startup": 10,
       "active": 8,
       "recovery": 22,
-      "damage": 78,
+      "damage": 55,
       "chip": 10,
       "stun": 11,
       "hitstun": 18,
       "blockstun": 13,
+      "knockdown": true,
       "hitbox": {
         "x": -10,
         "y": 30,
@@ -403,14 +404,14 @@ export default {
       "name": "华炎蹴",
       "input": "623K",
       "desc": "上挑旋踢，对空",
-      "startup": 7,
-      "active": 12,
-      "recovery": 26,
-      "damage": 110,
-      "chip": 12,
-      "stun": 14,
-      "hitstun": 22,
-      "blockstun": 15,
+      "startup": 9,
+      "active": 8,
+      "recovery": 30,
+      "damage": 95,
+      "chip": 10,
+      "stun": 12,
+      "hitstun": 20,
+      "blockstun": 14,
       "knockdown": true,
       "hitbox": {
         "x": 2,
@@ -432,33 +433,33 @@ export default {
       "name": "灰雁龙",
       "input": "214236P",
       "desc": "杖挥灰焰龙卷，中距离贯穿",
-      "startup": 12,
-      "active": 14,
-      "recovery": 34,
-      "damage": 255,
-      "chip": 38,
+      "startup": 14,
+      "active": 10,
+      "recovery": 40,
+      "damage": 200,
+      "chip": 32,
       "stun": 0,
-      "hitstun": 30,
-      "blockstun": 22,
+      "hitstun": 26,
+      "blockstun": 20,
       "knockdown": true,
       "invuln": [
         1,
-        8
+        6
       ],
       "hitbox": {
         "x": 6,
         "y": 20,
-        "w": 72,
-        "h": 68
+        "w": 68,
+        "h": 64
       },
       "move": {
-        "vx": 2.8,
-        "frames": 14,
-        "at": 8
+        "vx": 2.4,
+        "frames": 12,
+        "at": 10
       },
       "anim": "super",
       "sdm": {
-        "damage": 400
+        "damage": 340
       }
     }
   ]

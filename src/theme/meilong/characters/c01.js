@@ -52,7 +52,7 @@ export default {
     },
     {
       id: 'xuanfeng', name: '旋风镐', input: '214K', desc: '旋身突进踢，可穿过飞行道具下方',
-      startup: 10, active: 18, recovery: 16, damage: 80, chip: 8, stun: 10, hitstun: 18, blockstun: 12,
+      startup: 10, active: 18, recovery: 16, damage: 85, chip: 8, stun: 10, hitstun: 28, blockstun: 12,
       hitbox: { x: -20, y: 44, w: 70, h: 24 }, move: { vx: 3.0, frames: 18, at: 10 }, anim: 'spin',
     },
   ],
