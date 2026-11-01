@@ -63,3 +63,29 @@ html, body { margin: 0; height: 100%; background: #0b0908; overflow: hidden; col
 .ending p { margin: 0; max-width: 70vw; font-size: 20px; line-height: 1.8; color: #f2c14e; }
 .ending .ending-text { white-space: pre-line; }
 .ending .blink { margin-top: 30px; font-size: 16px; color: #fff3c4; animation: blink 1s steps(2) infinite; }
+
+/* —— 过场（src/ui/cutscene.js） —— */
+#cutscene-root { position: fixed; inset: 0; pointer-events: none; z-index: 50; }
+.cutscene { position: absolute; inset: 0; background: #000; pointer-events: auto; overflow: hidden; cursor: pointer; }
+.cs-bg { position: absolute; inset: 0; animation-duration: 9s; animation-timing-function: ease-out; animation-fill-mode: both; }
+.cs-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .5s; }
+.cs-img.ok { opacity: 1; }
+.cs-fallback { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 0 12vw 22vh; text-align: center;
+  font-size: 18px; line-height: 1.8; color: #8d7a63; font-style: italic; background: radial-gradient(ellipse at 50% 40%, #3a2a1c, #0b0908 75%); }
+.cs-push { animation-name: cs-push; } .cs-pull { animation-name: cs-pull; } .cs-panL { animation-name: cs-panL; } .cs-panR { animation-name: cs-panR; }
+@keyframes cs-push { from { transform: scale(1); } to { transform: scale(1.12); } }
+@keyframes cs-pull { from { transform: scale(1.14); } to { transform: scale(1); } }
+@keyframes cs-panL { from { transform: scale(1.12) translateX(4%); } to { transform: scale(1.12) translateX(-4%); } }
+@keyframes cs-panR { from { transform: scale(1.12) translateX(-4%); } to { transform: scale(1.12) translateX(4%); } }
+.cs-portrait { position: absolute; bottom: 0; width: 34vw; height: 78vh; display: flex; align-items: flex-end; justify-content: center; transition: filter .2s, transform .2s; }
+.cs-left { left: 2vw; } .cs-right { right: 2vw; } .cs-right img { transform: scaleX(-1); }
+.cs-portrait img { max-width: 100%; max-height: 100%; object-fit: contain; filter: drop-shadow(0 0 12px rgba(0,0,0,.8)); }
+.cs-portrait.dim { filter: brightness(.45); transform: translateY(2vh); }
+.cs-silhouette { width: 60%; height: 80%; border-radius: 45% 45% 8% 8%; background: linear-gradient(var(--c), #111); opacity: .85; display: flex; align-items: center; justify-content: center; }
+.cs-silhouette span { font-size: 28px; font-weight: 900; letter-spacing: 4px; text-shadow: 0 2px 0 #000; }
+.cs-box { position: absolute; left: 6vw; right: 6vw; bottom: 4vh; min-height: 16vh; padding: 18px 28px; background: rgba(12,9,8,.88); border: 2px solid #f2c14e; border-radius: 6px; z-index: 2; }
+.cs-box.narration { border-color: #6b5a44; text-align: center; }
+.cs-name { position: absolute; top: -18px; left: 20px; padding: 2px 14px; background: #c8452c; font-weight: 900; letter-spacing: 3px; }
+.cs-text { font-size: 24px; line-height: 1.7; color: #fff3c4; white-space: pre-line; }
+.cs-box.narration .cs-text { color: #e8d9b8; font-style: italic; }
+.cs-hint { position: absolute; right: 3vw; top: 2vh; font-size: 13px; color: #8d7a63; z-index: 2; }

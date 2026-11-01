@@ -1,6 +1,7 @@
 // 主题包：煤龙拳。换主题 = 新建一个同结构的目录，并在 src/theme/index.js 里切换。
 import { ROSTER } from './characters/index.js';
 import { STAGES } from './stages.js';
+import * as STORY from './story.js';
 
 export default {
   id: 'meilong',
@@ -8,6 +9,7 @@ export default {
   subtitle: 'COAL DRAGON FIST',
   roster: ROSTER,
   stages: STAGES,
+  story: STORY,
   // 街机最后一关（docs/故事设定.md）：固定沈清；玩家选沈清时最后一关为林啸
   finalBoss: { boss: 'c08', ifBoss: 'c01' },
   palette: { ui: '#f2c14e', uiDark: '#1a1410', accent: '#c8452c' },

@@ -176,3 +176,13 @@ Claude 通过这个仓库看你的进度、推送引擎修复和指示。规矩�
 - 只用自己生成的音频，不得使用任何现成游戏/影视的音乐音效
 
 全部做完后：`npm run check` 全绿 → TG 汇报（附 3 张不同角色对战截图）。
+
+## 十二、剧情过场（C1–C3）
+
+动态漫画式过场：场景图 + 镜头推拉 + 立绘表情 + 逐字对话。剧本和播放系统 Claude 已写好（C1、C3 全绿），**你负责 C2 过场美术**。
+
+- 剧本：`src/theme/meilong/story.js`（不要改台词，有问题写 BLOCKERS）；播放器 `src/ui/cutscene.js`；组装 `src/ui/storyflow.js`
+- 场景图：`story.js` 里 `IMAGES` 列了 39 张，每张都有画面描述 → `public/assets/meilong/scenes/<id>.png`，1280×720，和角色立绘同一画风（厚涂赛璐璐、北方煤矿、偏暖工业色调）。画面里出现的人物尽量是背影、剪影或远景，避免和角色立绘长得不一样
+- 表情立绘：每人 4 种 `normal angry smug hurt` → `public/assets/meilong/portraits/<id>/<expr>.png`，竖幅透明背景半身像（建议 768×1024），朝右。用定稿立绘做参考，Qwen-Image-Edit 改表情和姿态，保证是同一个人
+- 验收：`tests/unit/c2-story-art.test.js`；看效果：`?cutscenes=1` 打开会播开场，标题页按 O 重看
+- 浏览器自动化测试里过场默认关闭（navigator.webdriver），不影响其他测试

@@ -10,6 +10,8 @@ import { Hud } from './ui/hud.js';
 import { Controls } from './ui/controls.js';
 import { Menus, Pause } from './ui/menus.js';
 import { createArcade } from './ui/arcade.js';
+import { Cutscene } from './ui/cutscene.js';
+import { openingScenes, prologueScenes, preFightScenes, endingScenes } from './ui/storyflow.js';
 import { ROUND } from './engine/constants.js';
 
 // eslint-disable-next-line no-undef
@@ -24,6 +26,10 @@ const hud = new Hud(document.getElementById('hud-root'), theme);
 const audio = new Audio();
 const controls = new Controls();
 const pause = new Pause(document.getElementById('pause-root'));
+// 过场：自动化测试（navigator.webdriver）和 ?test=1 下默认关闭，?cutscenes=1 或 __game.cutscenes(true) 强制打开
+const cutscene = new Cutscene(document.body, theme);
+let cutscenesOn = params.has('cutscenes') || (!navigator.webdriver && !TEST_MODE);
+const playStory = (scenes) => (cutscenesOn ? cutscene.play(scenes) : Promise.resolve());
 
 let game = new Game({ seed: 1, characters: [theme.roster[0], theme.roster[Math.min(1, theme.roster.length - 1)]] });
 let chars = game.chars.map(c => c.def);
@@ -99,6 +105,7 @@ function draw(state) {
 
 const menus = TEST_MODE ? null : new Menus(document.getElementById('menu-root'), theme, controls, {
   version: VERSION,
+  blocked: () => cutscene.active,
   onStart: ({ characters, mode: m }) => {
     mode = m;
     const training = m === 'training';
@@ -120,7 +127,11 @@ const menus = TEST_MODE ? null : new Menus(document.getElementById('menu-root'),
     document.getElementById('hud-root').style.display = '';
     audio.ensure();
     audio.playBgm(theme.stages[renderer.stageIndex].bgm);
-    if (m === 'arcade') {
+    if (m === 'arcade' && cutscenesOn) {
+      // 过场：角色序章 + 第 1 战对战前对话，播完开打
+      const cur = arcade.current();
+      playStory([...prologueScenes(theme.story, arcadePlayer), ...preFightScenes(theme.story, arcadePlayer, cur.opponent, { stage: 1 })]).then(beginArcadeMatch);
+    } else if (m === 'arcade') {
       // 第 1 战开场白（docs/故事设定.md）：显示所选角色开场白 + 参赛缘由，倒计时结束或 Enter 开打
       const me = getCharacter(arcadePlayer);
       showArcadeOverlay(`<div class="screen ending" data-arcade-overlay>
@@ -137,8 +148,22 @@ const menus = TEST_MODE ? null : new Menus(document.getElementById('menu-root'),
   },
 });
 
+// 开场动画：每个浏览器首次打开时播放一次（标题页上按 O 可重看）
+function playOpening() { cutscene.play(openingScenes(theme.story)); }
+if (menus && cutscenesOn) {
+  let seen = false;
+  try { seen = localStorage.getItem('opening-seen') === '1'; localStorage.setItem('opening-seen', '1'); } catch { /* 无痕模式 */ }
+  if (!seen || params.has('cutscenes')) playOpening();
+}
+
 controls.onKey((code) => {
   audio.ensure();
+  if (cutscene.active) {
+    if (code === 'Enter' || code === 'Space') cutscene.next();
+    else if (code === 'Escape') cutscene.skip();
+    return;
+  }
+  if (code === 'KeyO' && !running && menus?.stage === 'title') { playOpening(); return; }
   if (code === 'KeyM') audio.toggleMute();
   // 菜单界面放标题音乐（有文件才放）
   if (!running && !audio.now && theme.audio?.title && !TEST_MODE) audio.playBgm({ file: theme.audio.title });
@@ -243,13 +268,30 @@ function quitArcade() {
 // 比赛结束（matchOver）后按胜负推进街机流程
 function handleArcadeResult() {
   const r = arcade.report(game.round.matchWinner === 0 ? 'win' : 'lose');
-  if (r === 'next') startArcadeRound();
-  else if (r === 'continue') showContinueScreen();
-  else showEndingScreen();
+  if (r === 'continue') return showContinueScreen();
+  if (!cutscenesOn) return r === 'next' ? startArcadeRound() : showEndingScreen();
+  running = false;
+  if (r === 'next') {
+    const cur = arcade.current();
+    playStory(preFightScenes(theme.story, arcadePlayer, cur.opponent, { stage: cur.stage, final: cur.stage === arcade.opponents.length })).then(startArcadeRound);
+  } else {
+    audio.stopBgm();
+    playStory(endingScenes(theme.story, arcadePlayer)).then(showEndingScreen);
+  }
 }
 
 window.__game = {
   version: VERSION,
+  // 过场测试接口
+  cutscenes: (on = true) => { cutscenesOn = !!on; return cutscenesOn; },
+  cutscene: () => cutscene.info(),
+  playStory: (kind, a, b, opts) => {
+    const st = theme.story;
+    const scenes = kind === 'opening' ? openingScenes(st) : kind === 'prologue' ? prologueScenes(st, a)
+      : kind === 'prefight' ? preFightScenes(st, a, b, opts) : kind === 'ending' ? endingScenes(st, a) : [];
+    cutscene.play(scenes);
+    return scenes.length;
+  },
   roster: () => theme.roster.map(c => c.id),
   getState: () => game.getState(),
   step: (n = 1) => { for (let k = 0; k < n; k++) draw(tick()); return game.getState(); },

@@ -46,11 +46,12 @@ export function systemHtml() {
 }
 
 export class Menus {
-  constructor(root, theme, controls, { onStart, version }) {
+  constructor(root, theme, controls, { onStart, version, blocked }) {
     this.root = root;
     this.theme = theme;
     this.onStart = onStart;
     this.version = version;
+    this.blocked = blocked ?? (() => false); // 过场播放时菜单不响应按键
     this.stage = 'title';
     this.cursor = [0, Math.min(1, theme.roster.length - 1)];
     this.modeIndex = 0;
@@ -62,7 +63,7 @@ export class Menus {
   show() { this.stage = 'title'; this.picking = 0; this.render(); }
 
   key(code) {
-    if (this.stage === 'hidden') return;
+    if (this.stage === 'hidden' || this.blocked()) return;
     const n = this.theme.roster.length;
     const cols = 4;
     if (code === 'Enter') {
@@ -112,6 +113,7 @@ export class Menus {
       this.root.innerHTML = `<div class="screen title" data-testid="title-screen">
         <div class="logo">${T.title}</div><div class="sub">${T.subtitle}</div>
         <div class="blink">${T.text.pressStart}</div>
+        <div style="margin-top:10px;font-size:13px;color:#8d7a63">按 O 重看开场</div>
         <div class="version" data-testid="version">版本 ${this.version}</div></div>`;
       this.root.querySelector('.title').onclick = () => this.key('Enter');
       return;
