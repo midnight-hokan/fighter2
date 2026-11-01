@@ -352,7 +352,7 @@ export default {
   "specials": [
     {
       "id": "denghua",
-      "name": "灯花蹴",
+      "name": "萤火蹴",
       "input": "214P",
       "desc": "下前滑步踢，突进压制",
       "startup": 8,
@@ -409,7 +409,7 @@ export default {
     },
     {
       "id": "jifenghua",
-      "name": "疾风花",
+      "name": "窜火踢",
       "input": "236K",
       "desc": "前冲扫踢，快速接压",
       "startup": 10,
@@ -437,9 +437,9 @@ export default {
   "supers": [
     {
       "id": "huaying",
-      "name": "花影旋",
+      "name": "火灵旋",
       "input": "214214P",
-      "desc": "化作灯影连续突刺",
+      "desc": "化作火灵连续突刺",
       "startup": 6,
       "active": 24,
       "recovery": 28,

@@ -60,7 +60,7 @@ export default {
 
   supers: [
     {
-      id: 'dihuolong', name: '地火龙', input: '236236P', desc: '燃烧斗气全身突进，MAX 状态下威力更大',
+      id: 'dihuolong', name: '地火钻', input: '236236P', desc: '燃烧斗气全身突进，MAX 状态下威力更大',
       startup: 6, active: 24, recovery: 30, damage: 300, chip: 40, stun: 0, hitstun: 30, blockstun: 20,
       knockdown: true, invuln: [1, 12], hitbox: { x: 8, y: 20, w: 70, h: 72 },
       move: { vx: 4, frames: 20, at: 6 }, anim: 'super', sdm: { damage: 460, invuln: [1, 20] },

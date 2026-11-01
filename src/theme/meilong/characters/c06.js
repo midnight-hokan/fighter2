@@ -429,7 +429,7 @@ export default {
   "supers": [
     {
       "id": "jifenglong",
-      "name": "疾风龙",
+      "name": "疾风贯针",
       "input": "6321463214P",
       "desc": "化风连续突刺，高速贯穿",
       "startup": 5,

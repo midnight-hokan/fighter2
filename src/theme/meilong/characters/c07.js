@@ -430,7 +430,7 @@ export default {
   "supers": [
     {
       "id": "tongshoulong",
-      "name": "铜首龙",
+      "name": "顶梁破石",
       "input": "623623P",
       "desc": "顶梁之拳，重压突进",
       "startup": 12,

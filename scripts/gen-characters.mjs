@@ -91,18 +91,18 @@ const CHARS = [
     normals: { damageMul: 1.05, startupDelta: { 'st.lp': -1, 'st.lk': -1, 'cr.lp': -1, 'cr.lk': -1 } },
     throw: { name: '膝挂摔', damage: 130, stun: 10 },
     specials: [
-      { id: 'denghua', name: '灯花蹴', input: '214P', desc: '下前滑步踢，突进压制',
+      { id: 'denghua', name: '萤火蹴', input: '214P', desc: '下前滑步踢，突进压制',
         startup: 8, active: 10, recovery: 18, damage: 105, chip: 12, stun: 10, hitstun: 20, blockstun: 12,
         hitbox: { x: -16, y: 30, w: 60, h: 20 }, move: { vx: 2.8, frames: 14, at: 8 }, anim: 'kick' },
       { id: 'shanguang', name: '闪光旋', input: '41236P', desc: '下后下前跃起旋踢，起手无敌，对空',
         startup: 9, active: 12, recovery: 22, damage: 110, chip: 12, stun: 12, hitstun: 18, blockstun: 14,
         knockdown: true, invuln: [1, 6], hitbox: { x: -12, y: 40, w: 56, h: 30 }, move: { vx: 2.2, vy: 4.5, at: 6 }, anim: 'spin' },
-      { id: 'jifenghua', name: '疾风花', input: '236K', desc: '前冲扫踢，快速接压',
+      { id: 'jifenghua', name: '窜火踢', input: '236K', desc: '前冲扫踢，快速接压',
         startup: 10, active: 14, recovery: 16, damage: 90, chip: 10, stun: 8, hitstun: 14, blockstun: 10,
         hitbox: { x: -14, y: 34, w: 54, h: 20 }, move: { vx: 3.2, frames: 16, at: 10 }, anim: 'rush' },
     ],
     supers: [
-      { id: 'huaying', name: '花影旋', input: '214214P', desc: '化作灯影连续突刺',
+      { id: 'huaying', name: '火灵旋', input: '214214P', desc: '化作火灵连续突刺',
         startup: 6, active: 24, recovery: 28, damage: 330, chip: 42, stun: 0, hitstun: 28, blockstun: 20,
         knockdown: true, invuln: [1, 10], hitbox: { x: -16, y: 20, w: 76, h: 60 },
         move: { vx: 3.4, frames: 18, at: 6 }, anim: 'super', sdm: { damage: 470 } },
@@ -129,7 +129,7 @@ const CHARS = [
         cancel: true, hitbox: { x: 10, y: 50, w: 44, h: 16 }, anim: 'punch' },
     ],
     supers: [
-      { id: 'denghuadrag', name: '灯花龙', input: '236236K', desc: '灯杆挥出巨浪火弹，飞行道具',
+      { id: 'denghuadrag', name: '灯花澜', input: '236236K', desc: '灯杆挥出巨浪火弹，飞行道具',
         startup: 14, active: 1, recovery: 40, damage: 330, chip: 52, stun: 0, hitstun: 30, blockstun: 22,
         knockdown: true, projectile: { speed: 2.8, x: 36, y: 30, w: 44, h: 30, life: 300 },
         anim: 'super', sdm: { damage: 510, projectile: { speed: 3.4, x: 36, y: 30, w: 50, h: 34, life: 320 } } },
@@ -156,7 +156,7 @@ const CHARS = [
         projectile: { speed: 5.5, x: 28, y: 56, w: 22, h: 14, life: 110 }, anim: 'fireball' },
     ],
     supers: [
-      { id: 'jifenglong', name: '疾风龙', input: '6321463214P', desc: '化风连续突刺，高速贯穿',
+      { id: 'jifenglong', name: '疾风贯针', input: '6321463214P', desc: '化风连续突刺，高速贯穿',
         startup: 5, active: 26, recovery: 26, damage: 310, chip: 40, stun: 0, hitstun: 28, blockstun: 20,
         knockdown: true, invuln: [1, 8], hitbox: { x: -18, y: 20, w: 78, h: 56 },
         move: { vx: 4.0, frames: 20, at: 5 }, anim: 'super', sdm: { damage: 450 } },
@@ -183,7 +183,7 @@ const CHARS = [
         knockdown: true, hitbox: { x: 4, y: 10, w: 56, h: 30 }, anim: 'highkick' },
     ],
     supers: [
-      { id: 'tongshoulong', name: '铜首龙', input: '623623P', desc: '顶梁之拳，重压突进',
+      { id: 'tongshoulong', name: '顶梁破石', input: '623623P', desc: '顶梁之拳，重压突进',
         startup: 12, active: 28, recovery: 38, damage: 320, chip: 50, stun: 0, hitstun: 30, blockstun: 24,
         knockdown: true, invuln: [1, 14], hitbox: { x: 0, y: 10, w: 76, h: 72 },
         move: { vx: 3.0, frames: 22, at: 12 }, anim: 'super', sdm: { damage: 500, invuln: [1, 20] } },
@@ -210,7 +210,7 @@ const CHARS = [
         knockdown: true, hitbox: { x: 2, y: 40, w: 36, h: 66 }, move: { vy: 6.0, vx: 0.8, at: 4 }, anim: 'uppercut' },
     ],
     supers: [
-      { id: 'huiyanlong', name: '灰雁龙', input: '214214P', desc: '杖挥灰焰龙卷，中距离贯穿',
+      { id: 'huiyanlong', name: '灰雁龙卷', input: '214214P', desc: '杖挥灰焰龙卷，中距离贯穿',
         startup: 14, active: 10, recovery: 40, damage: 200, chip: 32, stun: 0, hitstun: 26, blockstun: 20,
         knockdown: true, invuln: [1, 6], hitbox: { x: 6, y: 20, w: 68, h: 64 },
         move: { vx: 2.4, frames: 12, at: 10 }, anim: 'super', sdm: { damage: 340 } },

@@ -423,7 +423,7 @@ export default {
   "supers": [
     {
       "id": "denghuadrag",
-      "name": "灯花龙",
+      "name": "灯花澜",
       "input": "236236K",
       "desc": "灯杆挥出巨浪火弹，飞行道具",
       "startup": 14,

@@ -431,7 +431,7 @@ export default {
   "supers": [
     {
       "id": "huiyanlong",
-      "name": "灰雁龙",
+      "name": "灰雁龙卷",
       "input": "214214P",
       "desc": "杖挥灰焰龙卷，中距离贯穿",
       "startup": 14,
