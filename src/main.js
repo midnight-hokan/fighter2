@@ -4,6 +4,7 @@ import theme, { getCharacter } from './theme/index.js';
 import { Game } from './engine/game.js';
 import { createAI } from './engine/ai.js';
 import { Renderer } from './render/renderer.js';
+import { loadStageImages } from './render/stage.js';
 import { Audio, SOUNDS } from './render/audio.js';
 import { Hud } from './ui/hud.js';
 import { Controls } from './ui/controls.js';
@@ -38,7 +39,8 @@ const DUMMY = ['站立', '蹲下', '全防', '跳跃', '电脑'];
 let dummy = 0;
 const queued = [[], []];
 
-renderer.atlases.load(theme.roster);
+// 美术与音频资源：全部异步加载，缺什么就用程序化兜底（火柴人 / 色块背景 / 合成音）
+const assetsReady = Promise.all([renderer.atlases.load(theme.roster), loadStageImages(theme.stages), audio.preload(theme)]);
 
 function dummyController(state, me) {
   const self = state.fighters[me];
@@ -119,6 +121,8 @@ const menus = TEST_MODE ? null : new Menus(document.getElementById('menu-root'),
 controls.onKey((code) => {
   audio.ensure();
   if (code === 'KeyM') audio.toggleMute();
+  // 菜单界面放标题音乐（有文件才放）
+  if (!running && !audio.now && theme.audio?.title && !TEST_MODE) audio.playBgm({ file: theme.audio.title });
   if (code === 'F1') renderer.showBoxes = !renderer.showBoxes;
   if (arcadeScreen) {
     if (code === 'Enter') { if (arcadeScreen === 'continue') startArcadeRound(); else quitArcade(); }
@@ -138,6 +142,7 @@ function backToMenu() {
   arcade = null;
   arcadeScreen = null;
   audio.stopBgm();
+  if (theme.audio?.title) audio.playBgm({ file: theme.audio.title });
   document.getElementById('hud-root').style.display = 'none';
   menus?.show();
 }
@@ -229,6 +234,8 @@ window.__game = {
   stageCount: () => theme.stages.length,
   toggleBoxes: () => { renderer.showBoxes = !renderer.showBoxes; draw(game.getState()); return renderer.showBoxes; },
   renderInfo: () => renderer.info(),
+  assetsReady: () => assetsReady.then(() => true),
+  audioFiles: () => audio.info(),
   audioInfo: () => ({ log: [...audio.log], sounds: Object.fromEntries(Object.entries(SOUNDS).map(([k, v]) => [k, typeof v === 'function'])) }),
   isRunning: () => running,
   mode: () => mode,

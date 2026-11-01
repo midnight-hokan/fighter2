@@ -1,5 +1,7 @@
-// 音效与背景音乐：全部用 WebAudio 现场合成，不使用音频文件。
+// 音效与背景音乐。优先播放音频文件（主题 audio 字段 + 场景 bgm.file），没有文件或加载失败时用 WebAudio 现场合成兜底。
 // 浏览器要求用户交互后才能出声：首次按键 / 点击时调用 ensure()。M 键静音。
+// 主题 audio 字段：{ title: 'assets/<主题>/audio/title.ogg', sfx: { hit: '...ogg', block: ..., ko: ... } }
+// 场景 bgm 字段：{ file: 'assets/<主题>/audio/s01.ogg', tempo, key, scale, seed }（file 缺省时按后四项合成）
 import { createRng } from '../engine/rng.js';
 
 function tone(ctx, out, f0, f1, dur, type = 'square', vol = 0.15, delay = 0) {
@@ -74,6 +76,53 @@ export class Audio {
     this.muted = false;
     this.log = [];
     this.bgmTimer = null;
+    this.bgmNode = null;
+    this.bgmToken = 0;
+    this.buffers = new Map();   // 路径 → AudioBuffer
+    this.failed = new Map();    // 路径 → 错误
+    this.sfx = {};
+    this.now = null;            // 当前背景音乐 { mode: 'file' | 'synth', src }
+    this.decoder = null;
+  }
+
+  // 预加载音频文件（不需要用户交互：用离线上下文解码）
+  async preload(theme) {
+    this.sfx = theme.audio?.sfx ?? {};
+    const paths = [theme.audio?.title, ...Object.values(this.sfx), ...(theme.stages ?? []).map(s => s.bgm?.file)].filter(Boolean);
+    await Promise.all([...new Set(paths)].map(p => this.loadFile(p)));
+  }
+
+  async loadFile(path) {
+    if (this.buffers.has(path)) return this.buffers.get(path);
+    if (typeof OfflineAudioContext === 'undefined') return null;
+    try {
+      const r = await fetch(path);
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const data = await r.arrayBuffer();
+      this.decoder ??= new OfflineAudioContext(2, 44100, 44100);
+      const buf = await this.decoder.decodeAudioData(data);
+      this.buffers.set(path, buf);
+      return buf;
+    } catch (e) {
+      this.failed.set(path, String(e));
+      console.warn(`音频 ${path} 加载失败，改用合成音：`, e);
+      return null;
+    }
+  }
+
+  info() {
+    return { loaded: [...this.buffers.keys()], failed: Object.fromEntries(this.failed), now: this.now };
+  }
+
+  playBuffer(buf, { loop = false, vol = 1 } = {}) {
+    const s = this.ctx.createBufferSource();
+    const g = this.ctx.createGain();
+    g.gain.value = vol;
+    s.buffer = buf;
+    s.loop = loop;
+    s.connect(g).connect(this.out);
+    s.start();
+    return s;
   }
 
   ensure() {
@@ -96,13 +145,32 @@ export class Audio {
       if (!SOUNDS[e.type]) continue;
       this.log.push(e.type);
       if (this.log.length > 300) this.log.shift();
-      if (this.ctx?.state === 'running') SOUNDS[e.type](this.ctx, this.out, e);
+      if (this.ctx?.state !== 'running') continue;
+      const buf = this.buffers.get(this.sfx[e.type]);
+      if (buf) this.playBuffer(buf, { vol: 0.9 });
+      else SOUNDS[e.type](this.ctx, this.out, e);
     }
   }
 
+  // bgm：场景的 bgm 字段，或 { file } 形式（标题音乐）
   playBgm(bgm) {
     this.stopBgm();
     if (!bgm) return;
+    const token = ++this.bgmToken;
+    if (bgm.file) {
+      this.now = { mode: 'file', src: bgm.file };
+      this.loadFile(bgm.file).then((buf) => {
+        if (token !== this.bgmToken) return;
+        if (buf && this.ensure()) this.bgmNode = this.playBuffer(buf, { loop: true, vol: 0.5 });
+        else if (bgm.tempo) this.playSynth(bgm);
+      });
+      return;
+    }
+    this.playSynth(bgm);
+  }
+
+  playSynth(bgm) {
+    this.now = { mode: 'synth', src: null };
     const song = composeBgm(bgm);
     let step = 0;
     const tick = () => {
@@ -117,5 +185,12 @@ export class Audio {
     this.bgmTimer = setInterval(tick, 60000 / song.tempo / 2);
   }
 
-  stopBgm() { if (this.bgmTimer) clearInterval(this.bgmTimer); this.bgmTimer = null; }
+  stopBgm() {
+    this.bgmToken++;
+    if (this.bgmTimer) clearInterval(this.bgmTimer);
+    this.bgmTimer = null;
+    try { this.bgmNode?.stop(); } catch { /* 已停止 */ }
+    this.bgmNode = null;
+    this.now = null;
+  }
 }

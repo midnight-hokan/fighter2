@@ -2,7 +2,7 @@
 // 有精灵图（public/assets/manifest.json 里登记过）的角色用精灵图，否则画占位小人。
 import { SCREEN, STAGE } from '../engine/constants.js';
 import { poseFor, skeleton } from './poses.js';
-import { drawStage } from './stage.js';
+import { drawStage, stageImagesLoaded } from './stage.js';
 import { Effects } from './effects.js';
 import { AtlasStore, animKeyFor } from './atlas.js';
 
@@ -173,7 +173,7 @@ export class Renderer {
   }
 
   info() {
-    return { camera: { x: this.cameraX }, effects: this.effects.count(), scale: this.scale, atlases: this.atlases.loadedIds(), showBoxes: this.showBoxes, stage: this.theme.stages[this.stageIndex]?.id };
+    return { camera: { x: this.cameraX }, effects: this.effects.count(), scale: this.scale, atlases: this.atlases.loadedIds(), showBoxes: this.showBoxes, stage: this.theme.stages[this.stageIndex]?.id, stageImages: stageImagesLoaded() };
   }
 }
 

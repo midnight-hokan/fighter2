@@ -23,6 +23,7 @@ try {
   const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
   await page.goto('http://127.0.0.1:4174/?test=1');
   await page.waitForFunction(() => window.__game);
+  await page.evaluate(() => window.__game.assetsReady?.());
   await page.evaluate(([a, b]) => {
     const g = window.__game;
     const ids = g.roster();

@@ -133,3 +133,46 @@ Claude 通过这个仓库看你的进度、推送引擎修复和指示。规矩�
 3. **每次提交会自动推送到 GitHub**（post-commit 钩子）。钩子日志在 `.check/deploy.log`，推送失败要排查。
 4. **分工防冲突**：Claude 只改 `src/engine/`、`tests/`、`tests.lock`、`scripts/check.mjs`、`TASK.md`、`INBOX.md`；你改内容文件（角色、场景、界面、README 等）。`git pull` 时如果 tests.lock 变了，那是 Claude 更新了验收标准，正常。
 5. 有需要 Claude 判断的问题，写进 `BLOCKERS.md` 并提交，Claude 下次会看到。
+
+## 十一、美术与音乐（A1–A3）
+
+光哥的优先级：**先把美术和音乐做上去，让人想玩**。A1–A3 优先于 INBOX 里剩下的 P1 质量条目。
+验收测试只能证明"资源齐全、能加载、互不相同"，**好不好看由光哥和 Claude 看图判断**，所以每个角色做完都要提交，网站会自动更新。
+
+| 里程碑 | 内容 | 验收测试 |
+|---|---|---|
+| A1 角色美术 | 8 人精灵图集 | `tests/unit/a1-sprites.test.js`、`tests/e2e/a1-sprites.spec.js` |
+| A2 场景美术 | 每个场景 ≥2 层图片背景 | `tests/unit/a2-stage-art.test.js`、`tests/e2e/a2-stage-art.spec.js` |
+| A3 音乐音效 | 每场景 BGM、标题音乐、8 种音效 | `tests/unit/a3-audio.test.js`、`tests/e2e/a3-audio.spec.js` |
+
+**算力**：PRO 6000 跑大模型（出图、LoRA 训练、音乐），四妹并行跑轻活（抠图、批量出图、音效）。用舰队上已部署的或能部署的开源模型，自己选型，选型理由写进 PROGRESS.md。
+
+### A1 角色精灵图流水线（工具已写好，在 scripts/art/）
+
+1. `node scripts/art/export-poses.mjs art-work/poses` → 每个角色每个动作的骨架关键点（帧数、fps 已按游戏节奏定好，约 200 帧/人）
+2. `python3 scripts/art/render-poses.py art-work/poses/c01.json art-work/pose-img/c01` → OpenPose 骨架图（1024×1024）
+3. 生成角色帧：先用角色的 `style` 字段出一张**定稿立绘**（侧身、朝右、全身、纯色背景），固定外观；再用"定稿立绘做参考（IP-Adapter / 角色 LoRA / 图像编辑模型）+ 骨架图做 ControlNet"逐帧生成。全角色统一画风（建议：16-bit 街机像素风或厚涂赛璐璐，二选一，全员一致）
+4. 抠图成透明背景（BiRefNet / rembg 之类），文件名保持 `<动画名>_<帧号>.png`，放 `art-work/frames/c01/`
+5. `python3 scripts/art/pack-atlas.py art-work/poses/c01.json art-work/frames/c01` → 自动缩放、拼图、写 atlas.json、登记 manifest
+6. `npm run build && npm run shot -- .check/c01.png c01 c02` 看效果；**每做完一个角色提交一次**
+
+要点：
+- 先把 c01 烈岩完整走通，确认画风和流程，再批量做其余 7 人
+- 同一角色每帧的脸、服装、配色必须一致，这是最难的部分，宁可多花时间在参考图/LoRA 上
+- `art-work/` 是中间产物，加进 .gitignore，不要提交；只提交 `public/assets/`
+- 帧不够好可以先上，后续替换；但 8 人都必须有图集才算 A1 完成
+
+### A2 场景美术
+
+每个场景生成 2–3 层**横向可平铺**的背景图（远景/中景/近景），透明背景 PNG，宽 768（≥384）、高 60–224。
+在 stages.js 的 layers 里加 `{ kind: 'image', src: 'assets/meilong/stages/s01/far.png', parallax: 0.2 }`，parallax 远小近大；原有程序化图层可以保留或删掉。
+场景要和主题一致：矿井、灯廊夜市、炭湖、高炉、矿镇、井下斗场。
+
+### A3 音乐音效
+
+- 每个场景一首 BGM（`bgm.file`，ogg 或 mp3，60–120 秒可循环，200KB–8MB），风格贴场景；标题音乐一首（`theme.audio.title`）
+- 音效 8 种：hit block throw projectile super ko round knockdown（`theme.audio.sfx`，短、干净、≤600KB）
+- 写法见 `src/render/audio.js` 顶部注释；文件放 `public/assets/meilong/audio/`
+- 只用自己生成的音频，不得使用任何现成游戏/影视的音乐音效
+
+全部做完后：`npm run check` 全绿 → TG 汇报（附 3 张不同角色对战截图）。

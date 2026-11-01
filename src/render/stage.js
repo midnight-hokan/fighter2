@@ -85,6 +85,29 @@ export const LAYER_KINDS = {
   },
 };
 
+// 图片图层：{ kind: 'image', src: 'assets/<主题>/stages/<场景id>/far.png', parallax: 0.2, y: 0 }
+// 图片横向无缝平铺；y 为图片顶边的屏幕坐标（缺省时底边贴地面）。图片没加载好时跳过这一层。
+const IMAGES = new Map();
+export function loadStageImages(stages) {
+  const srcs = [...new Set(stages.flatMap(s => (s.layers ?? []).filter(l => l.kind === 'image').map(l => l.src)))];
+  return Promise.all(srcs.map(src => new Promise((res) => {
+    if (IMAGES.has(src)) return res();
+    const im = new Image();
+    im.onload = () => { IMAGES.set(src, im); res(); };
+    im.onerror = () => { console.warn(`场景图片 ${src} 加载失败，跳过该图层`); res(); };
+    im.src = src;
+  })));
+}
+export const stageImagesLoaded = () => [...IMAGES.keys()];
+
+LAYER_KINDS.image = (ctx, l, cam) => {
+  const im = IMAGES.get(l.src);
+  if (!im) return;
+  const y = l.y ?? GROUND - im.height;
+  const off = ((Math.round(cam * (l.parallax ?? 0.5)) % im.width) + im.width) % im.width;
+  for (let x = -off; x < SCREEN.w; x += im.width) ctx.drawImage(im, x, y);
+};
+
 export function drawStage(ctx, stage, cam, t) {
   const [top, bottom] = stage.sky;
   const bands = 8;

@@ -11,10 +11,11 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
 import { basename } from 'node:path';
 
-const MILESTONES = ['E1', 'E2', 'E3', 'E4', 'E5', 'E6', 'E7', 'E8', 'R1', 'R2', 'R3', 'R4'];
+const MILESTONES = ['E1', 'E2', 'E3', 'E4', 'E5', 'E6', 'E7', 'E8', 'R1', 'R2', 'R3', 'R4', 'A1', 'A2', 'A3'];
 const NAMES = {
   E1: '输入解析', E2: '普通技/防御', E3: '投技/气绝', E4: '必杀技', E5: '气槽(KOF97)', E6: '回合', E7: '电脑对手', E8: '界面/渲染',
   R1: '8人阵容', R2: '场景/音乐', R3: '街机模式', R4: '收尾交付',
+  A1: '角色美术', A2: '场景美术', A3: '音乐音效',
 };
 const uptoArg = process.argv.indexOf('--upto');
 const upto = uptoArg > 0 ? process.argv[uptoArg + 1]?.toUpperCase() : null;
@@ -68,7 +69,7 @@ const e2e = spawnSync('npx', ['playwright', 'test', '--reporter=json'], {
 
 // ---------- 汇总 ----------
 const results = []; // { m, file, title, ok, msg }
-const msOf = (file) => (basename(file).match(/^([er]\d)-/i)?.[1] ?? '').toUpperCase();
+const msOf = (file) => (basename(file).match(/^([era]\d)-/i)?.[1] ?? '').toUpperCase();
 
 if (existsSync('.check/unit.json')) {
   const u = JSON.parse(readFileSync('.check/unit.json', 'utf8'));

@@ -1,4 +1,4 @@
-// 精灵图（图集）：规格、校验、加载与绘制。规格详见 docs/精灵图规格.md
+// 精灵图（图集）：规格、校验、加载与绘制。规格详见 docs/精灵图规格.md；生成流水线见 TASK.md 第十一节
 //
 // public/assets/manifest.json：{ "<主题id>": { "<角色id>": "assets/<主题id>/<角色id>/atlas.json" } }
 // atlas.json：{
