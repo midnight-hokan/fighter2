@@ -16,7 +16,7 @@
 # 用法：
 #   python3 scripts/art/gen-c2c.py                  # 全量 c02–c08 ×4
 #   CHARS=c03 python3 scripts/art/gen-c2c.py        # 只跑指定角色
-#   SEED_SALT=1 换种子簇；DRY=1 只出图不覆盖 public/
+#   SEED_SALT=1 换种子簇；DRY=1 只出图不覆盖 public/；NOBLANK=1 条件图不遮灰（只改表情）
 # 断点：art-work/c2/express-c/<cid>_<expr>_fin.png 存在则跳过。
 
 import importlib.util
@@ -70,7 +70,16 @@ def face_mask(box, W, H):
     return np.array(m).astype(float) / 255.0
 
 
-def prompt_for(expr, cid):
+def prompt_for(expr, cid, noblank=False):
+    if noblank:
+        # NOBLANK：条件图保留原脸（不遮灰），让 Edit 模型看到脸只改表情。
+        # 遮灰模式下 c07/c08 模型看不到原脸，要么照抄原脸要么脸区画空（2026-11-02）。
+        return (
+            "把图中这个人的表情改成：%s。表情要夸张、清晰可辨，" % EXPRESSION[expr]
+            + "严格保持同一身份：脸型、肤色、五官比例、发型、帽子、衣服、道具、姿势、背景全部原样不变，只改脸部表情。"
+            + "脸必须和头、耳朵、脖子自然衔接，改动要平滑自然。"
+            + "厚涂赛璐璐风格，干净线稿，色块分明，与画面其余部分画风完全一致。"
+        )
     if cid in HELMET:
         hat = f"头顶戴着{HELMET[cid]}色安全帽，保持不变。"
     else:
@@ -130,6 +139,7 @@ def face_skin_ok(dec_rgb, m):
 def main():
     dry = os.environ.get("DRY") == "1"
     salt = int(os.environ.get("SEED_SALT", "0"))
+    noblank = os.environ.get("NOBLANK") == "1"
     _chars = os.environ.get("CHARS", "").strip()
     ids = [c.strip() for c in _chars.split(",") if c.strip()] if _chars else ["c0%d" % i for i in range(2, 9)]
     boxes = json.loads(BBX.read_text())
@@ -154,8 +164,11 @@ def main():
             comp = Image.new("RGB", orig.size, BG)
             comp.paste(orig, mask=orig.split()[3])
             m = face_mask(box, orig.width, orig.height)
-            blanked = (np.array(comp).astype(float) * (1 - m[:, :, None])
-                       + BLANK[None, None, :] * m[:, :, None])
+            if noblank:
+                blanked = np.array(comp)          # 不遮灰：条件图保留原脸
+            else:
+                blanked = (np.array(comp).astype(float) * (1 - m[:, :, None])
+                           + BLANK[None, None, :] * m[:, :, None])
             img_name = "f2c2c_%s_%s.png" % (cid, expr)
             (genc2.UPLOAD / img_name).unlink(missing_ok=True)
             Image.fromarray(blanked.clip(0, 255).astype(np.uint8), "RGB").save(genc2.UPLOAD / img_name)
@@ -169,7 +182,7 @@ def main():
                     if fp.exists():
                         fp.unlink()
                     seed = base_seed + attempt * 1000003
-                    found, dt = genc2.run(wf_inpaint(img_name, prompt_for(expr, cid), seed, prefix), [prefix])
+                    found, dt = genc2.run(wf_inpaint(img_name, prompt_for(expr, cid, noblank), seed, prefix), [prefix])
                     dec = Image.open(found[prefix]).convert("RGB")
                     skin = face_skin_ok(dec, m)
                     result = blend_face(orig, dec, m)
@@ -181,6 +194,16 @@ def main():
                     if skin < 0.10:
                         log("bad %s_%s [脸区肤色占比 %.3f < 0.10] try%d" % (cid, expr, skin, attempt + 1))
                         continue
+                    # 脸区实际变化量：模型照抄原脸（表情没生效）时 diff≈0（c07/c08 教训 2026-11-02）。
+                    # normal 是静止表情：NOBLANK 下"保持原脸"就是正确结果，跳过此项（skin+qc 仍把关）。
+                    if expr != 'normal':
+                        od = np.array(orig.convert("RGB")).astype(float)
+                        nd = np.array(result.convert("RGB")).astype(float)
+                        core = (m > 0.7).reshape(-1)
+                        delta = float(np.abs(nd[:, :, :3].reshape(-1, 3) - od.reshape(-1, 3))[core].mean())
+                        if delta < 8.0:
+                            log("bad %s_%s [脸区平均变化 %.1f < 8.0 表情未生效] try%d" % (cid, expr, delta, attempt + 1))
+                            continue
                     if dry:
                         result.save(WORK / (prefix + "_preview.png"))
                         log("dry %s_%s skin=%.2f (%.0fs)" % (cid, expr, skin, dt))
