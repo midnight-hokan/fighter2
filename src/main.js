@@ -48,7 +48,8 @@ const playStory = (scenes) => (cutscenesOn ? cutscene.play(scenes) : Promise.res
 const versus = new Versus(document.body, theme);
 // 开打：过场开启时先播 VS 画面，再显示回合横幅、开始计时
 function startFight(bannerText) {
-  const go = () => { running = true; hud.flashBanner(bannerText, 60); hud.queue = [[theme.text.fight, 40]]; draw(game.getState()); };
+  // 引擎只在第 2 回合起发 round 事件，第 1 回合的开场白和播报在这里补上
+  const go = () => { running = true; hud.flashBanner(bannerText, 60); hud.queue = [[theme.text.fight, 40]]; audio.handleVoice({ type: 'round', number: 1 }); audio.handleAnnouncer({ type: 'round', number: 1 }); draw(game.getState()); };
   if (!cutscenesOn) return go();
   running = false;
   const stage = theme.stages[renderer.stageIndex];
@@ -348,7 +349,7 @@ window.__game = {
   renderInfo: () => renderer.info(),
   assetsReady: () => assetsReady.then(() => true),
   audioFiles: () => audio.info(),
-  audioInfo: () => ({ log: [...audio.log], sounds: Object.fromEntries(Object.entries(SOUNDS).map(([k, v]) => [k, typeof v === 'function'])) }),
+  audioInfo: () => ({ log: [...audio.log], announcer: [...audio.announcerLog], sounds: Object.fromEntries(Object.entries(SOUNDS).map(([k, v]) => [k, typeof v === 'function'])) }),
   isRunning: () => running,
   mode: () => mode,
   pauseOpen: () => pause.open,
@@ -377,6 +378,7 @@ if (TEST_MODE) {
   let last = performance.now();
   let acc = 0;
   let overTimer = 0;
+  let slowFrames = 0;
   const loop = (now) => {
     acc += Math.min(now - last, 250);
     last = now;
@@ -387,8 +389,12 @@ if (TEST_MODE) {
       if (arcadeIntroFrames === 0) beginArcadeMatch();
     }
     while (acc >= 1000 / 60) {
-      if (running && !pause.open) state = tick();
       acc -= 1000 / 60;
+      if (!running || pause.open) continue;
+      // KO 慢动作：KO 后约 1.5 秒内每 3 帧才推进 1 帧（只影响节奏，不影响结果）
+      if (slowFrames > 0) { slowFrames--; if (slowFrames % 3 !== 0) continue; }
+      state = tick();
+      if (state.events.some(e => e.type === 'ko')) slowFrames = 90;
     }
     if (running) draw(state ?? game.getState());
     touch?.setVisible(running && !cutscene.active && !versus.active);

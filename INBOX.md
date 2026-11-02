@@ -239,3 +239,24 @@ Claude 已完成剧本和过场播放系统（C1 剧本、C3 过场演出全绿�
 - 8 人重打包图集，frame-qc 报告里失败帧 = 0（顶替帧单独列出）；
 - 更新 art-review 蒙太奇；npm run build + 全量 check，原文和 commit hash 发回。
 **看门狗**：本条没 ✅ 之前重新装上看门狗。
+
+## 2026-11-03 07:30 · V2 高清美术（新里程碑，测试已锁定：tests/unit/v2-hd-art.test.js）
+背景：光哥试玩后觉得"简陋"。Claude 已完成 V1 华丽演出（引擎侧：高清 3 倍画布、震屏/推镜/光爆火花、超必杀立绘切入、残影、扬尘、KO 慢动作、播报员接口、HUD 质感），V1 全绿。现在画面的短板是美术本身，交给你做 V2。
+**顺序：先完成 06:20 那条（A1 帧质检和修复），再做 V2。** 两条都做完前看门狗保持在岗。
+
+### V2-1 场景全景图（6 张，替换现在的 far/near 条带）
+- 每个场景一张**连地面一起画的全景图**：尺寸 2304×672（逻辑 768×224，scale 3），侧视格斗游戏背景，地平线放在离底边约 1/9 处（逻辑 y≈200 是角色脚底），画面中央 384 宽区域不要放高对比的杂物，免得抢角色。
+- 画风与立绘一致（厚涂、暖色光源），每张按 docs/故事设定.md 的场景写提示词；左右两端要能无缝平铺（做边缘渐变融合）。
+- 存成 JPG（质量 88–92）放 public/assets/meilong/stages/<id>/pano.jpg，单张 < 3MB。
+- stages.js：每个场景 layers 改成 `{ kind: 'image', src: '.../pano.jpg', scale: 3, ground: true, parallax: 0.5 }`，`floor: { ..., hidden: true }`。
+- 再加至少 2 个动态层（引擎已支持）：`particles`（style 可选 embers/dust/steam/snow/fireflies/drips）和 `glow`（光源呼吸，points 填全景图里灯的位置）。前景层可以放在 `front: [...]`（画在角色前面，比如飘过的蒸汽）。按场景选：矿井=dust+drips+灯光，夜市=灯笼 glow+fireflies，炭湖=fireflies+steam，高炉=embers+火光 glow，矿镇=snow 或 dust+路灯 glow，斗场=dust+embers。
+### V2-2 角色高清图集（256 像素）
+- 用 06:20 修好的帧，从 **art-work/raw 的高清原图**重新抠图打包成 256×256 单帧（anchor 按比例 ×2），atlas.json 加 `"scale": 2`，frameW/frameH = 256。
+- 体积控制：图集存 WebP（质量 90，有 alpha），单张 < 8MB；atlas.json 的 image 指向 .webp。
+### V2-3 播报员（9 句）
+- CosyVoice2 选一个浑厚、有激情的男声（不要和 8 个角色重音色），中文："第一回合" "第二回合" "第三回合" "最终回合" "开始！" "KO！"（读作"K—O"）"时间到！" "完胜！" "胜利！"
+- 存 public/assets/meilong/voice/announcer/<key>.ogg（key：round1 round2 round3 final fight ko timeup perfect win），响度 -14 LUFS，theme.js 的 audio 里加 `announcer: { round1: '...', ... }`。引擎已经在对应时机播放。
+### 验收
+- `npm run check` 里 V2 全绿、其他里程碑不回退；
+- 6 个场景各截一张对战截图（?test=1，`__game.setStage(i)`）放 docs/art-review/v2-stages.png 拼图；
+- 结果原文和 commit hash 发回。不用等确认。

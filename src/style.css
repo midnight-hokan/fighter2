@@ -167,3 +167,23 @@ body.touch .hud .face-wrap { width: 40px; height: 40px; }
 body.touch .hud .bar { height: 14px; }
 body.touch .hud .timer { font-size: 26px; min-width: 44px; }
 body.touch .power { top: calc(env(safe-area-inset-top, 0px) + 70px); }
+
+/* ===== V1 华丽演出：HUD 质感 ===== */
+.hud .bar { height: 22px; background: linear-gradient(#2a0a0a, #120404); }
+.hud .fill { background: linear-gradient(#fffbd0 0%, #ffe066 30%, #ffb21f 60%, #d86a0a 100%); }
+.hud .fill::after { content: ''; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 0 40%, rgba(255,255,255,.55) 50%, transparent 60% 100%);
+  background-size: 300% 100%; animation: bar-shine 3.2s linear infinite; }
+@keyframes bar-shine { from { background-position: 150% 0; } to { background-position: -150% 0; } }
+.hud .red { background: linear-gradient(#ff8a70, #c8241a); }
+.hud .timer { background: radial-gradient(circle at 50% 30%, #5a3a20, #120c08 75%); text-shadow: 0 0 10px rgba(255,190,80,.7), 0 3px 0 #000; }
+.power .gauge { height: 12px; border-color: #bfe3ff; background: linear-gradient(#081420, #10263a); box-shadow: 0 0 0 2px #000; }
+.power .gfill { background: linear-gradient(#bfe9ff, #3fa9ff 50%, #1560c8); box-shadow: 0 0 8px #3fa9ff; }
+.power .stocks { font-size: 32px; background: linear-gradient(#fff6c0, #ffd23f 50%, #ff8a1f); -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 3px 0 #000) drop-shadow(0 0 6px rgba(255,170,40,.8)); }
+.power .maxbar { background: linear-gradient(90deg, #ff3a1a, #ffd23f, #ff3a1a); background-size: 200% 100%; animation: bar-shine 0.6s linear infinite; box-shadow: 0 0 10px #ff6a2b; }
+.combo { font-size: 36px; background: linear-gradient(#fffbe0, #ffd23f 45%, #ff6a1f); -webkit-background-clip: text; background-clip: text; color: transparent;
+  text-shadow: none; filter: drop-shadow(0 3px 0 #7a1a0a) drop-shadow(0 5px 0 #000); }
+.banner { background: linear-gradient(#ffffff 0%, #fff3c4 35%, #ffc23f 60%, #ff7a1f 100%); -webkit-background-clip: text; background-clip: text; color: transparent;
+  text-shadow: none; filter: drop-shadow(0 4px 0 #a2321f) drop-shadow(0 8px 0 #000) drop-shadow(0 0 24px rgba(255,160,40,.7)); }
+.banner.ko { font-size: 120px; background: linear-gradient(#fffbe0, #ffe14d 40%, #ff5a1f); -webkit-background-clip: text; background-clip: text; color: transparent;
+  text-shadow: none; filter: drop-shadow(0 6px 0 #c8452c) drop-shadow(0 12px 0 #000) drop-shadow(0 0 40px rgba(255,80,30,.9)); }

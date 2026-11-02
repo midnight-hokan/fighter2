@@ -100,33 +100,96 @@ export function loadStageImages(stages) {
 }
 export const stageImagesLoaded = () => [...IMAGES.keys()];
 
+// scale：图片像素 / 逻辑像素（高清全景图 2 或 3）。y 缺省时底边贴屏幕底（全景图连地面一起画）或贴地面（旧条带）。
 LAYER_KINDS.image = (ctx, l, cam) => {
   const im = IMAGES.get(l.src);
   if (!im) return;
-  const y = l.y ?? GROUND - im.height;
-  const off = ((Math.round(cam * (l.parallax ?? 0.5)) % im.width) + im.width) % im.width;
-  for (let x = -off; x < SCREEN.w; x += im.width) ctx.drawImage(im, x, y);
+  const k = l.scale ?? 1;
+  const w = im.width / k, h = im.height / k;
+  const y = l.y ?? (l.ground ? SCREEN.h - h : GROUND - h);
+  const off = (((cam * (l.parallax ?? 0.5)) % w) + w) % w;
+  for (let x = -off; x < SCREEN.w; x += w) ctx.drawImage(im, x, y, w + 0.5, h);
 };
 
+// 动态粒子层：embers（火星上飘）、dust（浮尘）、steam（蒸汽团）、snow（落雪）、fireflies（萤火）、drips（滴水）
+// { kind: 'particles', style: 'embers', count: 40, color: '#ffb060', parallax: 0.9, area: [y0, y1] }
+const PSTYLE = {
+  embers: { vy: -0.35, vx: 0.15, size: 1.2, wob: 0.6, glow: true },
+  dust: { vy: -0.05, vx: 0.08, size: 0.9, wob: 0.4, glow: false },
+  steam: { vy: -0.25, vx: 0.1, size: 9, wob: 0.8, glow: false, soft: true },
+  snow: { vy: 0.35, vx: 0.1, size: 1.1, wob: 0.7, glow: false },
+  fireflies: { vy: -0.05, vx: 0.05, size: 1.4, wob: 1.5, glow: true, blink: true },
+  drips: { vy: 1.6, vx: 0, size: 0.9, wob: 0, glow: false, streak: true },
+};
+LAYER_KINDS.particles = (ctx, l, cam, t) => {
+  const st = PSTYLE[l.style] ?? PSTYLE.dust;
+  const n = l.count ?? 40;
+  const [y0, y1] = l.area ?? [0, GROUND];
+  const span = y1 - y0;
+  const r = createRng(l.seed ?? 11);
+  const W = SCREEN.w + 40;
+  ctx.save();
+  if (st.glow) ctx.globalCompositeOperation = 'lighter';
+  for (let i = 0; i < n; i++) {
+    const bx = r.next() * W * 3, by = r.next() * span, ph = r.next() * 6.28, sp = 0.6 + r.next() * 0.8;
+    let x = bx + t * st.vx * sp - cam * (l.parallax ?? 0.8);
+    let y = by + t * st.vy * sp;
+    x = ((x % W) + W) % W - 20;
+    y = y0 + (((y % span) + span) % span);
+    x += Math.sin(t * 0.03 * sp + ph) * st.wob * 6;
+    const blink = st.blink ? 0.5 + 0.5 * Math.sin(t * 0.08 + ph * 3) : 1;
+    ctx.globalAlpha = (l.alpha ?? (st.soft ? 0.12 : 0.8)) * blink;
+    ctx.fillStyle = l.color ?? '#ffffff';
+    if (st.streak) { ctx.fillRect(x, y, 0.6, 4); continue; }
+    ctx.beginPath(); ctx.arc(x, y, st.size * (st.soft ? sp : 1), 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.restore();
+};
+
+// 光源呼吸：{ kind: 'glow', points: [[x, y, r], ...], color: '#ffb060', parallax: 0.6, flicker: 0.2 }
+LAYER_KINDS.glow = (ctx, l, cam, t) => {
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  (l.points ?? []).forEach(([px, py, pr], i) => {
+    const W = l.wrap ?? 768;
+    let x = px - cam * (l.parallax ?? 0.6);
+    x = ((x % W) + W) % W;
+    if (x > SCREEN.w + pr) x -= W;
+    const fl = 1 - (l.flicker ?? 0.15) * (0.5 + 0.5 * Math.sin(t * 0.11 + i * 1.7) * Math.sin(t * 0.037 + i));
+    const g = ctx.createRadialGradient(x, py, 0, x, py, pr * fl);
+    g.addColorStop(0, hexToRgba(l.color ?? '#ffb060', 0.55 * fl));
+    g.addColorStop(1, hexToRgba(l.color ?? '#ffb060', 0));
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(x, py, pr * fl, 0, Math.PI * 2); ctx.fill();
+  });
+  ctx.restore();
+};
+
+// 场景：天空渐变 → 图层（远到近）→ 地面（floor.hidden 时不画，全景图自带地面）→ 前景层（stage.front）
 export function drawStage(ctx, stage, cam, t) {
   const [top, bottom] = stage.sky;
-  const bands = 8;
-  for (let i = 0; i < bands; i++) {
-    ctx.fillStyle = mix(top, bottom, i / (bands - 1));
-    ctx.fillRect(0, Math.floor((GROUND * i) / bands), SCREEN.w, Math.ceil(GROUND / bands) + 1);
-  }
+  const g = ctx.createLinearGradient(0, 0, 0, GROUND);
+  g.addColorStop(0, top); g.addColorStop(1, bottom);
+  ctx.fillStyle = g;
+  ctx.fillRect(-20, -20, SCREEN.w + 40, SCREEN.h + 40);
   for (const l of stage.layers ?? []) LAYER_KINDS[l.kind]?.(ctx, l, cam, t);
-  ctx.fillStyle = stage.floor.color;
-  ctx.fillRect(0, GROUND, SCREEN.w, SCREEN.h - GROUND);
-  ctx.fillStyle = stage.floor.line;
-  const off = Math.round(cam) % 32;
-  for (let x = -off; x < SCREEN.w; x += 32) ctx.fillRect(x, GROUND + 6, 16, 2);
-  ctx.fillRect(0, GROUND, SCREEN.w, 1);
-  // 场地两端的边界提示
-  for (const wx of [STAGE.left, STAGE.right]) {
-    const x = Math.round(wx - cam);
-    if (x > -4 && x < SCREEN.w + 4) { ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.fillRect(x - 2, 0, 4, GROUND); }
+  if (!stage.floor?.hidden) {
+    const fg = ctx.createLinearGradient(0, GROUND, 0, SCREEN.h);
+    fg.addColorStop(0, stage.floor.color); fg.addColorStop(1, '#000000');
+    ctx.fillStyle = fg;
+    ctx.fillRect(-20, GROUND, SCREEN.w + 40, SCREEN.h - GROUND + 20);
+    ctx.fillStyle = stage.floor.line;
+    ctx.fillRect(-20, GROUND, SCREEN.w + 40, 1);
   }
+}
+
+export function drawStageFront(ctx, stage, cam, t) {
+  for (const l of stage.front ?? []) LAYER_KINDS[l.kind]?.(ctx, l, cam, t);
+}
+
+function hexToRgba(hex, a) {
+  const n = parseInt(hex.slice(1), 16);
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a.toFixed(3)})`;
 }
 
 function mix(a, b, k) {

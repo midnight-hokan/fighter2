@@ -24,20 +24,21 @@ export async function startFromMenu(page, { modeSteps = 0 } = {}) {
   await page.waitForFunction(() => window.__game.isRunning());
 }
 
-// 画布像素统计（在原生分辨率上取）
+// 画布像素统计。region 用逻辑坐标（384×224），按高清画布的倍数换算成像素区域
 export async function canvasStats(page, region) {
   return page.evaluate((r) => {
     const c = document.getElementById('scene');
     const ctx = c.getContext('2d');
-    const { x = 0, y = 0, w = c.width, h = c.height } = r ?? {};
-    const d = ctx.getImageData(x, y, w, h).data;
+    const k = c.width / 384;
+    const { x = 0, y = 0, w = 384, h = 224 } = r ?? {};
+    const d = ctx.getImageData(Math.round(x * k), Math.round(y * k), Math.max(1, Math.round(w * k)), Math.max(1, Math.round(h * k))).data;
     let sum = 0, sum2 = 0, rs = 0, gs = 0, bs = 0;
     const n = d.length / 4;
     for (let i = 0; i < d.length; i += 4) {
       const l = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
       sum += l; sum2 += l * l; rs += d[i]; gs += d[i + 1]; bs += d[i + 2];
     }
-    return { variance: sum2 / n - (sum / n) ** 2, mean: [rs / n, gs / n, bs / n], width: c.width, height: c.height };
+    return { variance: sum2 / n - (sum / n) ** 2, mean: [rs / n, gs / n, bs / n], width: c.width, height: c.height, logical: [c.width / k, c.height / k], k };
   }, region);
 }
 

@@ -3,13 +3,14 @@ import { trackErrors, openTestMode, startFromMenu, canvasStats, solidPng } from 
 import { requiredAnims } from '../../src/render/atlas.js';
 import theme from '../../src/theme/index.js';
 
-test('测试模式加载无报错，画布为原生 384×224 且不是黑屏', async ({ page }) => {
+test('测试模式加载无报错，画布为逻辑 384×224（高清倍数绘制）且不是黑屏', async ({ page }) => {
   const errors = trackErrors(page);
   await openTestMode(page);
   await page.evaluate(() => window.__game.step(10));
   const st = await canvasStats(page);
-  expect(st.width).toBe(384);
-  expect(st.height).toBe(224);
+  expect(Number.isInteger(st.k) && st.k >= 1).toBe(true);
+  expect(st.width).toBe(384 * st.k);
+  expect(st.height).toBe(224 * st.k);
   expect(st.variance).toBeGreaterThan(30);
   expect(errors).toEqual([]);
 });

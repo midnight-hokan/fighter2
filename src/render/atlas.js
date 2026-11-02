@@ -4,7 +4,9 @@
 // atlas.json：{
 //   "image": "atlas.png", "frameW": 128, "frameH": 128, "columns": 8,
 //   "anchor": { "x": 64, "y": 124 },            // 脚底中心在单帧里的像素位置
-//   "animations": { "<动画名>": { "frames": [0,1,2], "fps": 10, "loop": true } }
+//   "animations": { "<动画名>": { "frames": [0,1,2], "fps": 10, "loop": true } },
+//   "scale": 2                                   // 可选：高清图集（256 像素帧）写 2，按逻辑尺寸 128 绘制
+
 // }
 // 动画名 = 状态名（见 BASE_ANIMS）或招式 id（st.lp、必杀技 id、超必杀 id、throw、gc）。
 
@@ -64,8 +66,10 @@ class Atlas {
     return a.loop === false ? a.frames[Math.min(step, a.frames.length - 1)] : a.frames[step % a.frames.length];
   }
 
-  draw(ctx, key, f, x, y, alt, flash = false) {
+  // tint：残影着色（'special' 青白 / 'super' 金色）。json.scale = 图集像素 / 逻辑像素（高清图集 256 帧用 2）
+  draw(ctx, key, f, x, y, alt, flash = false, tint = null) {
     const j = this.json;
+    const k = j.scale ?? 1;
     const idx = this.frameIndex(key, f);
     const sx = (idx % j.columns) * j.frameW;
     const sy = Math.floor(idx / j.columns) * j.frameH;
@@ -73,10 +77,12 @@ class Atlas {
     const filters = [];
     if (alt) filters.push('hue-rotate(160deg) saturate(0.8)');
     if (flash) filters.push('brightness(2.4)');
+    if (tint === 'special') filters.push('brightness(1.4) sepia(1) hue-rotate(160deg) saturate(3)');
+    if (tint === 'super') filters.push('brightness(1.5) sepia(1) saturate(4)');
     if (filters.length) ctx.filter = filters.join(' ');
     ctx.translate(x, y);
     if (f.facing < 0) ctx.scale(-1, 1);
-    ctx.drawImage(this.image, sx, sy, j.frameW, j.frameH, -j.anchor.x, -j.anchor.y, j.frameW, j.frameH);
+    ctx.drawImage(this.image, sx, sy, j.frameW, j.frameH, -j.anchor.x / k, -j.anchor.y / k, j.frameW / k, j.frameH / k);
     ctx.restore();
   }
 }

@@ -2,19 +2,20 @@
   "note": "受保护文件清单，由 npm run lock-tests 生成。大炮不得修改。",
   "files": {
     "playwright.config.js": "199852e47d67e234ef648daa015e9f27675ac42e4c79391232b49761ab79f854",
-    "scripts/check.mjs": "c68ed2cf2ca3458e9fe9b64fc782308417dc07d807ac2fd700f30dcf3636557c",
+    "scripts/check.mjs": "16a8c5feb60d873a16763db12bc49a2eb01b7044f20f4f18dc613358c8b32f11",
     "scripts/lock-tests.mjs": "dfd95a7b41585a3d2d9d396ccac94d6cf1afbf1df52b95d6daa52d457e105653",
-    "tests/e2e/_util.js": "70b57ae4486cf83b93e51d4d832f138679736d732017d14a162535c8d2eefb58",
+    "tests/e2e/_util.js": "c2cf9ee2423403bfeebd06acae567645a4797584d61336829df439fa80875647",
     "tests/e2e/a1-sprites.spec.js": "36491a81b16abd2ea5bb4e48b7e633c189a15048a17fbbd72e5e1119d5310558",
     "tests/e2e/a2-stage-art.spec.js": "824d0788695d5aaa39cf60a8b1727b8d14d3afdea125dbfc646cad1940b513a4",
     "tests/e2e/a3-audio.spec.js": "ebdf657dd474252cdc8a48f7731cd4bc1a06e71b2d1139671b9e2cc19709ae07",
     "tests/e2e/c3-cutscene.spec.js": "dc3c6e4f77d81a3409bb715015d07bab035b7838e56b2c4b81b96f31a732d175",
-    "tests/e2e/e8-ui.spec.js": "91758de55b65a490eb35f86d5ca8d91fc95fcfa845fc0c9875962e69003cd961",
+    "tests/e2e/e8-ui.spec.js": "f900a89547f72331860bb792bb7df6212598656248ad5e7d69389bda87718735",
     "tests/e2e/r2-stages.spec.js": "c2734f812cadbdffeeec7b04b655c7ba0a7dc5c943e21a05a14c7e9c498a07a9",
     "tests/e2e/r3-arcade.spec.js": "f4cb8c42b03e7cf984f9a19ba43656fef9495153dd5a76b2162e0e342bf0141c",
     "tests/e2e/r4-delivery.spec.js": "617968f700afd1c61d052e7d3a62f4395160b37fb8c2bd30c81d0330f3ae0601",
     "tests/e2e/u1-touch.spec.js": "0fe80f6a738814b8bbce2e805ef2b77c225195b2d62db92ecddf0d75dc6ff491",
-    "tests/unit/_assets.js": "c83bb966db8d8285304d8609dc5779f617751e85211ef76ccf4862a0a06748e5",
+    "tests/e2e/v1-vfx.spec.js": "238fd6e76d89d8d92edb4761b62ba6e5b1d466797589614aab5f1fb885533343",
+    "tests/unit/_assets.js": "7ee7523674da351a9d750d90d6dbc93ae88d5b3e8c3da48e25091c79d2a393fc",
     "tests/unit/_fixtures.js": "74b199e63096a9489b4d08a29efeb061e5c2b61ece9cb3f337eb75ebf9d07433",
     "tests/unit/a1-sprites.test.js": "1444f7bdfb91d92064b6be4e91295725b5a1d74575e6098ead18396cf72d47e9",
     "tests/unit/a2-stage-art.test.js": "7db627ae29bc8bdf4f3b50d2a261e260954b1a934e93d99dbf36e73d74d7b35d",
@@ -34,6 +35,7 @@
     "tests/unit/r3-arcade.test.js": "424d96d18ee737bc4c87c5ca480a996f9298ee2b7a93e31ef12a3a349631653c",
     "tests/unit/r4-delivery.test.js": "9e129d068ccb1a2e4c29a30fd0c6b3222f24e5b3435d7a98db9c933ff88a260e",
     "tests/unit/u1-simple-input.test.js": "afe821f7a36a02b882696980d3c23e2432d33f0a462930ea13c40032966561e7",
+    "tests/unit/v2-hd-art.test.js": "f84ac9867a9028950010c4dc8cb2a4cd7780464a3007f9b719aca07e8b9cfa2f",
     "vite.config.js": "f4ec640edd27b83b6da1838570bd8bca1a398067d607967744e0ed6f1d444c7c"
   }
 }

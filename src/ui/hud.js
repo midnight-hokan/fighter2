@@ -52,7 +52,7 @@ export class Hud {
     for (const e of state.events) {
       if (e.type === 'hit' && e.combo >= 2) { this.comboText[e.attacker] = `${e.combo} 连击`; this.comboShow[e.attacker] = 70; }
       if (e.type === 'round') { this.flashBanner(T.round(e.number), 60); this.queue = [[T.fight, 40]]; }
-      if (e.type === 'super') this.flashBanner(e.sdm ? 'MAX 超必杀！' : '超必杀！', 40);
+      // 超必杀的提示改由画布上的切入演出负责（renderer.drawCutin）
     }
     state.fighters.forEach((f, i) => {
       const k = i === 0 ? 'p1' : 'p2';

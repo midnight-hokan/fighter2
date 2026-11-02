@@ -81,6 +81,8 @@ export class Audio {
     this.buffers = new Map();   // 路径 → AudioBuffer
     this.failed = new Map();    // 路径 → 错误
     this.sfx = {};
+    this.announcer = {};
+    this.announcerLog = [];
     this.voice = {};            // 角色语音：{ c01: { intro, special, super, ko } }
     this.fighters = [];         // 当前对局双方角色定义（含 id），由 main 在对局开始时设置
     this.now = null;            // 当前背景音乐 { mode: 'file' | 'synth', src }
@@ -91,7 +93,8 @@ export class Audio {
   async preload(theme) {
     this.sfx = theme.audio?.sfx ?? {};
     this.voice = theme.audio?.voice ?? {};
-    const voicePaths = Object.values(this.voice).flatMap(v => Object.values(v));
+    this.announcer = theme.audio?.announcer ?? {};
+    const voicePaths = [...Object.values(this.voice).flatMap(v => Object.values(v)), ...Object.values(this.announcer)];
     const paths = [theme.audio?.title, ...Object.values(this.sfx), ...voicePaths, ...(theme.stages ?? []).map(s => s.bgm?.file)].filter(Boolean);
     await Promise.all([...new Set(paths)].map(p => this.loadFile(p)));
   }
@@ -140,6 +143,25 @@ export class Audio {
     this.playBuffer(buf, { vol: 1, delay });
   }
 
+  // 播报员：round1/round2/round3/final/fight/ko/timeup/perfect/win（theme.audio.announcer，缺文件就不播）
+  playAnnouncer(key, { delay = 0 } = {}) {
+    this.announcerLog.push(key);
+    if (this.announcerLog.length > 50) this.announcerLog.shift();
+    const path = this.announcer?.[key];
+    const buf = path && this.buffers.get(path);
+    if (!buf || this.ctx?.state !== 'running') return;
+    this.playBuffer(buf, { vol: 1.1, delay });
+  }
+
+  handleAnnouncer(e) {
+    if (e.type === 'round') {
+      this.playAnnouncer(e.number >= 4 ? 'final' : `round${e.number}`);
+      this.playAnnouncer('fight', { delay: 1.1 });
+    } else if (e.type === 'ko') this.playAnnouncer('ko', { delay: 0.05 });
+    else if (e.type === 'timeup') this.playAnnouncer('timeup');
+    else if (e.type === 'matchover' && e.winner !== 'draw') this.playAnnouncer('win', { delay: 1.2 });
+  }
+
   // 角色语音与引擎事件挂钩：round 1 开场白、超必杀喊招、KO 台词（必杀喊招由 main 检出招式开始时调 playVoice）
   handleVoice(e) {
     if (e.type === 'round' && e.number === 1) {
@@ -171,6 +193,7 @@ export class Audio {
   handle(events) {
     for (const e of events) {
       this.handleVoice(e);
+      this.handleAnnouncer(e);
       if (!SOUNDS[e.type]) continue;
       this.log.push(e.type);
       if (this.log.length > 300) this.log.shift();
