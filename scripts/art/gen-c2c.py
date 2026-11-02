@@ -136,6 +136,21 @@ def face_skin_ok(dec_rgb, m):
     return float(skin.mean())
 
 
+def mask_gray_ratio(res_rgba, m, s_th=0.08, v_lo=0.55, v_hi=0.93):
+    """mask 核心区（m>0.5）低饱和高亮灰像素占比（INBOX 2026-11-02：>3% 判遮灰残留）。
+    只算不透明像素（alpha>250）：角色外是透明背景，合成底 #d8d8d8 本身就是
+    低饱和高亮灰，不算进来；v_hi 排除近白（牙齿/白安全帽）。
+    2026-11-02 c05/normal 鬼脸灰雾 + c03 拳上灰雾均逃过 skin/identity 检查，此条兜底。
+    校准：脸 mask 正确时干净脸 0–2.7%，灰雾残留 4%+（c05/normal 4.4%、c03/hurt 3.7%）。"""
+    a = np.array(res_rgba)
+    opq = (m > 0.5) & (a[:, :, 3] > 250)
+    px = np.array(res_rgba).astype(float)[opq]
+    if px.shape[0] == 0:
+        return 0.0
+    h, s, v = genc2._hsv_vec(px)
+    return float(((s < s_th) * (v > v_lo) * (v < v_hi)).sum() / px.shape[0])
+
+
 def main():
     dry = os.environ.get("DRY") == "1"
     salt = int(os.environ.get("SEED_SALT", "0"))
@@ -193,6 +208,10 @@ def main():
                         continue
                     if skin < 0.10:
                         log("bad %s_%s [脸区肤色占比 %.3f < 0.10] try%d" % (cid, expr, skin, attempt + 1))
+                        continue
+                    gray_r = mask_gray_ratio(result, m)
+                    if gray_r > 0.03:
+                        log("bad %s_%s [mask区遮灰残留 %.2f%% > 3%%] try%d" % (cid, expr, gray_r * 100, attempt + 1))
                         continue
                     # 脸区实际变化量：模型照抄原脸（表情没生效）时 diff≈0（c07/c08 教训 2026-11-02）。
                     # normal 是静止表情：NOBLANK 下"保持原脸"就是正确结果，跳过此项（skin+qc 仍把关）。
