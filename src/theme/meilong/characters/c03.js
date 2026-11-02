@@ -411,6 +411,29 @@ export default {
         "h": 16
       },
       "anim": "sweep"
+    },
+    {
+      "id": "lansao",
+      "name": "缆鞭踢",
+      "input": "421K",
+      "desc": "后下下后重脚，肩上电缆甩踢，下段击倒",
+      "startup": 14,
+      "active": 6,
+      "recovery": 28,
+      "damage": 120,
+      "chip": 15,
+      "stun": 14,
+      "hitstun": 20,
+      "blockstun": 16,
+      "level": "low",
+      "knockdown": true,
+      "hitbox": {
+        "x": -6,
+        "y": 0,
+        "w": 62,
+        "h": 40
+      },
+      "anim": "sweep"
     }
   ],
   "supers": [
