@@ -58,15 +58,24 @@ def log(msg):
 
 def face_mask(box, W, H):
     """VLM bbox → 内缩椭圆 mask（羽化），float 0–1，1=重绘区。
-    内缩保证混接缝落在脸内部（皮肤上），不压头发/脸型轮廓。"""
+    内缩保证混接缝落在脸内部（皮肤上），不压头发/脸型轮廓。
+    TIGHT=1：椭圆下移到脸下半部（眉/眼/嘴），额头/发际线/太阳穴留在 mask 外
+    （那里逐位保留底图像素）——2026-11-02 c03/hurt 重做时模型重画的发际线
+    灰雾从羽化区渗漏，收紧后发际线不再被重绘。"""
     x, y, w, h = box["x"], box["y"], box["w"], box["h"]
-    cx, cy = x + w / 2, y + h * 0.55
-    rx, ry = w * 0.46, h * 0.50
+    if os.environ.get("TIGHT") == "1":
+        cx, cy = x + w / 2, y + h * 0.62
+        rx, ry = w * 0.40, h * 0.36
+        blur = max(3.0, w * 0.04)
+    else:
+        cx, cy = x + w / 2, y + h * 0.55
+        rx, ry = w * 0.46, h * 0.50
+        blur = max(4.0, w * 0.05)
     yy, xx = np.mgrid[0:H, 0:W].astype(float)
     d = ((xx - cx) / rx) ** 2 + ((yy - cy) / ry) ** 2
     arr = np.clip(1.0 - d, 0, 1)
     m = Image.fromarray((arr * 255).astype(np.uint8), "L")
-    m = m.filter(ImageFilter.GaussianBlur(max(4.0, w * 0.05)))   # 过渡带宽 ~ w*0.08
+    m = m.filter(ImageFilter.GaussianBlur(blur))   # 过渡带
     return np.array(m).astype(float) / 255.0
 
 
