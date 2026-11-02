@@ -65,6 +65,9 @@ const CHARS = [
       { id: 'chongtianshan', name: '救援钩上挑', input: '[2]8K', desc: '下蓄力上放，救援钩对空上挑，起手无敌',
         startup: 6, active: 10, recovery: 26, damage: 105, chip: 12, stun: 16, hitstun: 20, blockstun: 16,
         knockdown: true, invuln: [1, 10], hitbox: { x: 2, y: 40, w: 36, h: 68 }, anim: 'uppercut' },
+      { id: 'gousao', name: '钩扫', input: '3HK', desc: '后下重脚，救援钩拖扫，下段击倒',
+        startup: 12, active: 5, recovery: 24, damage: 100, chip: 12, stun: 12, hitstun: 18, blockstun: 14,
+        level: 'low', knockdown: true, hitbox: { x: -4, y: 0, w: 58, h: 14 }, anim: 'sweep' },
     ],
     supers: [
       { id: 'longxuantan', name: '生命通道', input: '236236P', desc: '展开生命通道，冲拳钻地突进',
@@ -93,6 +96,9 @@ const CHARS = [
       { id: 'kengtai', name: '绝缘靴踹', input: '214K', desc: '扫堂腿，下段击倒',
         startup: 8, active: 6, recovery: 22, damage: 90, chip: 10, stun: 10, hitstun: 16, blockstun: 12,
         level: 'low', knockdown: true, hitbox: { x: 0, y: 0, w: 62, h: 16 }, anim: 'sweep' },
+      { id: 'lansao', name: '缆鞭踢', input: '421K', desc: '后下下后重脚，肩上电缆甩踢，下段击倒',
+        startup: 14, active: 6, recovery: 28, damage: 120, chip: 15, stun: 14, hitstun: 20, blockstun: 16,
+        level: 'low', knockdown: true, hitbox: { x: -6, y: 0, w: 62, h: 40 }, anim: 'sweep' },
     ],
     supers: [
       { id: 'chaozhong', name: '高压送电', input: '236236K', desc: '扛起对手整圈砸地，下段',
@@ -122,6 +128,9 @@ const CHARS = [
       { id: 'jifenghua', name: '停产整顿', input: '236K', desc: '前冲扫踢，快速接压',
         startup: 10, active: 14, recovery: 16, damage: 90, chip: 10, stun: 8, hitstun: 14, blockstun: 10,
         hitbox: { x: -14, y: 34, w: 54, h: 20 }, move: { vx: 3.2, frames: 16, at: 10 }, anim: 'rush' },
+      { id: 'fadanjia', name: '罚单夹击', input: '6MP', desc: '前突中拳，罚单本夹击，中段快',
+        startup: 5, active: 3, recovery: 12, damage: 60, chip: 8, stun: 7, hitstun: 14, blockstun: 10,
+        level: 'mid', hitbox: { x: 10, y: 44, w: 42, h: 22 }, anim: 'punch' },
     ],
     supers: [
       { id: 'huaying', name: '一票否决', input: '214214P', desc: '罚单翻飞，连续突刺',
@@ -151,6 +160,9 @@ const CHARS = [
       { id: 'dengzhuo', name: '横幅横扫', input: '214P', desc: '近身快速横扫，可取消',
         startup: 6, active: 3, recovery: 14, damage: 55, chip: 10, stun: 6, hitstun: 12, blockstun: 10,
         cancel: true, hitbox: { x: 10, y: 50, w: 44, h: 16 }, anim: 'punch' },
+      { id: 'hengsaotui', name: '横幅低扫', input: '3HK', desc: '后下重脚，横幅卷低扫，下段击倒',
+        startup: 10, active: 4, recovery: 22, damage: 85, chip: 10, stun: 10, hitstun: 16, blockstun: 12,
+        level: 'low', knockdown: true, hitbox: { x: -4, y: 0, w: 54, h: 14 }, anim: 'sweep' },
     ],
     supers: [
       { id: 'denghuadrag', name: '全矿广播', input: '236236K', desc: '全矿广播，挥出巨型声波弹，飞行道具',
@@ -180,6 +192,9 @@ const CHARS = [
       { id: 'jifengdan', name: '双灯连闪', input: '236P', desc: '短程快弹，飞行道具，存在时间短',
         startup: 9, active: 1, recovery: 22, damage: 55, chip: 8, stun: 8, hitstun: 14, blockstun: 11,
         projectile: { speed: 5.5, x: 28, y: 56, w: 22, h: 14, life: 110 }, anim: 'fireball' },
+      { id: 'dengliandian', name: '灯链点', input: '6MP', desc: '前点中拳，矿灯链轻点，中段可取消',
+        startup: 4, active: 3, recovery: 10, damage: 50, chip: 6, stun: 6, hitstun: 12, blockstun: 9,
+        level: 'mid', cancel: true, hitbox: { x: 10, y: 46, w: 40, h: 20 }, anim: 'punch' },
     ],
     supers: [
       { id: 'jifenglong', name: '万灯齐明', input: '236236P', desc: '双灯满电，化风连续突刺，高速贯穿',
@@ -209,6 +224,9 @@ const CHARS = [
       { id: 'zhongkeng', name: '拖把横扫', input: '214K', desc: '下后下长柄拖把横扫踹翻，击倒',
         startup: 12, active: 6, recovery: 32, damage: 130, chip: 18, stun: 16, hitstun: 22, blockstun: 16,
         knockdown: true, hitbox: { x: 4, y: 10, w: 56, h: 30 }, anim: 'highkick' },
+      { id: 'tuobachongtui', name: '拖把冲腿', input: '6HK', desc: '前重脚，长柄拖把抡扫腿，上段重击',
+        startup: 16, active: 8, recovery: 32, damage: 140, chip: 18, stun: 16, hitstun: 22, blockstun: 18,
+        level: 'high', hitbox: { x: 4, y: 30, w: 60, h: 60 }, anim: 'highkick' },
     ],
     supers: [
       { id: 'tongshoulong', name: '开闸放水', input: '214214P', desc: '高压水管连环冲击，重压突进',
@@ -238,6 +256,9 @@ const CHARS = [
       { id: 'huayan', name: '点穴上挑', input: '623K', desc: '点穴手法上挑旋踢，对空',
         startup: 9, active: 8, recovery: 30, damage: 95, chip: 10, stun: 12, hitstun: 20, blockstun: 14,
         knockdown: true, hitbox: { x: 2, y: 40, w: 36, h: 66 }, move: { vy: 6.0, vx: 0.8, at: 4 }, anim: 'uppercut' },
+      { id: 'zhenxiansao', name: '针线扫', input: '3HK', desc: '后下重脚，银针线低扫，下段',
+        startup: 9, active: 4, recovery: 20, damage: 75, chip: 10, stun: 9, hitstun: 15, blockstun: 11,
+        level: 'low', hitbox: { x: -2, y: 0, w: 50, h: 14 }, anim: 'sweep' },
     ],
     supers: [
       { id: 'huiyanlong', name: '妙手回春', input: '214214P', desc: '银针龙卷，中距离贯穿',

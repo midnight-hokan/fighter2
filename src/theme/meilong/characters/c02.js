@@ -424,6 +424,29 @@ export default {
         "h": 68
       },
       "anim": "uppercut"
+    },
+    {
+      "id": "gousao",
+      "name": "钩扫",
+      "input": "3HK",
+      "desc": "后下重脚，救援钩拖扫，下段击倒",
+      "startup": 12,
+      "active": 5,
+      "recovery": 24,
+      "damage": 100,
+      "chip": 12,
+      "stun": 12,
+      "hitstun": 18,
+      "blockstun": 14,
+      "level": "low",
+      "knockdown": true,
+      "hitbox": {
+        "x": -4,
+        "y": 0,
+        "w": 58,
+        "h": 14
+      },
+      "anim": "sweep"
     }
   ],
   "supers": [
