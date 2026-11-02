@@ -146,7 +146,11 @@ export class Audio {
       this.log.push(e.type);
       if (this.log.length > 300) this.log.shift();
       if (this.ctx?.state !== 'running') continue;
-      const buf = this.buffers.get(this.sfx[e.type]);
+      // 命中音按伤害分轻/中/重（阈值 50/90，普通技伤害 25–120，超必杀 300/460 归重击）
+      let key = e.type;
+      if (key === 'hit') key = e.damage < 50 ? 'hit_light' : e.damage < 90 ? 'hit_med' : 'hit_heavy';
+      const path = this.sfx[key] ?? this.sfx[e.type];
+      const buf = path && this.buffers.get(path);
       if (buf) this.playBuffer(buf, { vol: 0.9 });
       else SOUNDS[e.type](this.ctx, this.out, e);
     }
