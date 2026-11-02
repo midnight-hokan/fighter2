@@ -59,6 +59,11 @@ export default {
       startup: 10, active: 18, recovery: 16, damage: 85, chip: 8, stun: 10, hitstun: 28, blockstun: 12,
       hitbox: { x: -20, y: 44, w: 70, h: 24 }, move: { vx: 3.0, frames: 18, at: 10 }, anim: 'spin',
     },
+    {
+      id: 'dengya', name: '灯压', input: '6MP', desc: '前压中拳，矿灯侧撞，中段',
+      startup: 7, active: 4, recovery: 13, damage: 75, chip: 8, stun: 8, hitstun: 16, blockstun: 12,
+      level: 'mid', hitbox: { x: 10, y: 42, w: 44, h: 24 }, anim: 'heavy',
+    },
   ],
 
   supers: [

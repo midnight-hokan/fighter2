@@ -17,14 +17,14 @@ LBL = 150
 STATE_SHOW = ["idle", "walkf", "st.hp", "cr.hk"]
 # 每人的必杀技 + 超必杀 id（与 theme roster 同步）
 MOVE_IDS = {
-    "c01": ["meiyan", "chongtian", "xuanfeng", "dihuolong"],
-    "c02": ["baokong", "tanshui", "chongtianshan", "longxuantan"],
-    "c03": ["zhongdan", "suiluo", "kengtai", "chaozhong"],
-    "c04": ["denghua", "shanguang", "jifenghua", "huaying"],
-    "c05": ["denghuadan", "daiteng", "dengzhuo", "denghuadrag"],
-    "c06": ["shanfengt", "feihua", "jifengdan", "jifenglong"],
-    "c07": ["chongtiant", "zhongdanluo", "zhongkeng", "tongshoulong"],
-    "c08": ["huiyan", "huihe", "huayan", "huiyanlong"],
+    "c01": ["meiyan", "chongtian", "xuanfeng", "dengya", "dihuolong"],
+    "c02": ["baokong", "tanshui", "chongtianshan", "gousao", "longxuantan"],
+    "c03": ["zhongdan", "suiluo", "kengtai", "lansao", "chaozhong"],
+    "c04": ["denghua", "shanguang", "jifenghua", "fadanjia", "huaying"],
+    "c05": ["denghuadan", "daiteng", "dengzhuo", "hengsaotui", "denghuadrag"],
+    "c06": ["shanfengt", "feihua", "jifengdan", "dengliandian", "jifenglong"],
+    "c07": ["chongtiant", "zhongdanluo", "zhongkeng", "tuobachongtui", "tongshoulong"],
+    "c08": ["huiyan", "huihe", "huayan", "zhenxiansao", "huiyanlong"],
 }
 
 rows = []
