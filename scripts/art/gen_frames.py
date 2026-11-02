@@ -44,6 +44,13 @@ CLIP = "qwen_2.5_vl_7b_fp8_scaled.safetensors"
 VAE = "qwen_image_vae.safetensors"
 BIREFNET = "birefnet.safetensors"
 
+# bbox 顶部 20% 不是纯头盔的动画：knockdown/ko 横躺（顶部是腿/靴子），
+# airhit 空中大角度倾斜（顶部是头+抬起的拳混合）。verify() 的头盔色检查
+# 只对直立姿有效，这些动画跳过头盔检查（阈值不变，只修检查适用范围）。
+# 2026-11-02：参考色改 BiRefNet 抠图后，c08 knockdown_02/ko_01 头盔色偏差
+# 83/93 暴露了这个检查设计缺陷，故修。
+LIE_DOWN_ANIMS = {"knockdown", "ko", "airhit"}
+
 # 绿幕背景：纯 #00ff00，与 8 个角色配色（深蓝/橙红/白/红/蓝/白/绿围裙等）都不撞
 PROMPT_TMPL = (
     "角色设定：{desc}。"
@@ -187,8 +194,8 @@ def run(w, prefixes, timeout_min=12):
     raise RuntimeError("TIMEOUT 缺少 " + str([p for p in prefixes if p not in found]))
 
 
-def portrait_stats(portrait):
-    """定稿立绘的角色主色 + 头盔色（背景减法取角色区）。缓存一次。"""
+def _portrait_stats_bgsub(portrait):
+    """旧版背景减法参考（无抠图时的回退）。"""
     import numpy as np
     from PIL import Image
     im = np.array(Image.open(portrait).convert("RGB")).astype(float)
@@ -211,11 +218,46 @@ def portrait_stats(portrait):
     return pmean, phelmet
 
 
-def verify(raw_path, rgba_path, pose_path, pstats, height_ref, height_mode):
+def portrait_stats(portrait):
+    """定稿立绘的角色主色 + 头盔色。缓存一次。
+    2026-11-02 修：优先用 BiRefNet 抠图（art-work/portrait-cutout/<cid>.cutout.png，
+    与帧抠图同法）取角色区——旧背景减法会漏掉整块浅色头盔（c04 白盔与浅灰背景
+    同色、dist<40 被当背景，头盔参考定成肤色），造成帧头盔色系统性偏差 80-152。
+    无抠图时回退背景减法（旧逻辑）。"""
+    import numpy as np
+    from PIL import Image
+    portrait = Path(portrait)
+    cid = portrait.stem.split("-")[0]  # "c04-portrait" -> "c04"
+    cutout = ROOT / "art-work" / "portrait-cutout" / (cid + ".cutout.png")
+    if cutout.exists():
+        rgba = np.array(Image.open(cutout).convert("RGBA"))
+        im = rgba[:, :, :3].astype(float)
+        H, W = im.shape[:2]
+        char = rgba[:, :, 3] > 200
+        # 限制在中心区域，去掉可能的杂点
+        yy, xx = np.mgrid[0:H, 0:W]
+        char &= (yy > H * 0.05) & (yy < H * 0.98) & (xx > W * 0.05) & (xx < W * 0.95)
+        ys, xs = np.where(char)
+        if len(ys) < 500:
+            # 抠图异常（人物太小），回退背景减法
+            return _portrait_stats_bgsub(portrait)
+        y0, y1 = ys.min(), ys.max()
+        bh = max(1, y1 - y0)
+        pmean = im[char, :3].mean(axis=0)
+        helmet = char & (yy < y0 + 0.20 * bh)
+        phelmet = im[helmet, :3].mean(axis=0) if helmet.sum() > 100 else pmean
+        return pmean, phelmet
+    # 回退：背景减法（旧逻辑）
+    return _portrait_stats_bgsub(portrait)
+
+
+def verify(raw_path, rgba_path, pose_path, pstats, height_ref, height_mode, anim_name=None):
     """程序化验收。返回 (ok, 原因列表, 人物包围盒高度)。
     height_mode: strict = 与同动画首帧比(15%)；
                  loose  = 本动画首帧对 idle_00（比例[0.45,1.30]，容忍倒地/低姿）；
-                 none   = 参照帧本身，不做高度校验。"""
+                 none   = 参照帧本身，不做高度校验。
+    anim_name: 动画名。LIE_DOWN_ANIMS（横躺/大角度倾斜）顶部非纯头盔，跳过
+               头盔色检查（见 LIE_DOWN_ANIMS 注释）。"""
     import numpy as np
     from PIL import Image
     # 1) 骨架残留（原图上查白线与骨架白线重合度）
@@ -257,13 +299,17 @@ def verify(raw_path, rgba_path, pose_path, pstats, height_ref, height_mode):
     d_mean = float(np.linalg.norm(char_rgb.mean(axis=0) - pmean))
     if d_mean > 75:
         return False, ["主色偏差 %.0f>75" % d_mean], None
-    y0 = int(ys.min())
-    yy = np.arange(H)[:, None]
-    helmet = (alpha > 200) & (yy < y0 + 0.20 * bbox_h)
-    if helmet.sum() > 100:
-        d_helm = float(np.linalg.norm(arr[helmet, :3].astype(float).mean(axis=0) - phelmet))
-        if d_helm > 80:
-            return False, ["头盔色偏差 %.0f>80" % d_helm], None
+    # 头盔色：仅对直立姿有效（顶部20%=头盔）。LIE_DOWN_ANIMS（横躺/大角度倾斜）
+    # 顶部不是纯头盔（knockdown/ko 是腿靴、airhit 是头+拳混合），跳过头盔检查。
+    # 阈值不变（80），只修检查适用范围；主色等其余检查照常。
+    if anim_name not in LIE_DOWN_ANIMS:
+        y0 = int(ys.min())
+        yy = np.arange(H)[:, None]
+        helmet = (alpha > 200) & (yy < y0 + 0.20 * bbox_h)
+        if helmet.sum() > 100:
+            d_helm = float(np.linalg.norm(arr[helmet, :3].astype(float).mean(axis=0) - phelmet))
+            if d_helm > 80:
+                return False, ["头盔色偏差 %.0f>80" % d_helm], None
     # 6) 前伸量（骨架朝右伸出多少，角色至少 50%）
     pys, pxs = np.where(pwhite)
     pcx = (pxs.max() + pxs.min()) / 2
@@ -365,7 +411,7 @@ def main():
                 found, dt = run(wf(overlay, prompt, aseed, cid, safe, i), [raw_p, fin_p])
                 raw_src, fin_src = found[raw_p], found[fin_p]
                 raw_src.rename(raw_out)          # 保存抠图前原图
-                good, why, bh = verify(raw_out, fin_src, pose, pstats, height_ref, height_mode)
+                good, why, bh = verify(raw_out, fin_src, pose, pstats, height_ref, height_mode, anim_name=a)
                 if good:
                     fin_src.rename(out)          # 透明 RGBA 帧
                     if is_ref:
