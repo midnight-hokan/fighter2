@@ -27,9 +27,9 @@ export default {
   "normals": {
     "st.lp": {
       "name": "快拳",
-      "startup": 4,
+      "startup": 5,
       "active": 3,
-      "recovery": 7,
+      "recovery": 9,
       "damage": 31,
       "stun": 4,
       "hitstun": 12,
@@ -37,7 +37,7 @@ export default {
       "hitbox": {
         "x": 12,
         "y": 62,
-        "w": 38,
+        "w": 42,
         "h": 14
       },
       "cancel": true,
@@ -46,17 +46,17 @@ export default {
     },
     "st.mp": {
       "name": "直拳",
-      "startup": 6,
+      "startup": 7,
       "active": 3,
-      "recovery": 12,
-      "damage": 61,
+      "recovery": 14,
+      "damage": 62,
       "stun": 8,
       "hitstun": 16,
       "blockstun": 12,
       "hitbox": {
         "x": 12,
         "y": 62,
-        "w": 46,
+        "w": 50,
         "h": 16
       },
       "cancel": true,
@@ -64,17 +64,17 @@ export default {
     },
     "st.hp": {
       "name": "救护重拳",
-      "startup": 8,
+      "startup": 9,
       "active": 4,
-      "recovery": 20,
-      "damage": 102,
+      "recovery": 22,
+      "damage": 104,
       "stun": 14,
       "hitstun": 20,
       "blockstun": 15,
       "hitbox": {
         "x": 12,
         "y": 60,
-        "w": 52,
+        "w": 56,
         "h": 18
       },
       "pushback": 14,
@@ -82,9 +82,9 @@ export default {
     },
     "st.lk": {
       "name": "前踢",
-      "startup": 5,
+      "startup": 6,
       "active": 3,
-      "recovery": 9,
+      "recovery": 11,
       "damage": 36,
       "stun": 4,
       "hitstun": 12,
@@ -92,41 +92,41 @@ export default {
       "hitbox": {
         "x": 10,
         "y": 30,
-        "w": 44,
+        "w": 48,
         "h": 14
       },
       "anim": "kick"
     },
     "st.mk": {
       "name": "侧踹",
-      "startup": 7,
+      "startup": 8,
       "active": 3,
-      "recovery": 14,
-      "damage": 66,
+      "recovery": 16,
+      "damage": 68,
       "stun": 8,
       "hitstun": 16,
       "blockstun": 12,
       "hitbox": {
         "x": 10,
         "y": 40,
-        "w": 52,
+        "w": 56,
         "h": 16
       },
       "anim": "kick"
     },
     "st.hk": {
       "name": "钩踢",
-      "startup": 10,
+      "startup": 11,
       "active": 4,
-      "recovery": 22,
-      "damage": 107,
+      "recovery": 24,
+      "damage": 109,
       "stun": 14,
       "hitstun": 20,
       "blockstun": 15,
       "hitbox": {
         "x": 10,
         "y": 56,
-        "w": 60,
+        "w": 64,
         "h": 18
       },
       "pushback": 16,
@@ -134,9 +134,9 @@ export default {
     },
     "cr.lp": {
       "name": "蹲快拳",
-      "startup": 4,
+      "startup": 5,
       "active": 2,
-      "recovery": 7,
+      "recovery": 9,
       "damage": 26,
       "stun": 3,
       "hitstun": 11,
@@ -144,7 +144,7 @@ export default {
       "hitbox": {
         "x": 10,
         "y": 40,
-        "w": 36,
+        "w": 40,
         "h": 12
       },
       "cancel": true,
@@ -152,17 +152,17 @@ export default {
     },
     "cr.mp": {
       "name": "蹲直拳",
-      "startup": 6,
+      "startup": 7,
       "active": 3,
-      "recovery": 12,
-      "damage": 56,
+      "recovery": 14,
+      "damage": 57,
       "stun": 7,
       "hitstun": 15,
       "blockstun": 11,
       "hitbox": {
         "x": 10,
         "y": 38,
-        "w": 44,
+        "w": 48,
         "h": 14
       },
       "cancel": true,
@@ -170,17 +170,17 @@ export default {
     },
     "cr.hp": {
       "name": "上勾拳",
-      "startup": 7,
+      "startup": 8,
       "active": 5,
-      "recovery": 22,
-      "damage": 97,
+      "recovery": 24,
+      "damage": 99,
       "stun": 12,
       "hitstun": 20,
       "blockstun": 14,
       "hitbox": {
         "x": 4,
         "y": 50,
-        "w": 40,
+        "w": 44,
         "h": 54
       },
       "cancel": true,
@@ -188,9 +188,9 @@ export default {
     },
     "cr.lk": {
       "name": "低踢",
-      "startup": 5,
+      "startup": 6,
       "active": 3,
-      "recovery": 9,
+      "recovery": 11,
       "damage": 31,
       "stun": 3,
       "hitstun": 11,
@@ -199,7 +199,7 @@ export default {
       "hitbox": {
         "x": 10,
         "y": 0,
-        "w": 46,
+        "w": 50,
         "h": 12
       },
       "cancel": true,
@@ -207,10 +207,10 @@ export default {
     },
     "cr.mk": {
       "name": "扫腿",
-      "startup": 7,
+      "startup": 8,
       "active": 3,
-      "recovery": 15,
-      "damage": 56,
+      "recovery": 17,
+      "damage": 57,
       "stun": 7,
       "hitstun": 15,
       "blockstun": 11,
@@ -218,7 +218,7 @@ export default {
       "hitbox": {
         "x": 10,
         "y": 0,
-        "w": 56,
+        "w": 60,
         "h": 12
       },
       "cancel": true,
@@ -226,10 +226,10 @@ export default {
     },
     "cr.hk": {
       "name": "钩扫腿",
-      "startup": 9,
+      "startup": 10,
       "active": 4,
-      "recovery": 24,
-      "damage": 92,
+      "recovery": 26,
+      "damage": 94,
       "stun": 12,
       "hitstun": 18,
       "blockstun": 13,
@@ -238,16 +238,16 @@ export default {
       "hitbox": {
         "x": 8,
         "y": 0,
-        "w": 64,
+        "w": 68,
         "h": 14
       },
       "anim": "sweep"
     },
     "j.lp": {
       "name": "跳拳",
-      "startup": 4,
+      "startup": 5,
       "active": 6,
-      "recovery": 4,
+      "recovery": 6,
       "damage": 36,
       "stun": 5,
       "hitstun": 12,
@@ -255,92 +255,92 @@ export default {
       "hitbox": {
         "x": 6,
         "y": 30,
-        "w": 34,
+        "w": 38,
         "h": 16
       },
       "anim": "punch"
     },
     "j.mp": {
       "name": "跳直拳",
-      "startup": 6,
+      "startup": 7,
       "active": 5,
-      "recovery": 6,
-      "damage": 61,
+      "recovery": 8,
+      "damage": 62,
       "stun": 9,
       "hitstun": 16,
       "blockstun": 12,
       "hitbox": {
         "x": 8,
         "y": 26,
-        "w": 40,
+        "w": 44,
         "h": 18
       },
       "anim": "punch"
     },
     "j.hp": {
       "name": "跳重拳",
-      "startup": 8,
+      "startup": 9,
       "active": 5,
-      "recovery": 8,
-      "damage": 92,
+      "recovery": 10,
+      "damage": 94,
       "stun": 14,
       "hitstun": 20,
       "blockstun": 14,
       "hitbox": {
         "x": 8,
         "y": 20,
-        "w": 46,
+        "w": 50,
         "h": 22
       },
       "anim": "heavy"
     },
     "j.lk": {
       "name": "跳膝",
-      "startup": 5,
+      "startup": 6,
       "active": 7,
-      "recovery": 4,
-      "damage": 41,
+      "recovery": 6,
+      "damage": 42,
       "stun": 5,
       "hitstun": 12,
       "blockstun": 9,
       "hitbox": {
         "x": 4,
         "y": 10,
-        "w": 38,
+        "w": 42,
         "h": 18
       },
       "anim": "kick"
     },
     "j.mk": {
       "name": "跳踢",
-      "startup": 6,
+      "startup": 7,
       "active": 5,
-      "recovery": 6,
-      "damage": 66,
+      "recovery": 8,
+      "damage": 68,
       "stun": 9,
       "hitstun": 16,
       "blockstun": 12,
       "hitbox": {
         "x": 6,
         "y": 6,
-        "w": 44,
+        "w": 48,
         "h": 18
       },
       "anim": "kick"
     },
     "j.hk": {
       "name": "跳旋踢",
-      "startup": 8,
+      "startup": 9,
       "active": 5,
-      "recovery": 8,
-      "damage": 97,
+      "recovery": 10,
+      "damage": 99,
       "stun": 14,
       "hitstun": 20,
       "blockstun": 14,
       "hitbox": {
         "x": 6,
         "y": 4,
-        "w": 52,
+        "w": 56,
         "h": 20
       },
       "anim": "highkick"

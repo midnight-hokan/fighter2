@@ -27,8 +27,16 @@ function makeNormals(cfg) {
     let startup = m.startup + (cfg.startupDelta?.[id] ?? cfg.startupAll ?? 0);
     startup = Math.max(2, startup);
     m.startup = startup;
+    if (cfg.recoveryDelta?.[id] != null) m.recovery = Math.max(0, m.recovery + cfg.recoveryDelta[id]);
+    else if (cfg.recoveryAll) m.recovery = Math.max(0, m.recovery + cfg.recoveryAll);
+    if (cfg.activeAll) m.active = Math.max(1, m.active + cfg.activeAll);
     if (cfg.damageMul) m.damage = Math.round(m.damage * cfg.damageMul);
     if (cfg.damageMulIds && cfg.damageMulIds.includes(id)) m.damage = Math.round(m.damage * (cfg.damageMulIdsVal ?? 1.1));
+    if (cfg.hitbox) {
+      if (cfg.hitbox.reachAdd) m.hitbox.w = Math.round((m.hitbox.w + cfg.hitbox.reachAdd) * 10) / 10;
+      if (cfg.hitbox.hMul) m.hitbox.h = Math.round(m.hitbox.h * cfg.hitbox.hMul);
+      if (cfg.hitbox.xAdd) m.hitbox.x = m.hitbox.x + cfg.hitbox.xAdd;
+    }
     m.name = cfg.names?.[id] ?? GENERIC_NAMES[id] ?? m.name;
   }
   return n;
@@ -45,7 +53,7 @@ const CHARS = [
     story: '传言改造后井下人少了，救护队要缩编。他不服："人少了，救援就不要了？"他要用擂台证明，救护队的本事一样也不能丢。',
     ending: '智能化之后，救护队不但没缩编，还配上了无人机和井下机器人，罗铮成了第一任技术教官。他第一堂课对新队员说："机器能进去，人也得能进去。"',
     stats: { health: 1050, walkF: 2.0, walkB: 1.8, jumpV: 7.6, jumpH: 2.6, stunMax: 110, throwRange: 40 },
-    normals: { damageMul: 1.02, names: { 'st.hp': '救护重拳', 'st.hk': '钩踢', 'cr.hk': '钩扫腿' } },
+    normals: { damageMul: 1.04, startupAll: 1, recoveryAll: 2, hitbox: { reachAdd: 4 }, names: { 'st.hp': '救护重拳', 'st.hk': '钩踢', 'cr.hk': '钩扫腿' } },
     throw: { name: '担架摔', damage: 130, stun: 10 },
     specials: [
       { id: 'baokong', name: '抛救生绳', input: '[4]6P', desc: '后蓄力前放，抛出救生绳（飞行道具）',
@@ -74,7 +82,7 @@ const CHARS = [
     story: '智能化改造要换掉他亲手维护了二十年的老设备。他心里想要的是：改造的设备，得由他的人来管。',
     ending: '新设备进矿那天，厂家工程师来培训，讲到一半，雷钧举手指出了说明书上的两处错误。三个月后，他成了矿上智能装备维护中心的主任。',
     stats: { health: 1150, walkF: 1.8, walkB: 1.6, jumpV: 7.0, jumpH: 2.2, stunMax: 130, throwRange: 58 },
-    normals: { damageMulIds: ['st.mp', 'st.hp', 'st.hk', 'cr.hp', 'cr.hk'], damageMulIdsVal: 1.1, startupDelta: { 'st.hp': 1, 'st.hk': 1 }, names: { 'st.hp': '扳手重击', 'st.hk': '缆线旋踢', 'cr.hp': '扳手勾拳', 'cr.hk': '电缆扫堂' } },
+    normals: { damageMul: 1.02, startupAll: 1, startupDelta: { 'st.mp': 1, 'st.hp': 1, 'st.mk': 1, 'st.hk': 1, 'cr.hp': 1, 'cr.hk': 1 }, recoveryAll: 3, hitbox: { reachAdd: 4 }, names: { 'st.hp': '扳手重击', 'st.hk': '缆线旋踢', 'cr.hp': '扳手勾拳', 'cr.hk': '电缆扫堂' } },
     throw: { name: '电缆抱摔', damage: 150, stun: 12 },
     specials: [
       { id: 'zhongdan', name: '电缆缠摔', input: '360P', desc: '一圈指令投，电缆缠抱摔砸地',
@@ -102,7 +110,7 @@ const CHARS = [
     story: '恢复擂台的消息一出，他第一个跳出来反对。反对无效，他干脆报名："那我就进去盯着，谁敢违章，我当场叫停。"',
     ending: '严正捧着头灯，在全矿大会上第一次讲了自己被困的那十一个小时。最后他说："以后井下的人少了，这是我干安监这么多年，最想看到的事。"台下安静了很久，然后掌声响了起来。',
     stats: { health: 1080, walkF: 2.8, walkB: 2.2, jumpV: 8.8, jumpH: 3.4, stunMax: 95, throwRange: 42 },
-    normals: { damageMul: 1.05, startupDelta: { 'st.lp': -1, 'st.lk': -1, 'cr.lp': -1, 'cr.lk': -1 }, names: { 'st.hp': '检测重击', 'st.hk': '监察旋踢', 'cr.hk': '罚单扫堂' } },
+    normals: { damageMul: 0.94, startupAll: -1, recoveryAll: -2, startupDelta: { 'st.lp': -1, 'st.lk': -1, 'cr.lp': -1, 'cr.lk': -1 }, names: { 'st.hp': '检测重击', 'st.hk': '监察旋踢', 'cr.hk': '罚单扫堂' } },
     throw: { name: '按倒摔', damage: 130, stun: 10 },
     specials: [
       { id: 'denghua', name: '隐患排查', input: '214P', desc: '下前滑步踢，突进压制',
@@ -131,7 +139,7 @@ const CHARS = [
     story: '她负责六十周年的庆典宣传，本来只是来报道擂台的。结果写稿写到一半发现：黑岭六十年的故事里，几乎没有女人的名字。她把稿子一扔，自己报了名。',
     ending: '苏红赢下擂台，主持了黑岭六十周年的庆典。她在矿史馆里加了一面新墙，上面写满了黑岭六十年来所有女工、女技术员、女干部的名字。第一个名字是澡堂的霍兰，第二个是她自己。',
     stats: { health: 1050, walkF: 2.0, walkB: 2.0, jumpV: 7.4, jumpH: 2.8, stunMax: 90, throwRange: 36 },
-    normals: { names: { 'st.hp': '挥臂重拳', 'cr.hk': '横幅扫腿' } },
+    normals: { startupAll: 1, hitbox: { reachAdd: 6 }, names: { 'st.hp': '挥臂重拳', 'cr.hk': '横幅扫腿' } },
     throw: { name: '横幅摔', damage: 110, stun: 8 },
     specials: [
       { id: 'denghuadan', name: '喇叭声波', input: '236K', desc: '大喇叭声波，飞行道具，速度快',
@@ -160,7 +168,7 @@ const CHARS = [
     story: '她听说头灯里面装的，是黑岭第一盏灯的原装灯头。她从十五岁起就想亲手修一修那盏灯，让它再亮一次。',
     ending: '方萤捧着头灯回到灯房，用了一整夜把它修好了。六十周年庆典上，头灯在矿史馆里重新亮起来。后来智能矿灯进矿，她成了矿上第一个"智能矿灯管理员"，徽章上的编号是 001。',
     stats: { health: 980, walkF: 3.4, walkB: 2.6, jumpV: 9.2, jumpH: 3.6, stunMax: 70, throwRange: 38 },
-    normals: { damageMul: 1.0, startupAll: -1 },
+    normals: { damageMul: 0.88, startupAll: -1, recoveryAll: -3 },
     throw: { name: '灯绳摔', damage: 105, stun: 8 },
     specials: [
       { id: 'shanfengt', name: '充电冲刺', input: '63214P', desc: '后下前下前快拳，高速突进',
@@ -189,7 +197,7 @@ const CHARS = [
     story: '二十多年前最后一届擂台，她是唯一打进决赛的女人，在最后一场输给了林啸的父亲。她不是想报仇，就是一直想知道："如果那天我没输，会怎么样？"',
     ending: '霍兰捧着头灯，去林啸家敲了门。林啸的父亲开门，两人对视了很久，一起笑了出来。那天夜里，澡堂破例开到天亮，热水管够，全矿的人都来了。',
     stats: { health: 1080, walkF: 1.6, walkB: 1.4, jumpV: 6.8, jumpH: 2.4, stunMax: 120, throwRange: 50 },
-    normals: { damageMulIds: ['st.mp', 'st.hp', 'st.hk', 'cr.hp', 'cr.mk', 'cr.hk'], damageMulIdsVal: 1.05, startupDelta: { 'st.lp': 1, 'st.lk': 1 } },
+    normals: { damageMul: 1.06, startupAll: 1, startupDelta: { 'st.mp': 1, 'st.hp': 1, 'st.mk': 1, 'st.hk': 1, 'cr.hp': 1, 'cr.hk': 1 }, recoveryAll: 3, hitbox: { reachAdd: 4 } },
     throw: { name: '拖把摔', damage: 140, stun: 12 },
     specials: [
       { id: 'chongtiant', name: '蒸汽冲天', input: '623P', desc: '长柄大拖把对空抡扫，起手无敌，击飞',
