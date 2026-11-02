@@ -428,6 +428,28 @@ export default {
         "at": 4
       },
       "anim": "uppercut"
+    },
+    {
+      "id": "zhenxiansao",
+      "name": "针线扫",
+      "input": "3HK",
+      "desc": "后下重脚，银针线低扫，下段",
+      "startup": 9,
+      "active": 4,
+      "recovery": 20,
+      "damage": 75,
+      "chip": 10,
+      "stun": 9,
+      "hitstun": 15,
+      "blockstun": 11,
+      "level": "low",
+      "hitbox": {
+        "x": -2,
+        "y": 0,
+        "w": 50,
+        "h": 14
+      },
+      "anim": "sweep"
     }
   ],
   "supers": [

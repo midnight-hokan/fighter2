@@ -420,6 +420,29 @@ export default {
         "h": 16
       },
       "anim": "punch"
+    },
+    {
+      "id": "hengsaotui",
+      "name": "横幅低扫",
+      "input": "3HK",
+      "desc": "后下重脚，横幅卷低扫，下段击倒",
+      "startup": 10,
+      "active": 4,
+      "recovery": 22,
+      "damage": 85,
+      "chip": 10,
+      "stun": 10,
+      "hitstun": 16,
+      "blockstun": 12,
+      "level": "low",
+      "knockdown": true,
+      "hitbox": {
+        "x": -4,
+        "y": 0,
+        "w": 54,
+        "h": 14
+      },
+      "anim": "sweep"
     }
   ],
   "supers": [

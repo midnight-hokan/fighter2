@@ -434,6 +434,28 @@ export default {
         "at": 10
       },
       "anim": "rush"
+    },
+    {
+      "id": "fadanjia",
+      "name": "罚单夹击",
+      "input": "6MP",
+      "desc": "前突中拳，罚单本夹击，中段快",
+      "startup": 5,
+      "active": 3,
+      "recovery": 12,
+      "damage": 60,
+      "chip": 8,
+      "stun": 7,
+      "hitstun": 14,
+      "blockstun": 10,
+      "level": "mid",
+      "hitbox": {
+        "x": 10,
+        "y": 44,
+        "w": 42,
+        "h": 22
+      },
+      "anim": "punch"
     }
   ],
   "supers": [

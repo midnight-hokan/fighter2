@@ -427,6 +427,28 @@ export default {
         "h": 30
       },
       "anim": "highkick"
+    },
+    {
+      "id": "tuobachongtui",
+      "name": "拖把冲腿",
+      "input": "6HK",
+      "desc": "前重脚，长柄拖把抡扫腿，上段重击",
+      "startup": 16,
+      "active": 8,
+      "recovery": 32,
+      "damage": 140,
+      "chip": 18,
+      "stun": 16,
+      "hitstun": 22,
+      "blockstun": 18,
+      "level": "high",
+      "hitbox": {
+        "x": 4,
+        "y": 30,
+        "w": 60,
+        "h": 60
+      },
+      "anim": "highkick"
     }
   ],
   "supers": [

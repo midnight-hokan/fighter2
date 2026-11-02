@@ -426,6 +426,29 @@ export default {
         "life": 110
       },
       "anim": "fireball"
+    },
+    {
+      "id": "dengliandian",
+      "name": "灯链点",
+      "input": "6MP",
+      "desc": "前点中拳，矿灯链轻点，中段可取消",
+      "startup": 4,
+      "active": 3,
+      "recovery": 10,
+      "damage": 50,
+      "chip": 6,
+      "stun": 6,
+      "hitstun": 12,
+      "blockstun": 9,
+      "level": "mid",
+      "cancel": true,
+      "hitbox": {
+        "x": 10,
+        "y": 46,
+        "w": 40,
+        "h": 20
+      },
+      "anim": "punch"
     }
   ],
   "supers": [
