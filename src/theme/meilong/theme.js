@@ -33,6 +33,17 @@ export default {
       gc: 'assets/meilong/sfx/gc.ogg',
       knockdown: 'assets/meilong/sfx/knockdown.ogg',
     },
+    // 角色语音（CosyVoice2 零样本克隆，8 人音色各异；每人 4 句：intro 开场白 / special 必杀喊招 / super 超必杀喊招 / ko 被 KO 台词）
+    voice: {
+      c01: { intro: 'assets/meilong/voice/c01_intro.ogg', special: 'assets/meilong/voice/c01_special.ogg', super: 'assets/meilong/voice/c01_super.ogg', ko: 'assets/meilong/voice/c01_ko.ogg' },
+      c02: { intro: 'assets/meilong/voice/c02_intro.ogg', special: 'assets/meilong/voice/c02_special.ogg', super: 'assets/meilong/voice/c02_super.ogg', ko: 'assets/meilong/voice/c02_ko.ogg' },
+      c03: { intro: 'assets/meilong/voice/c03_intro.ogg', special: 'assets/meilong/voice/c03_special.ogg', super: 'assets/meilong/voice/c03_super.ogg', ko: 'assets/meilong/voice/c03_ko.ogg' },
+      c04: { intro: 'assets/meilong/voice/c04_intro.ogg', special: 'assets/meilong/voice/c04_special.ogg', super: 'assets/meilong/voice/c04_super.ogg', ko: 'assets/meilong/voice/c04_ko.ogg' },
+      c05: { intro: 'assets/meilong/voice/c05_intro.ogg', special: 'assets/meilong/voice/c05_special.ogg', super: 'assets/meilong/voice/c05_super.ogg', ko: 'assets/meilong/voice/c05_ko.ogg' },
+      c06: { intro: 'assets/meilong/voice/c06_intro.ogg', special: 'assets/meilong/voice/c06_special.ogg', super: 'assets/meilong/voice/c06_super.ogg', ko: 'assets/meilong/voice/c06_ko.ogg' },
+      c07: { intro: 'assets/meilong/voice/c07_intro.ogg', special: 'assets/meilong/voice/c07_special.ogg', super: 'assets/meilong/voice/c07_super.ogg', ko: 'assets/meilong/voice/c07_ko.ogg' },
+      c08: { intro: 'assets/meilong/voice/c08_intro.ogg', special: 'assets/meilong/voice/c08_special.ogg', super: 'assets/meilong/voice/c08_super.ogg', ko: 'assets/meilong/voice/c08_ko.ogg' },
+    },
   },
   text: {
     pressStart: '按 Enter 开始',

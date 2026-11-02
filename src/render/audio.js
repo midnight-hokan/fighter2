@@ -81,6 +81,8 @@ export class Audio {
     this.buffers = new Map();   // 路径 → AudioBuffer
     this.failed = new Map();    // 路径 → 错误
     this.sfx = {};
+    this.voice = {};            // 角色语音：{ c01: { intro, special, super, ko } }
+    this.fighters = [];         // 当前对局双方角色定义（含 id），由 main 在对局开始时设置
     this.now = null;            // 当前背景音乐 { mode: 'file' | 'synth', src }
     this.decoder = null;
   }
@@ -88,9 +90,14 @@ export class Audio {
   // 预加载音频文件（不需要用户交互：用离线上下文解码）
   async preload(theme) {
     this.sfx = theme.audio?.sfx ?? {};
-    const paths = [theme.audio?.title, ...Object.values(this.sfx), ...(theme.stages ?? []).map(s => s.bgm?.file)].filter(Boolean);
+    this.voice = theme.audio?.voice ?? {};
+    const voicePaths = Object.values(this.voice).flatMap(v => Object.values(v));
+    const paths = [theme.audio?.title, ...Object.values(this.sfx), ...voicePaths, ...(theme.stages ?? []).map(s => s.bgm?.file)].filter(Boolean);
     await Promise.all([...new Set(paths)].map(p => this.loadFile(p)));
   }
+
+  // 对局开始时由 main 注入双方角色定义（用于按角色播语音）
+  setFighters(defs) { this.fighters = defs ?? []; }
 
   async loadFile(path) {
     if (this.buffers.has(path)) return this.buffers.get(path);
@@ -114,15 +121,36 @@ export class Audio {
     return { loaded: [...this.buffers.keys()], failed: Object.fromEntries(this.failed), now: this.now };
   }
 
-  playBuffer(buf, { loop = false, vol = 1 } = {}) {
+  playBuffer(buf, { loop = false, vol = 1, delay = 0 } = {}) {
     const s = this.ctx.createBufferSource();
     const g = this.ctx.createGain();
     g.gain.value = vol;
     s.buffer = buf;
     s.loop = loop;
     s.connect(g).connect(this.out);
-    s.start();
+    s.start(this.ctx.currentTime + delay);
     return s;
+  }
+
+  // 角色语音：按角色 id + 台词名（intro/special/super/ko）播放对应文件
+  playVoice(charId, line, { delay = 0 } = {}) {
+    const path = this.voice?.[charId]?.[line];
+    const buf = path && this.buffers.get(path);
+    if (!buf || this.ctx?.state !== 'running') return;
+    this.playBuffer(buf, { vol: 1, delay });
+  }
+
+  // 角色语音与引擎事件挂钩：round 1 开场白、超必杀喊招、KO 台词（必杀喊招由 main 检出招式开始时调 playVoice）
+  handleVoice(e) {
+    if (e.type === 'round' && e.number === 1) {
+      const [a, b] = this.fighters;
+      if (a?.id) this.playVoice(a.id, 'intro');
+      if (b?.id) this.playVoice(b.id, 'intro', { delay: 0.8 });
+    } else if (e.type === 'super') {
+      if (this.fighters[e.player]?.id) this.playVoice(this.fighters[e.player].id, 'super', { delay: 0.15 });
+    } else if (e.type === 'ko' && e.loser && e.loser !== 'both') {
+      if (this.fighters[e.loser]?.id) this.playVoice(this.fighters[e.loser].id, 'ko', { delay: 0.7 });
+    }
   }
 
   ensure() {
@@ -142,6 +170,7 @@ export class Audio {
 
   handle(events) {
     for (const e of events) {
+      this.handleVoice(e);
       if (!SOUNDS[e.type]) continue;
       this.log.push(e.type);
       if (this.log.length > 300) this.log.shift();

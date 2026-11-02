@@ -57,6 +57,7 @@ function startFight(bannerText) {
 
 let game = new Game({ seed: 1, characters: [theme.roster[0], theme.roster[Math.min(1, theme.roster.length - 1)]] });
 let chars = game.chars.map(c => c.def);
+let prevMove = [null, null]; // 双方上一帧招式 id（用于检出必杀招式开始 → 播喊招语音）
 let controllers = [() => ({}), () => ({})];
 let running = false;
 let mode = 'test';
@@ -98,6 +99,8 @@ function newGame({ characters, seed = 1, training = false, p1x, p2x }) {
   const defs = characters.map(id => (typeof id === 'string' ? getCharacter(id) : id));
   game = new Game({ seed, characters: defs, training, p1x, p2x });
   chars = defs;
+  audio.setFighters(defs); // 角色语音：告诉音频系统当前对局双方
+  prevMove = Array(2).fill(null);
   queued[0].length = 0;
   queued[1].length = 0;
   // 场景：对手角色的主场（角色数据里的 stage 字段），没写就按名单顺序轮换
@@ -115,6 +118,14 @@ function tick() {
   const s = game.getState();
   game.step(frameInputs(s));
   const after = game.getState();
+  // 角色语音：检出必杀招式开始 → 播喊招（开场白/超必杀/KO 台词由 audio.handle 按引擎事件处理）
+  for (let i = 0; i < 2; i++) {
+    const f = after.fighters[i];
+    const mv = f && f.move;
+    const id = mv && mv.id ? mv.id : null;
+    if (id && id !== prevMove[i] && mv.kind === 'special' && chars[i] && chars[i].id) audio.playVoice(chars[i].id, 'special');
+    prevMove[i] = id;
+  }
   audio.handle(after.events);
   return after;
 }
