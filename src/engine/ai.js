@@ -125,7 +125,7 @@ export function createAI(level = 'normal', seed = 1, character = null) {
         return useCmd(projectile, s);
       }
       if (r() < cfg.jump) return queue([{ up: true, [fwd]: true }, { [fwd]: true }, {}]);
-      return queue(Array.from({ length: 6 + Math.floor(r() * 10) }, () => ({ [fwd]: true })));
+      return queue(Array.from({ length: 9 + Math.floor(r() * 8) }, () => ({ [fwd]: true })));
     }
 
     // 近身
@@ -150,8 +150,8 @@ export function createAI(level = 'normal', seed = 1, character = null) {
       const [stance, b] = n.id.split('.');
       return queue([{ [b]: true, down: stance === 'cr' }, { down: stance === 'cr' }, {}]);
     }
-    // 中距离：靠近
+    // 中距离：靠近（每段至少 9 帧：比点一下长，避免被引擎当成双击跑步）
     if (r() < cfg.jump) return queue([{ up: true, [fwd]: true }, { [fwd]: true }, {}]);
-    return queue(Array.from({ length: 4 + Math.floor(r() * 8) }, () => ({ [fwd]: true })));
+    return queue(Array.from({ length: 9 + Math.floor(r() * 5) }, () => ({ [fwd]: true })));
   };
 }

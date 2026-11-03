@@ -49,6 +49,30 @@ export class InputHistory {
     return this.recent(window).some(f => f.pressed[button]);
   }
 
+  // 双击方向（拳皇的跑步 66 / 后撤步 44）：本帧刚推到 dir，且 window 帧内此前已推到过一次 dir 再松开
+  doubleTap(match, window = 14) {
+    const fr = this.recent(window + 1);
+    const n = fr.length;
+    if (n < 3 || !match(fr[n - 1].dir) || match(fr[n - 2].dir)) return false;
+    // 第一下必须是"点"（按住不超过 8 帧），避免把长按（如防御按住后）误判成双击
+    // 两下之间必须回中（拳皇 6 5 6 / 4 5 4），搓招里经过的斜方向、下方向不算，避免 214214 之类的指令误触后撤步
+    let i = n - 2;
+    while (i >= 0 && !match(fr[i].dir)) { if (fr[i].dir !== 5) return false; i--; }
+    if (i < 0) return false;
+    let len = 0;
+    while (i >= 0 && match(fr[i].dir)) { len++; i--; }
+    return len <= 8 && i >= -1 && (i >= 0 || fr.length <= window + 1);
+  }
+
+  // 大跳（拳皇 2→8）：本帧刚推到上方向，且 window 帧内按过下
+  superJump(window = 10) {
+    const fr = this.recent(window + 1);
+    const n = fr.length;
+    const up = (d) => d >= 7;
+    if (n < 2 || !up(fr[n - 1].dir) || up(fr[n - 2].dir)) return false;
+    return fr.slice(0, -1).some(f => f.dir >= 1 && f.dir <= 3);
+  }
+
   // 同时按键：buttons 全部在 window 帧内按下过，且至少一个是本帧按下
   simul(buttons, window = INPUT.simulWindow) {
     const last = this.latest();

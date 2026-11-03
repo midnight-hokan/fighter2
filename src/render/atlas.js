@@ -52,6 +52,8 @@ const ANIM_ALIAS = { 'cl.hp': 'st.hp', 'cl.hk': 'st.hk', cd: 'st.hk', 'j.cd': 'j
 export function animKeyFor(f) {
   if (f.action === 'attack' && f.move) return ANIM_ALIAS[f.move.id] ?? f.move.id;
   if (f.action === 'blockstun' && f.blockLow) return 'crblock';
+  if (f.action === 'run') return 'walkf';
+  if (f.action === 'backstep') return 'walkb';
   return f.action;
 }
 

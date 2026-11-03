@@ -115,3 +115,76 @@ describe('V1 连段', () => {
     expect(ev?.counter).toBe(true);
   });
 });
+
+describe('V1 拳皇式移动与超必杀取消', () => {
+  const mk = (p1x = 200, p2x = 560) => new Game({ seed: 1, characters: [getCharacter('c01'), getCharacter('c01')], p1x, p2x });
+  const go = (g, seq) => { for (const [inp, n] of seq) for (let i = 0; i < n; i++) g.step([inp, {}]); return g.getState(); };
+
+  it('跑步：快速双击 → 后按住，比走路快得多；松开就停', () => {
+    const walk = go(mk(), [[{ right: true }, 30]]).fighters[0].x;
+    const g = mk();
+    const st = go(g, [[{ right: true }, 3], [{}, 3], [{ right: true }, 27]]);
+    expect(st.fighters[0].action).toBe('run');
+    expect(st.fighters[0].x - 200).toBeGreaterThan((walk - 200) * 1.5);
+    expect(go(g, [[{}, 2]]).fighters[0].action).not.toBe('run');
+  });
+
+  it('后撤步：快速双击 ← 向后退，开头几帧无敌', () => {
+    const g = mk(300, 400);
+    go(g, [[{ left: true }, 3], [{}, 3]]);
+    g.step([{ left: true }, {}]);
+    const s = g.getState().fighters[0];
+    expect(s.action).toBe('backstep');
+    expect(s.invulnerable).toBe(true);
+    const end = go(g, [[{}, 20]]).fighters[0];
+    expect(end.x).toBeLessThan(300 - 30);
+  });
+
+  it('搓 214214 不会误触后撤步', () => {
+    const g = mk(300, 400);
+    const seq = [{ down: true }, { down: true, left: true }, { left: true }, { down: true }, { down: true, left: true }, { left: true }];
+    let seen = false;
+    for (const k of seq) { g.step([k, {}]); g.step([k, {}]); seen = seen || g.getState().fighters[0].action === 'backstep'; }
+    expect(seen).toBe(false);
+  });
+
+  it('大跳：↓ 再快速 ↑ 跳得更高更远；跑动中起跳也更远', () => {
+    const jump = (seq) => { const g = mk(); let top = 0, x = 0; for (const [k, n] of seq) for (let i = 0; i < n; i++) { g.step([k, {}]); const f = g.getState().fighters[0]; top = Math.max(top, f.y); x = f.x; } return { top, x }; };
+    const norm = jump([[{ up: true, right: true }, 10], [{ right: true }, 60]]);
+    const sup = jump([[{ down: true }, 2], [{ up: true, right: true }, 10], [{ right: true }, 60]]);
+    expect(sup.top).toBeGreaterThan(norm.top);
+    expect(sup.x).toBeGreaterThan(norm.x + 20);
+  });
+
+  it('超必杀取消：必杀技命中后输入超必杀，共消耗 2 豆，连段不断', () => {
+    let ok = null;
+    for (const gap of [0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 12]) {
+      const g = mk(364, 404);
+      g.debug.setMeter(0, 3);
+      let sc = false, combo = 0;
+      const step = (k) => { g.step([k, {}]); const st = g.getState(); sc = sc || st.events.some(e => e.type === 'supercancel'); for (const e of st.events) if (e.type === 'hit' && e.attacker === 0) combo = Math.max(combo, e.combo); };
+      for (const k of [{ down: true }, { down: true, left: true }, { left: true, lk: true }]) step(k);   // 214B 滚筒旋踢
+      for (let i = 0; i < gap; i++) step({});
+      for (const k of [{ down: true }, { down: true, right: true }, { right: true }, { down: true }, { down: true, right: true }, { right: true, hp: true }]) step(k);
+      for (let i = 0; i < 90; i++) step({});
+      if (sc && combo >= 2) { ok = { stocks: g.getState().fighters[0].meter.stocks, combo }; break; }
+      if (sc && !ok) ok = { stocks: g.getState().fighters[0].meter.stocks, combo };
+    }
+    expect(ok, '没触发超必杀取消').toBeTruthy();
+    expect(ok.stocks).toBe(1);
+    expect(ok.combo).toBeGreaterThanOrEqual(2);
+  });
+});
+
+describe('V1 4 键下所有招式都按得出来', () => {
+  it('每个必杀技、特殊技、超必杀的按键都在 A/B/C/D 之内', () => {
+    for (const id of ids) {
+      const g = new Game({ seed: 1, characters: [getCharacter(id), getCharacter(id)] });
+      const ch = g.chars[0];
+      for (const m of [...ch.specials, ...ch.supers]) {
+        const b = m.parsed.button;
+        expect(['P', 'K', 'LP', 'HP', 'LK', 'HK'], `${id} ${m.name} 用了中拳/中脚`).toContain(b);
+      }
+    }
+  });
+});

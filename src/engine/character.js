@@ -45,7 +45,8 @@ export function prepareCharacter(def) {
   kofNormals(normals);
   const throwMove = withDefaults({ startup: 3, active: 1, recovery: 20, damage: 120, stun: 10, knockdown: true, anim: 'throw', ...(def.throw ?? {}) }, 'throw', 'throw');
   const prep = (list, kind) => (list ?? []).map((m) => {
-    const parsed = parseCommand(m.input);
+    // 拳皇式 4 键没有中拳中脚：指令里写死 MP / MK 的特殊技改由 A（轻拳）/ B（轻脚）触发
+    const parsed = parseCommand(String(m.input).replace(/MP$/, 'LP').replace(/MK$/, 'LK'));
     return { ...withDefaults(m, kind, m.id), parsed, len: commandLength(parsed) };
   }).sort((a, b) => b.len - a.len);
   const specials = prep(def.specials, 'special');

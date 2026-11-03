@@ -37,7 +37,7 @@
     "tests/unit/r4-delivery.test.js": "9e129d068ccb1a2e4c29a30fd0c6b3222f24e5b3435d7a98db9c933ff88a260e",
     "tests/unit/u1-simple-input.test.js": "afe821f7a36a02b882696980d3c23e2432d33f0a462930ea13c40032966561e7",
     "tests/unit/u1-webp.test.js": "ae3876b66b635b6d8f7e9c5210d1f5f850b809b866b27c293912d992fa96accd",
-    "tests/unit/v1-combo.test.js": "94d0a9e121d78306dfdec6bdd04720c643b530e10e2620f52ed54a6553dc0e31",
+    "tests/unit/v1-combo.test.js": "fe355403f5b37f38b16cb2ed2c1a38657e99ce8d19b7111b4f3516aab880ebab",
     "tests/unit/v2-hd-art.test.js": "f84ac9867a9028950010c4dc8cb2a4cd7780464a3007f9b719aca07e8b9cfa2f",
     "vite.config.js": "f4ec640edd27b83b6da1838570bd8bca1a398067d607967744e0ed6f1d444c7c"
   }

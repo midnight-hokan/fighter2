@@ -11,7 +11,7 @@ import { createRng } from './rng.js';
 import { updateRound } from './round.js';
 
 const START_GAP = 70;
-const CONTROLLABLE = new Set(['idle', 'walkf', 'walkb', 'crouch', 'prejump']);
+const CONTROLLABLE = new Set(['idle', 'walkf', 'walkb', 'crouch', 'prejump', 'run']);
 const HIT_STATES = new Set(['hitstun', 'airhit', 'dizzy']);
 const NOT_THROWABLE = new Set(['hitstun', 'blockstun', 'airhit', 'knockdown', 'roll', 'maxstart', 'ko', 'prejump']);
 const BLOCKABLE_STATES = new Set(['idle', 'walkf', 'walkb', 'crouch', 'blockstun']);
@@ -160,6 +160,10 @@ export class Game {
       case 'maxstart':
         if (f.actionFrame >= MAX_START_FRAMES) this.setAction(f, 'idle');
         return;
+      case 'backstep':
+        if (f.actionFrame <= KOF.backstep.frames - 4) f.x -= f.facing * KOF.backstep.speed;
+        if (f.actionFrame >= KOF.backstep.frames) this.setAction(f, 'idle');
+        return;
       case 'attack':
         this._updateAttack(f, input);
         return;
@@ -196,8 +200,10 @@ export class Game {
         const st = this.ch(f).stats;
         const dir = input.right ? 1 : input.left ? -1 : 0;
         f.grounded = false;
-        f.vy = st.jumpV;
-        f.vx = dir * st.jumpH;
+        // 大跳：↓ 再快速 ↑；跑动中起跳横向更远
+        const hx = f.superJump ? KOF.superJumpH : f.runJump ? KOF.runJumpH : 1;
+        f.vy = st.jumpV * (f.superJump ? KOF.superJumpV : 1);
+        f.vx = dir * st.jumpH * hx;
         f.jumpDir = dir;
         f.airAttackUsed = false;
         f.hopWindow = KOF.hopWindow;   // 起跳后几帧内松开"上" → 小跳
@@ -206,7 +212,13 @@ export class Game {
       }
       return;
     }
-    if (input.up) { this.setAction(f, 'prejump'); return; }
+    if (input.up) {
+      const h = this.histories[f.index];
+      f.superJump = h.superJump();
+      f.runJump = f.action === 'run';
+      this.setAction(f, 'prejump');
+      return;
+    }
     if (input.down) {
       if (f.action !== 'crouch') this.setAction(f, 'crouch');
       return;
@@ -214,6 +226,14 @@ export class Game {
     const st = this.ch(f).stats;
     const fwd = f.facing > 0 ? input.right : input.left;
     const back = f.facing > 0 ? input.left : input.right;
+    const h = this.histories[f.index];
+    // 跑步：快速双击 →，按住一直跑；后撤步：快速双击 ←
+    if (fwd && (f.action === 'run' || h.doubleTap(d => d === 6))) {
+      f.x += f.facing * KOF.runSpeed;
+      if (f.action !== 'run') this.setAction(f, 'run');
+      return;
+    }
+    if (back && h.doubleTap(d => d === 4)) { this.setAction(f, 'backstep'); return; }
     if (fwd) {
       f.x += f.facing * st.walkF;
       if (f.action !== 'walkf') this.setAction(f, 'walkf');
@@ -319,6 +339,15 @@ export class Game {
       else if (h.simul(['hp', 'hk'])) f.queued = { kind: 'gc', type: 'blowback' };
       return;
     }
+    // 超必杀取消：必杀技命中后输入超必杀，额外消耗 1 豆（共 2 豆）
+    if (f.action === 'attack' && f.move.connected && f.move.def.kind === 'special' && !f.move.superCancelled && !f.queued
+        && f.meter.stocks >= 1 + KOF.superCancelCost) {
+      const h0 = this.histories[f.index];
+      for (const s of this.ch(f).supers) {
+        const btn = matchCommand(h0, s.parsed);
+        if (btn) { f.queued = { kind: 'super', move: resolveStrength(s, strengthOf(btn)), sdm: f.meter.max > 0, sc: true }; return; }
+      }
+    }
     if (f.action !== 'attack' || !f.move.connected || f.move.cancelUsed || f.queued) return;
     const h = this.histories[f.index];
     if (f.move.def.cancel) {
@@ -404,12 +433,31 @@ export class Game {
     if (f.queued) {
       const q = f.queued;
       f.queued = null;
-      if (q.kind === 'super' && f.meter.stocks >= 1) { this._startMove(f, q.move, { sdm: f.meter.max > 0 }); f.move.cancelUsed = true; return; }
+      if (q.kind === 'super' && q.sc && f.meter.stocks >= 1 + KOF.superCancelCost) {
+        f.meter.stocks -= KOF.superCancelCost;
+        this._startMove(f, q.move, { sdm: f.meter.max > 0 });
+        f.move.cancelUsed = true; f.move.superCancelled = true;
+        this.emit('supercancel', { player: f.index });
+        return;
+      }
+      if (q.kind === 'super' && !q.sc && f.meter.stocks >= 1) { this._startMove(f, q.move, { sdm: f.meter.max > 0 }); f.move.cancelUsed = true; return; }
       if (q.kind === 'special') { this._startMove(f, q.move); f.move.cancelUsed = true; return; }
       if (q.kind === 'chain') { const c = (mv.chain ?? 0) + 1; this._startMove(f, q.move); f.move.chain = c; return; }
     }
     if (mv.connected && mv.def.cancel && !mv.cancelUsed && f.grounded) {
       if (this._trySuper(f) || this._trySpecial(f)) { f.move.cancelUsed = true; return; }
+    }
+    if (mv.connected && mv.def.kind === 'special' && !mv.superCancelled && f.meter.stocks >= 1 + KOF.superCancelCost) {
+      const h = this.histories[f.index];
+      for (const sp of this.ch(f).supers) {
+        const btn = matchCommand(h, sp.parsed);
+        if (!btn) continue;
+        f.meter.stocks -= KOF.superCancelCost;
+        this._startMove(f, resolveStrength(sp, strengthOf(btn)), { sdm: f.meter.max > 0 });
+        f.move.cancelUsed = true; f.move.superCancelled = true;
+        this.emit('supercancel', { player: f.index });
+        return;
+      }
     }
     if (mv.connected && !mv.cancelUsed) {
       const nxt = this._chainTarget(f);
@@ -601,6 +649,7 @@ export class Game {
     if (f.invuln > 0) return true;
     if (['knockdown', 'maxstart', 'ko', 'airhit'].includes(f.action)) return true;
     if (f.action === 'roll') return f.actionFrame >= ROLL.invuln[0] && f.actionFrame <= ROLL.invuln[1];
+    if (f.action === 'backstep') return f.actionFrame <= KOF.backstep.invuln;
     if (f.action === 'attack' && f.move.def.invuln) {
       const [a, b] = f.move.def.invuln;
       return f.move.frame >= a && f.move.frame <= b;

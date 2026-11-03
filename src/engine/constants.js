@@ -65,6 +65,12 @@ export const KOF = {
   kickReach: 1.3,        // 脚的判定横向加长（腿比手长）
   hopMul: 0.68,          // 小跳：起跳后 4 帧内松开上 → 跳跃初速 ×0.68（更低更快落地）
   hopWindow: 4,
+  runSpeed: 4.6,         // 跑步（快速双击 →）
+  backstep: { frames: 16, invuln: 6, speed: 4.2 },  // 后撤步（快速双击 ←），前 6 帧无敌
+  superJumpV: 1.1,       // 大跳（↓ 再快速 ↑）：起跳初速 ×1.1，横向 ×1.7
+  superJumpH: 1.7,
+  runJumpH: 1.5,         // 跑动中起跳横向 ×1.5
+  superCancelCost: 1,    // 超必杀取消：必杀技命中后取消成超必杀，额外消耗 1 豆
 };
 
 export const ROLL = { frames: 26, invuln: [1, 16], speed: 4 };
