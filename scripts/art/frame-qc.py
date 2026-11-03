@@ -46,7 +46,18 @@ SKEL_COLORS = np.array([
     (0, 0, 255), (85, 0, 255), (170, 0, 255), (255, 0, 255), (255, 0, 170), (255, 0, 85),
 ], dtype=np.int16)
 
-TH = {"skel_frac": 0.03, "green_frac": 0.02, "ghost_delta": 0.08, "pck": 0.7}
+TH = {"skel_frac": 0.03, "green_frac": 0.02, "ghost_delta": 0.08, "pck": 0.7, "idle_iou": 0.88}
+
+# I 像待机：这些动画本就接近 idle 或姿势独特，不判"没跟上动作"（INBOX 2026-11-03 第 4 条
+# 指定豁免 idle/walk/crouch/block/win；ko/knockdown/maxstart 为独特姿势，一并豁免防误杀；
+# blockstun/hitstun/dizzy 为纯状态动画（受击/格挡硬直/眩晕，无"该有的动作"、姿势本就接近
+# 待机，c07 快测 idle_iou 0.94-0.99 证实误判），豁免。有实际动作的 airhit/gc/roll/attack 保留检查）
+IDLE_EXEMPT = {"idle", "walkf", "walkb", "crouch", "crblock", "win", "ko", "knockdown",
+               "maxstart", "blockstun", "hitstun", "dizzy"}
+
+
+def anim_exempt(fname):
+    return fname.rsplit("_", 1)[0] in IDLE_EXEMPT
 
 # 目标 18 点 → DWPose COCO17 候选（nose→0；肩/肘/腕/髋/膝/踝 前后腿各对应一对 COCO 点）
 TARGET_TO_COCO = {
@@ -264,6 +275,45 @@ def ghost_ratio(frgb):
     return gh / max(opq, 1)
 
 
+def idle_like_ratio(frgb, idle_rgb):
+    """I 像待机：该帧与 idle_00 的剪影 IoU（脚底对齐 + 质心 x 对齐后比较）。
+    >0.88 表示非豁免动画帧姿势画成了待机（没跟上动作）。
+    只比"姿势形状"：垂直按最低不透明行（脚底）对齐到画布底，水平按质心对齐，
+    排除"站的位置/大小"差异，专抓"动作画错"。"""
+    m1 = idle_rgb[:, :, 3] > 50
+    m2 = frgb[:, :, 3] > 50
+    H, _ = m1.shape
+    if m1.sum() < 100 or m2.sum() < 100:
+        return 0.0
+
+    def shift_to_bottom(m):
+        ys = np.where(m.any(axis=1))[0]
+        if len(ys) == 0:
+            return m
+        dy = (H - 1) - int(ys.max())
+        if dy == 0:
+            return m
+        out = np.zeros_like(m)
+        if dy > 0:
+            out[dy:, :] = m[:H - dy, :]
+        else:
+            out[:H + dy, :] = m[-dy:, :]
+        return out
+
+    m1a = shift_to_bottom(m1)
+    m2a = shift_to_bottom(m2)
+
+    def cx(m):
+        _, xs = np.where(m)
+        return float(xs.mean()) if len(xs) else 0.0
+    dx = cx(m1a) - cx(m2a)
+    if abs(dx) > 1:
+        m2a = np.roll(m2a, int(round(dx)), axis=1)
+    inter = int((m1a & m2a).sum())
+    union = int((m1a | m2a).sum())
+    return inter / max(union, 1)
+
+
 def _assign_coco(kps, scores, target_kp):
     """每个目标点指派 COCO 点：score<0.3 记 None；双候选取距目标绝对坐标近的。
     返回 dict{目标点索引: ci|None}。"""
@@ -387,6 +437,8 @@ def main():
     ap.add_argument("--no-pose", action="store_true", help="跳过 DWPose 动作跟随检查")
     ap.add_argument("--limit", type=int, default=0, help="每角色只查前 N 帧（调试）")
     ap.add_argument("--only", default="", help="只查文件名包含该子串的帧（调试）")
+    ap.add_argument("--src", default="", help="帧目录根（默认 art-work/frames；"
+                                               "如 art-work/fixed 则查 art-work/fixed/<cid>/）")
     args = ap.parse_args()
     os.makedirs(CHK, exist_ok=True)
 
@@ -400,7 +452,7 @@ def main():
     for cid in args.chars:
         t1 = time.time()
         poses = json.load(open(os.path.join(ART, "poses", f"{cid}.json")))
-        fdir = os.path.join(ART, "frames", cid)
+        fdir = os.path.join(args.src, cid) if args.src else os.path.join(ART, "frames", cid)
         pdir = os.path.join(ART, "pose-img", cid)
         palette = load_palette_greens(cid)
         print(f"\n=== {cid} 立绘绿配色 {len(palette)} 组 ===", flush=True)
@@ -424,6 +476,8 @@ def main():
             frames = [f for f in frames if args.only in f[0]]
 
         base = None  # idle_00 的 ghost 基线
+        idle_fp = os.path.join(fdir, "idle_00.png")
+        idle_img = np.array(Image.open(idle_fp).convert("RGBA")) if os.path.exists(idle_fp) else None
         results = {}
         cells = []
         for fname, target in frames:
@@ -449,6 +503,10 @@ def main():
             rec["ghost"] = round(gr, 5)
             if fname == "idle_00.png":
                 base = gr
+            # I 像待机
+            if (idle_img is not None and fname != "idle_00.png"
+                    and not anim_exempt(fname)):
+                rec["idle_iou"] = round(idle_like_ratio(fimg, idle_img), 4)
             # P（先收集，稍后批量不必要——逐帧跑，GPU 上够快）
             if not args.no_pose and target is not None:
                 # 白底合成。⚠️ 坑：2D 帧 (H,W) * 3D alpha (H,W,1) 会广播爆炸成
@@ -472,10 +530,13 @@ def main():
                 fails.append("G")
             elif base is None and rec["ghost"] > TH["ghost_delta"]:
                 fails.append("G")
+            if "idle_iou" in rec and rec["idle_iou"] > TH["idle_iou"]:
+                fails.append("I")
             # P 只作参考不计 fail（2026-11-03 判定）：DWPose 对动态姿势/特效帧误报率高
             # （抽视检证实 PCK≈0 帧多数姿势正确，检测/分配崩），PCK p50≈0.46 为管线常态。
             # 低 PCK 帧走抽视检（p-debug-overlay.py），真缺陷才修。
-            if rec["pck"] is not None and rec["pck"] < TH["pck"]:
+            pck = rec.get("pck")
+            if pck is not None and pck < TH["pck"]:
                 rec["pck_low"] = True
             rec["fails"] = fails
             results[fname] = rec
@@ -487,9 +548,12 @@ def main():
                 fails = [f for f in rec["fails"] if f != "G"]
                 if base is not None and rec["ghost"] > base + TH["ghost_delta"]:
                     fails.append("G")
-                if rec["pck"] is not None and rec["pck"] < TH["pck"]:
+                if "idle_iou" in rec and rec["idle_iou"] > TH["idle_iou"]:
+                    fails.append("I")
+                pck = rec.get("pck")
+                if pck is not None and pck < TH["pck"]:
                     rec["pck_low"] = True
-                order = {"S": 0, "K": 1, "G": 2}
+                order = {"S": 0, "K": 1, "G": 2, "I": 3}
                 rec["fails"] = sorted(set(fails), key=lambda x: order[x])
                 for k, (_, _, fs) in enumerate(cells):
                     if cells[k][0] == fname:
@@ -507,11 +571,13 @@ def main():
         print(f"{cid}: {len(results)} 帧, 失败 {n_fail} → {report['characters'][cid]['fail_frames']}", flush=True)
         print(f"  蒙太奇: {montage}  用时 {time.time() - t1:.0f}s", flush=True)
 
-    # ⚠️ 坑：部分运行（--only/--limit）写单独文件，绝不覆盖全量报告
+    # ⚠️ 坑：部分运行（--only/--limit）写单独文件，绝不覆盖全量报告；
+    # --src 运行时报告名加 -<src basename> 后缀，也不覆盖默认目录的全量报告
     partial = bool(args.only or args.limit)
-    rp = os.path.join(CHK, "frame-qc-report-partial.json" if partial
-                      else "frame-qc-report.json")
-    if partial and os.path.exists(os.path.join(CHK, "frame-qc-report.json")):
+    src_tag = ("-" + os.path.basename(os.path.normpath(args.src))) if args.src else ""
+    rp = os.path.join(CHK, "frame-qc-report" + src_tag
+                      + ("-partial.json" if partial else ".json"))
+    if partial and not src_tag and os.path.exists(os.path.join(CHK, "frame-qc-report.json")):
         print("（部分运行：报告写 -partial，全量报告未动）", flush=True)
     with open(rp, "w") as f:
         json.dump(report, f, ensure_ascii=False, indent=1)
