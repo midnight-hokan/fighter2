@@ -81,13 +81,16 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("chars", nargs="+")
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--src", default="",
+                    help="帧目录根（默认 art-work/frames；如 art-work/fixed 则就地对 "
+                         "art-work/fixed/<cid>/ 去绿边，原帧 raw/ 不动）")
     args = ap.parse_args()
     cids = ([f"c0{i}" for i in range(1, 9)] if args.chars == ["all"] else args.chars)
     t0 = time.time()
     report = {"ts": time.strftime("%F %T"), "chars": {}}
     tot_s = tot_m = 0
     for cid in cids:
-        fdir = os.path.join(ART, "frames", cid)
+        fdir = os.path.join(args.src, cid) if args.src else os.path.join(ART, "frames", cid)
         if not os.path.isdir(fdir):
             continue
         palette = load_palette_greens(cid)
@@ -106,8 +109,8 @@ def main():
             n_m += m
         tot_s += n_s
         tot_m += n_m
-        report["chars"][cid] = {"palette": [list(c) for c in palette],
-                                "strong_px": n_s, "mild_px": n_m}
+        report["chars"][cid] = {"palette": [[int(x) for x in c] for c in palette],
+                                "strong_px": int(n_s), "mild_px": int(n_m)}
         print(f"{cid}: 强绿 {n_s}px 浅绿 {n_m}px 立绘合法绿 {len(palette)} 色", flush=True)
     if not args.dry_run:
         json.dump(report, open(os.path.join(CHK, "despill-report.json"), "w"),
