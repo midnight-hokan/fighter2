@@ -283,7 +283,7 @@ Claude 已改（af1021b 之后这次提交）：喊招音量降低；选人页�
 - 生成 6 张透明底道具图（侧视、和立绘同画风、无人物）：c01_helmet（黄色矿工安全帽带亮着的矿灯）、c02_rope（橙色救生绳绳圈带金属救援钩）、c02_flare（红色手持信号弹点燃）、c05_banner（卷起一半的红色横幅，黄字"安全生产"）、c06_lamp（一盏蓝灰色矿灯，灯头发光）、c08_needle（一根银针，可选）。
 - 512×512 生成 → BiRefNet 抠图 → 裁边缩到 128 宽，存 public/assets/meilong/projectiles/<名字>.png。
 - theme.js 的 projectiles 里给对应条目加 `sprite: { src, size, spin }`（size 是逻辑宽度：帽子 30、绳圈 34、信号弹 30、横幅 40、矿灯 20；spin：帽子 14、绳圈 12、矿灯 8、其他 0）。没放图的条目不要加 sprite（会 404 报错）。
-- 截一张每个道具飞行中的游戏截图拼图放 docs/art-review/projectiles.png。
+- 截一张每个道具飞行中的游戏截图拼图放 docs/art-review/projectiles.png。✅ 已完成 3c69c78（6 物体×2 候选绿幕生成+BiRefNet 抠图+裁边 128 宽+去绿边；5 件入图（帽子/绳圈/信号弹/横幅/矿灯，cand0 全中），c08 银针 2 候选均过细淡 QC 不通过且规范标注"可选"→ 保留程序化画法；theme.js sprite 按规范 size/spin 接入 5 条；飞行帧拼图 docs/art-review/projectiles.png（6 道具全在飞）；E1–V1 全绿不回退）
 
 ## 2026-11-03 15:20 · 说明：V2 红是预期的
 - V2 是你后面要做的里程碑，测试先锁好了，所以现在全量 check 一定是 ❌（只有 V2 0/5）。这不是回归，不要去改 V2 或把它当故障处理。
