@@ -282,3 +282,8 @@ Claude 已改（af1021b 之后这次提交）：喊招音量降低；选人页�
 - 512×512 生成 → BiRefNet 抠图 → 裁边缩到 128 宽，存 public/assets/meilong/projectiles/<名字>.png。
 - theme.js 的 projectiles 里给对应条目加 `sprite: { src, size, spin }`（size 是逻辑宽度：帽子 30、绳圈 34、信号弹 30、横幅 40、矿灯 20；spin：帽子 14、绳圈 12、矿灯 8、其他 0）。没放图的条目不要加 sprite（会 404 报错）。
 - 截一张每个道具飞行中的游戏截图拼图放 docs/art-review/projectiles.png。
+
+## 2026-11-03 15:20 · 说明：V2 红是预期的
+- V2 是你后面要做的里程碑，测试先锁好了，所以现在全量 check 一定是 ❌（只有 V2 0/5）。这不是回归，不要去改 V2 或把它当故障处理。
+- 在 V2 开工前，判断"有没有改坏"请用 `node scripts/check.mjs --upto V1`，必须全绿；Q1 汇总 check 结果时也按 `--upto V1` 判，V2 单列为"未开工"。
+- A1 的做法（raw 重抠到 recrop/、调色板保护后写到 fixed/、原帧不动、强化姿势提示词把像待机的 IoU 从 0.99 降到 0.48）方向正确，继续按此收尾。
