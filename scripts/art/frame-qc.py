@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """frame-qc.py — 精灵帧全量质检（8 角色 × 全部帧）
 
-四项检查（INBOX 2026-11-03 A1 复核）：
+六项检查（INBOX 2026-11-03 A1 复核 + 19:20 增补）：
   S 骨架线残留：目标骨架图(control 图)做掩膜膨胀 2px；掩膜内"近白或近骨架色、
     且比周围亮"的像素占掩膜面积 >3% → 失败（用覆盖率不用 IoU，细线 IoU 天然小）
   K 绿边：alpha 边缘 4px 带内 G 比 max(R,B) 高 30 以上、且颜色不匹配立绘配色
@@ -10,6 +10,20 @@
     高 0.08 以上 → 失败
   P 动作跟随：对输出帧跑 DWPose(yolox_l + dw-ll_ucoco_384)，与目标骨架算
     PCK@0.1（身高归一），<0.7 → 失败
+  I 像待机：非豁免动画帧与 idle_00 剪影 IoU >0.88 → 姿势画成了待机
+  ID 身份（19:20 增补）：与定稿立绘是否同一角色，两子项任一失败即判 ID：
+    a) 主色直方图距离 D：帧与立绘各自取 LAB 12^3 主色直方图(top-32 bin 重归一化)，
+       D=1-Σmin。失败判据 D > max(0.45, 1.5×该角色当批中位数)——绝对下限抓
+       整体换人，相对项按角色自身正常水平定标（8 角色服装色族相近，全局单一
+       阈值误杀率高，2026-11-03 用 baseline vs 07f0df9 返修帧校准：RGB 直方图
+       无法分离，LAB 空间 baseline p99=0.650；c07 st_hp 8 帧全换人 D=0.31–0.76，
+       D+高度比合并可抓 7/8）
+    b) 高度比：帧人物 bbox 高(A>100) / idle_00 bbox 高，超出 [0.85, 1.15] 失败；
+       蹲/倒地类及腾空收腿类豁免（2026-11-03 全量 1632 帧标定：非豁免动作
+       最低比值 0.90，豁免集内最低 0.49）
+  T 整体半透明（19:20 增补）：alpha 30–200 像素占人物面积(A>30)比例 >12% → 失败
+    （与 G 的区别：G 是相对自身 idle 的残影增量，T 是绝对整体半透明；baseline
+    全帧最大 5.7%，阈值留 2 倍余量，抓 BiRefNet 抠图宽半透明带/大面积鬼影）
 
 输出：.check/frame-qc-report.json + 每人一张问题帧标红蒙太奇
       .check/frame-qc-montage-<cid>.png
@@ -46,7 +60,13 @@ SKEL_COLORS = np.array([
     (0, 0, 255), (85, 0, 255), (170, 0, 255), (255, 0, 255), (255, 0, 170), (255, 0, 85),
 ], dtype=np.int16)
 
-TH = {"skel_frac": 0.03, "green_frac": 0.02, "ghost_delta": 0.08, "pck": 0.7, "idle_iou": 0.88}
+TH = {"skel_frac": 0.03, "green_frac": 0.02, "ghost_delta": 0.08, "pck": 0.7, "idle_iou": 0.88,
+      # ID 身份（19:20 增补，2026-11-03 baseline vs 07f0df9 返修帧校准）
+      "id_color_abs": 0.45,    # 主色直方图距离绝对下限（整体换人）
+      "id_color_rel": 1.5,     # 相对项：× 该角色当批中位数
+      "id_height_min": 0.85,   # 高度比区间（vs idle_00）
+      "id_height_max": 1.15,
+      "trans_frac": 0.12}      # T 整体半透明：alpha 30–200 占人物面积上限
 
 # I 像待机：这些动画本就接近 idle 或姿势独特，不判"没跟上动作"（INBOX 2026-11-03 第 4 条
 # 指定豁免 idle/walk/crouch/block/win；ko/knockdown/maxstart 为独特姿势，一并豁免防误杀；
@@ -58,6 +78,20 @@ IDLE_EXEMPT = {"idle", "walkf", "walkb", "crouch", "crblock", "win", "ko", "knoc
 
 def anim_exempt(fname):
     return fname.rsplit("_", 1)[0] in IDLE_EXEMPT
+
+# ID 高度比豁免：蹲/倒地类（INBOX 2026-11-03 19:20 指定"蹲/倒地类豁免"）+
+# 腾空收腿/翻滚类（bbox 天然矮）。2026-11-03 全量 1632 帧标定：非豁免动作
+# 最低比值 0.90（zhongkeng 0.90），豁免集内最低 0.49（ko 倒地）
+ID_HEIGHT_EXEMPT = {
+    "crouch", "crblock", "cr_hk", "cr_hp", "cr_lk", "cr_lp", "cr_mk", "cr_mp",
+    "ko", "knockdown",
+    "airhit", "j_hk", "jifenglong", "jump", "roll", "shanguang", "st_hk",
+    "xuanfeng", "zhongdan",
+}
+
+
+def id_height_exempt(fname):
+    return fname.rsplit("_", 1)[0] in ID_HEIGHT_EXEMPT
 
 # 目标 18 点 → DWPose COCO17 候选（nose→0；肩/肘/腕/髋/膝/踝 前后腿各对应一对 COCO 点）
 TARGET_TO_COCO = {
@@ -406,6 +440,95 @@ def load_palette_greens(cid):
     return np.array(out, dtype=np.int16)
 
 
+# ---------------- ID 身份 / T 整体半透明（19:20 增补） ----------------
+
+_LAB_LUT = None
+
+
+def _lab_lut():
+    """32^3 量化 RGB → LAB 12^3 bin 索引 查找表（128KB，一次构建全局复用）。
+    RGB 按 //8 取 bin 中心做 sRGB→LAB 近似转换，L 取 0–100 线性分 12 bin，
+    a/b 取 [-128,128] 分 12 bin（bin 宽 ~21，远大于感知噪声）。"""
+    global _LAB_LUT
+    if _LAB_LUT is not None:
+        return _LAB_LUT
+    r = (np.arange(32)[:, None, None] * 8 + 4) / 255
+    g = (np.arange(32)[None, :, None] * 8 + 4) / 255
+    b = (np.arange(32)[None, None, :] * 8 + 4) / 255
+
+    def f(c):
+        return np.where(c > 0.04045, ((c + 0.055) / 1.055) ** 2.4, c / 12.92)
+
+    r, g, b = f(r), f(g), f(b)
+    x = (r * 0.4124 + g * 0.3576 + b * 0.1805) / 0.95047
+    y = r * 0.2126 + g * 0.7152 + b * 0.0722
+    z = (r * 0.0193 + g * 0.1192 + b * 0.9505) / 1.08883
+
+    def g2(c):
+        return np.where(c > 0.008856, np.cbrt(c), 7.787 * c + 16 / 116)
+
+    X, Y, Z = g2(x), g2(y), g2(z)
+    L = 116 * Y - 16          # 0–100
+    A = 500 * (X - Y) + 128   # 平移到 0–256
+    B = 200 * (Y - Z) + 128
+    Lb = np.clip(L / 100 * 12, 0, 11).astype(np.int32)
+    Ab = np.clip(A / 256 * 12, 0, 11).astype(np.int32)
+    Bb = np.clip(B / 256 * 12, 0, 11).astype(np.int32)
+    _LAB_LUT = (Lb * 12 + Ab) * 12 + Bb
+    return _LAB_LUT
+
+
+def lab_maincolor_hist(fimg, m, K=32, minw=0.002):
+    """LAB 12^3 主色直方图：可见像素(m) → LAB bin 计数，去 <minw 噪声 bin，
+    取 top-K bin 重归一化。立绘与帧用同一函数，距离 D = 1 - Σmin(h1,h2)。"""
+    lut = _lab_lut()
+    q = (fimg[m][:, :3] // 8).clip(0, 31).astype(np.intp)
+    idx = lut[q[:, 0], q[:, 1], q[:, 2]]
+    h = np.bincount(idx, minlength=12 ** 3).astype(np.float64)
+    t = h.sum()
+    if t < 100:
+        return None
+    h[h / t < minw] = 0
+    keep = np.argsort(-h)[:K]
+    h2 = np.zeros_like(h)
+    h2[keep] = h[keep]
+    s = h2.sum()
+    return h2 / s if s > 0 else h2
+
+
+def id_color_dist(frame_hist, cutout_hist):
+    """主色直方图距离 D = 1 - Σmin。返回 0–1，None 表示无法计算。"""
+    if frame_hist is None or cutout_hist is None:
+        return None
+    return float(1 - np.minimum(frame_hist, cutout_hist).sum())
+
+
+def bbox_height(img):
+    """人物 bbox 高（A>100 的最上/最下行差），无有效像素返回 0。"""
+    ys = np.where((img[:, :, 3] > 100).any(axis=1))[0]
+    return int(ys.max() - ys.min() + 1) if len(ys) else 0
+
+
+def id_height_ratio(fimg, idle_img):
+    """帧人物高 / idle_00 人物高。idle 无效或帧无像素返回 None。"""
+    hi = bbox_height(idle_img)
+    if hi < 50:
+        return None
+    hf = bbox_height(fimg)
+    if hf < 50:
+        return None
+    return hf / hi
+
+
+def trans_ratio(fimg):
+    """T 整体半透明：alpha 30–200 像素 / 人物面积(A>30)。面积太小返回 None。"""
+    A = fimg[:, :, 3]
+    area = int((A > 30).sum())
+    if area < 100:
+        return None
+    return float(((A > 30) & (A <= 200)).sum()) / area
+
+
 # ---------------- 蒙太奇 ----------------
 
 def make_montage(cid, cells, font):
@@ -457,6 +580,13 @@ def main():
         palette = load_palette_greens(cid)
         print(f"\n=== {cid} 立绘绿配色 {len(palette)} 组 ===", flush=True)
 
+        # ID 身份：立绘主色直方图（每角色加载一次）
+        cut_fp = os.path.join(ART, "portrait-cutout", f"{cid}.cutout.png")
+        cut_hist = None
+        if os.path.exists(cut_fp):
+            cut_img = np.array(Image.open(cut_fp).convert("RGBA"))
+            cut_hist = lab_maincolor_hist(cut_img, cut_img[:, :, 3] > 128)
+
         # 帧清单：以 poses JSON 为准（含目标骨架），再补目录里多出的帧
         frames = []  # (fname, target_kp or None)
         seen = set()
@@ -503,6 +633,17 @@ def main():
             rec["ghost"] = round(gr, 5)
             if fname == "idle_00.png":
                 base = gr
+            # ID 身份：主色直方图距离 + 高度比（蹲/倒地/腾空类豁免）
+            m_vis = fimg[:, :, 3] > 150
+            d = id_color_dist(lab_maincolor_hist(fimg, m_vis) if m_vis.sum() >= 100 else None,
+                              cut_hist)
+            rec["id_color"] = round(d, 4) if d is not None else None
+            if idle_img is not None and fname != "idle_00.png" and not id_height_exempt(fname):
+                hr = id_height_ratio(fimg, idle_img)
+                rec["id_height"] = round(hr, 4) if hr is not None else None
+            # T 整体半透明
+            tr = trans_ratio(fimg)
+            rec["trans"] = round(tr, 4) if tr is not None else None
             # I 像待机
             if (idle_img is not None and fname != "idle_00.png"
                     and not anim_exempt(fname)):
@@ -542,28 +683,53 @@ def main():
             results[fname] = rec
             cells.append((fname, fimg, "".join(fails)))
 
-        # 第二遍判定 G（idle_00 可能不在最前）
-        if base is not None:
-            for fname, rec in results.items():
-                fails = [f for f in rec["fails"] if f != "G"]
-                if base is not None and rec["ghost"] > base + TH["ghost_delta"]:
-                    fails.append("G")
-                if "idle_iou" in rec and rec["idle_iou"] > TH["idle_iou"]:
-                    fails.append("I")
-                pck = rec.get("pck")
-                if pck is not None and pck < TH["pck"]:
-                    rec["pck_low"] = True
-                order = {"S": 0, "K": 1, "G": 2, "I": 3}
-                rec["fails"] = sorted(set(fails), key=lambda x: order[x])
-                for k, (_, _, fs) in enumerate(cells):
-                    if cells[k][0] == fname:
-                        cells[k] = (fname, cells[k][1], "".join(rec["fails"]))
+        # 第二遍判定（G 需要 idle_00 基线；ID 颜色需要角色级中位数定标）
+        ds = [r["id_color"] for r in results.values() if r.get("id_color") is not None]
+        id_med = float(np.median(ds)) if ds else None
+        # 帧数太少（--only/--limit 调试）时中位数不可信 → 只用绝对下限
+        id_thr = (max(TH["id_color_abs"], TH["id_color_rel"] * id_med)
+                  if id_med is not None and len(ds) >= 30 else TH["id_color_abs"])
+        for fname, rec in results.items():
+            fails = [f for f in rec["fails"] if f not in ("G", "ID", "T")]
+            if base is not None and rec["ghost"] > base + TH["ghost_delta"]:
+                fails.append("G")
+            elif base is None and rec["ghost"] > TH["ghost_delta"]:
+                fails.append("G")
+            if "idle_iou" in rec and rec["idle_iou"] > TH["idle_iou"]:
+                fails.append("I")
+            # ID 身份
+            d = rec.get("id_color")
+            if d is not None:
+                rec["id_color_fail"] = d > id_thr
+                if rec["id_color_fail"]:
+                    fails.append("ID")
+            hr = rec.get("id_height")
+            if hr is not None:
+                rec["id_height_fail"] = not (TH["id_height_min"] <= hr <= TH["id_height_max"])
+                if rec["id_height_fail"]:
+                    fails.append("ID")
+            # T 整体半透明
+            tr = rec.get("trans")
+            if tr is not None:
+                rec["trans_fail"] = tr > TH["trans_frac"]
+                if rec["trans_fail"]:
+                    fails.append("T")
+            pck = rec.get("pck")
+            if pck is not None and pck < TH["pck"]:
+                rec["pck_low"] = True
+            order = {"S": 0, "K": 1, "G": 2, "I": 3, "ID": 4, "T": 5}
+            rec["fails"] = sorted(set(fails), key=lambda x: order[x])
+            for k, (_, _, fs) in enumerate(cells):
+                if cells[k][0] == fname:
+                    cells[k] = (fname, cells[k][1], "".join(rec["fails"]))
 
         n_fail = sum(1 for r in results.values() if r["fails"])
         report["characters"][cid] = {
             "n_frames": len(results),
             "n_fail": n_fail,
             "ghost_base": round(base, 5) if base is not None else None,
+            "id_color_median": round(id_med, 4) if id_med is not None else None,
+            "id_color_thr": round(id_thr, 4),
             "fail_frames": [f for f, r in sorted(results.items()) if r["fails"]],
             "frames": results,
         }
