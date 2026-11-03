@@ -5,3 +5,4 @@ test-results/
 playwright-report/
 art-work/
 scripts/art/__pycache__/
+scripts/art/models/
