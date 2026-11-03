@@ -60,15 +60,20 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("chars", nargs="+")
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--src", default="",
+                    help="帧目录根（默认 art-work/frames；如 art-work/fixed 则修 "
+                         "art-work/fixed/<cid>/ 并读对应 -<src> 后缀报告）")
     args = ap.parse_args()
     cids = ([f"c0{i}" for i in range(1, 9)] if args.chars == ["all"] else args.chars)
 
-    rep = json.load(open(REPORT))
+    src_tag = ("-" + os.path.basename(os.path.normpath(args.src))) if args.src else ""
+    report_path = os.path.join(CHK, "frame-qc-report" + src_tag + ".json")
+    rep = json.load(open(report_path))
     regen = json.load(open(os.path.join(CHK, "regen-needed.json"))) \
         if os.path.exists(os.path.join(CHK, "regen-needed.json")) else {"frames": []}
 
     for cid in cids:
-        fdir = os.path.join(ART, "frames", cid)
+        fdir = os.path.join(args.src, cid) if args.src else os.path.join(ART, "frames", cid)
         pdir = os.path.join(ART, "pose-img", cid)
         palette = load_palette_greens(cid)
         crep = rep["characters"].get(cid, {})
@@ -77,7 +82,7 @@ def main():
         for fname, rec in crep.get("frames", {}).items():
             fails = rec.get("fails", [])
             need_local = any(f in ("S", "K") for f in fails)
-            need_regen = any(f in ("G",) for f in fails)  # P 已降级参考项，不进 fails
+            need_regen = any(f in ("G", "I") for f in fails)  # G 鬼影/I 像待机→重生；P 已降级参考项，不进 fails
             if not need_local and not need_regen:
                 continue
             if need_regen:
