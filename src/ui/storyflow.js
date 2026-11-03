@@ -14,7 +14,7 @@ export function openingScenes(story) { return story?.OPENING ?? []; }
 
 export function prologueScenes(story, me) { return story?.PROLOGUE?.[me] ?? []; }
 
-// 对战前对话：有专门恩怨的用 RIVALS，否则用两人的 TAUNTS 拼一段
+// 对战前对话：宿敌用 RIVALS，其余对手用 DUELS（故事模式每对都有专门台词），都没有才用 TAUNTS 拼一段
 export function preFightScenes(story, me, opp, { stage = 1, final = false } = {}) {
   if (!story) return [];
   if (final) {
@@ -23,13 +23,19 @@ export function preFightScenes(story, me, opp, { stage = 1, final = false } = {}
     const base = story.CHECKUP ?? [];
     return extra ? [...base, { img: 'checkup', cam: 'still', vs: { me, opp }, lines: extra }] : base;
   }
-  const rival = story.RIVALS?.[`${me}>${opp}`];
+  const rival = story.RIVALS?.[`${me}>${opp}`] ?? story.DUELS?.[`${me}>${opp}`];
   const lines = rival ? resolve(rival, me, opp) : [
     { who: me, expr: 'smug', text: pick(story.TAUNTS?.[me]?.open, stage) },
     { who: opp, expr: 'normal', text: pick(story.TAUNTS?.[opp]?.reply, stage) },
   ].filter(l => l.text);
   return [{ img: 'vs_arena', cam: 'push', vs: { me, opp }, lines }];
 }
+
+// 故事模式中段剧情（第三战后、第四战前）
+export function midpointScenes(story, me) { return story?.MIDPOINT?.[me] ?? []; }
+
+// 故事模式挑战顺序：剧本里写了就按剧本，没写返回 null（由 createArcade 洗牌）
+export function storyOrder(story, me) { return story?.ORDER?.[me] ?? null; }
 
 export function endingScenes(story, me) {
   return [...(story?.ENDINGS?.[me] ?? []), ...(story?.TRUTH ?? [])];
@@ -53,6 +59,7 @@ export function referencedImages(story, roster) {
   Object.values(story.PROLOGUE ?? {}).forEach(add);
   Object.values(story.ENDINGS ?? {}).forEach(add);
   add(story.CHECKUP ?? []); add(story.FINAL_FOR_SHEN ?? []); add(story.TRUTH ?? []);
+  Object.values(story.MIDPOINT ?? {}).forEach(add);
   for (const a of roster) for (const b of roster) if (a.id !== b.id) add(preFightScenes(story, a.id, b.id));
   return out;
 }

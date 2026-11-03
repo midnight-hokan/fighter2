@@ -90,3 +90,19 @@ test('KO 演出与播报：KO 触发放射光和播报员 ko，下一回合播�
   expect(r.ann).toContain('fight');
   expect(errors).toEqual([]);
 });
+
+test('飞行道具用角色随身物品：林啸的矿灯光弹画成矿灯帽，不是通用光团', async ({ page }) => {
+  const errors = trackErrors(page);
+  await openTestMode(page);
+  const n = await page.evaluate(() => {
+    const g = window.__game;
+    g.reset({ p1: 'c01', p2: 'c02', p1x: 200, p2x: 500 });
+    for (const k of [{ down: true }, { down: true, right: true }, { right: true, lp: true }]) g.input(0, k, 1);
+    let seen = 0;
+    for (let i = 0; i < 40; i++) { const st = g.step(1); seen = Math.max(seen, st.projectiles.length); }
+    return { seen, item: g.renderInfo().stats.itemProjectiles ?? 0 };
+  });
+  expect(n.seen).toBeGreaterThan(0);
+  expect(n.item).toBeGreaterThan(0);
+  expect(errors).toEqual([]);
+});

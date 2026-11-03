@@ -140,7 +140,8 @@ export class Audio {
     const path = this.voice?.[charId]?.[line];
     const buf = path && this.buffers.get(path);
     if (!buf || this.ctx?.state !== 'running') return;
-    this.playBuffer(buf, { vol: 1, delay });
+    // 喊招压低到音效之下（光哥试玩反馈：喊招太响）；开场白和 KO 台词稍响一点
+    this.playBuffer(buf, { vol: line === 'special' ? 0.38 : line === 'super' ? 0.5 : 0.6, delay });
   }
 
   // 播报员：round1/round2/round3/final/fight/ko/timeup/perfect/win（theme.audio.announcer，缺文件就不播）
@@ -150,7 +151,7 @@ export class Audio {
     const path = this.announcer?.[key];
     const buf = path && this.buffers.get(path);
     if (!buf || this.ctx?.state !== 'running') return;
-    this.playBuffer(buf, { vol: 1.1, delay });
+    this.playBuffer(buf, { vol: 0.85, delay });
   }
 
   handleAnnouncer(e) {

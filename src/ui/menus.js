@@ -3,12 +3,12 @@
 // 模式在选人页用 Q / E 切换（也可以鼠标点）。连按 3 次 Enter 用默认选项直接开打。
 // 街机模式（追加在最后）：P2 由电脑按 createArcade 的顺序与难度安排（src/ui/arcade.js）。
 export const MODES = [
-  { id: 'cpu-normal', label: '对电脑·普通' },
-  { id: 'cpu-hard', label: '对电脑·困难' },
-  { id: 'cpu-easy', label: '对电脑·简单' },
-  { id: '2p', label: '本地双人' },
+  { id: 'arcade', label: '故事模式' },
+  { id: 'cpu-normal', label: '对战·电脑（普通）' },
+  { id: 'cpu-hard', label: '对战·电脑（困难）' },
+  { id: 'cpu-easy', label: '对战·电脑（简单）' },
+  { id: '2p', label: '对战·双人' },
   { id: 'training', label: '训练模式' },
-  { id: 'arcade', label: '街机模式' },
 ];
 
 const ARROWS = { 1: '↙', 2: '↓', 3: '↘', 4: '←', 6: '→', 7: '↖', 8: '↑', 9: '↗' };

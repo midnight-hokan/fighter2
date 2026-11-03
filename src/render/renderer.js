@@ -202,7 +202,7 @@ export class Renderer {
       ctx.save();
       ctx.globalAlpha = 0.12 + 0.1 * i;
       ctx.globalCompositeOperation = 'lighter';
-      if (atlas) atlas.draw(ctx, animKeyFor(g), g, g.x - cam, GROUND - g.y, mirrorSame, false, f.move?.kind === 'super' ? 'super' : 'special');
+      if (atlas) atlas.draw(ctx, animKeyFor(g), g, g.x - cam, GROUND - g.y, mirrorSame, false); // 不用 ctx.filter 着色：软件渲染下滤镜极慢，靠 lighter 叠加提亮
       else this.drawPlaceholder(g, ch, Math.round(g.x - cam), Math.round(GROUND - g.y), mirrorSame);
       ctx.restore();
       this.stats.afterimages++;
@@ -330,14 +330,22 @@ export class Renderer {
     ctx.restore();
   }
 
+  // 暗角：预先画到离屏画布，每帧只贴图（软件渲染下全屏径向渐变很慢）
   drawVignette() {
-    const ctx = this.ctx;
     const W = SCREEN.w, H = SCREEN.h;
-    const g = ctx.createRadialGradient(W / 2, H * 0.55, H * 0.35, W / 2, H * 0.55, W * 0.62);
-    g.addColorStop(0, 'rgba(0,0,0,0)');
-    g.addColorStop(1, 'rgba(0,0,0,0.45)');
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, W, H);
+    if (!this.vignette) {
+      const c = document.createElement('canvas');
+      c.width = W * this.rs; c.height = H * this.rs;
+      const v = c.getContext('2d');
+      v.scale(this.rs, this.rs);
+      const g = v.createRadialGradient(W / 2, H * 0.55, H * 0.35, W / 2, H * 0.55, W * 0.62);
+      g.addColorStop(0, 'rgba(0,0,0,0)');
+      g.addColorStop(1, 'rgba(0,0,0,0.45)');
+      v.fillStyle = g;
+      v.fillRect(0, 0, W, H);
+      this.vignette = c;
+    }
+    this.ctx.drawImage(this.vignette, 0, 0, W, H);
   }
 
   drawPlaceholder(f, ch, x, y, alt) {
@@ -376,14 +384,37 @@ export class Renderer {
     ctx.fillRect(fx - 3, fy - 3, 6, 6);
   }
 
-  // 飞行道具：发光核心 + 外焰 + 拖尾
+  // 飞行道具：按 theme.projectiles 用角色随身物品（有图片用图片，否则程序化画法），没配置的用通用光团
   drawProjectile(p, ch, cam) {
+    const look = this.theme.projectiles?.[`${ch.id}:${p.id}`];
+    const x = p.x - cam, y = GROUND - p.y;
+    const dir = Math.sign(p.vx) || 1;
+    if (look) {
+      this.stats.itemProjectiles = (this.stats.itemProjectiles ?? 0) + 1;
+      const im = look.sprite && sprite(look.sprite.src);
+      if (im) return this.drawSpriteProjectile(im, look.sprite, x, y, dir, p);
+      const fx = PROJ_FX[look.fx];
+      if (fx) return fx(this.ctx, x, y, dir, p, this.frameCount);
+    }
+    this.drawGlowProjectile(p, ch, x, y, dir);
+  }
+
+  drawSpriteProjectile(im, sp, x, y, dir, p) {
     const ctx = this.ctx;
-    const x = p.x - cam;
-    const y = GROUND - p.y;
+    const w = sp.size ?? 28, h = w * im.height / im.width;
+    trail(ctx, x, y, dir, '#ffe2a0', w * 0.5);
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(dir, 1);
+    ctx.rotate(((p.x * (sp.spin ?? 0)) / 20) * Math.PI / 180 * dir);
+    ctx.drawImage(im, -w / 2, -h / 2, w, h);
+    ctx.restore();
+  }
+
+  drawGlowProjectile(p, ch, x, y, dir) {
+    const ctx = this.ctx;
     const c1 = ch.colors?.secondary ?? '#ffd34d';
     const c2 = ch.colors?.primary ?? '#ff6a2b';
-    const dir = Math.sign(p.vx) || 1;
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
     for (let i = 5; i >= 1; i--) {
@@ -427,6 +458,167 @@ export class Renderer {
       ko: !!this.ko, stats: { ...this.stats },
     };
   }
+}
+
+// —— 飞行道具：图片缓存与程序化画法（逻辑坐标，x/y 为中心，dir 为飞行方向） ——
+const SPRITES = new Map();
+function sprite(src) {
+  if (!SPRITES.has(src)) {
+    const rec = { im: new Image(), ok: false };
+    rec.im.onload = () => { rec.ok = true; };
+    rec.im.onerror = () => { rec.ok = false; };
+    rec.im.src = src;
+    SPRITES.set(src, rec);
+  }
+  const r = SPRITES.get(src);
+  return r.ok ? r.im : null;
+}
+
+function trail(ctx, x, y, dir, color, r) {
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  for (let i = 1; i <= 4; i++) {
+    ctx.globalAlpha = 0.16 * (5 - i) / 4;
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.arc(x - dir * i * 8, y, r * (1 - i * 0.15), 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.restore();
+}
+
+function glowDot(ctx, x, y, r, color, a = 0.9) {
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+  g.addColorStop(0, `rgba(255,255,255,${a})`);
+  g.addColorStop(0.35, hexA(color, a * 0.7));
+  g.addColorStop(1, hexA(color, 0));
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+
+const PROJ_FX = {
+  // 林啸：旋转飞出的矿灯安全帽，灯头朝前打出光束
+  helmet(ctx, x, y, dir, p, t) {
+    trail(ctx, x, y, dir, '#ffd34d', 9);
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate((p.x * 0.18) * dir);
+    ctx.fillStyle = '#e8b51e';
+    ctx.strokeStyle = '#6b4a08'; ctx.lineWidth = 0.8;
+    ctx.beginPath(); ctx.ellipse(0, 1, 11, 9, 0, Math.PI, 0); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#c9960f'; ctx.fillRect(-13, 0, 26, 3);          // 帽檐
+    ctx.fillStyle = '#fff6c8'; ctx.fillRect(-1.2, -9.5, 2.4, 9);      // 顶部加强筋
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath(); ctx.arc(9, -3, 3, 0, Math.PI * 2); ctx.fill();   // 灯头
+    ctx.restore();
+    glowDot(ctx, x + dir * 8, y - 2, 12, '#fff3b0');
+    ctx.save();                                                        // 光束
+    ctx.globalCompositeOperation = 'lighter';
+    const g = ctx.createLinearGradient(x, y, x + dir * 46, y);
+    g.addColorStop(0, 'rgba(255,248,200,0.55)'); g.addColorStop(1, 'rgba(255,248,200,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.moveTo(x + dir * 8, y - 3); ctx.lineTo(x + dir * 46, y - 12); ctx.lineTo(x + dir * 46, y + 8); ctx.closePath(); ctx.fill();
+    ctx.restore();
+  },
+  // 罗铮：甩出去旋转的救生绳圈，前端带救援钩
+  rope(ctx, x, y, dir, p) {
+    trail(ctx, x, y, dir, '#ff9a40', 8);
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(p.x * 0.2 * dir);
+    ctx.lineWidth = 2.2;
+    ['#f07a1e', '#ffb04a', '#d95e10'].forEach((c, i) => { ctx.strokeStyle = c; ctx.beginPath(); ctx.ellipse(0, 0, 12 - i * 3, 9 - i * 2.4, i * 0.6, 0, Math.PI * 2); ctx.stroke(); });
+    ctx.restore();
+    ctx.save();
+    ctx.strokeStyle = '#d8dde2'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(x + dir * 15, y + 2, 4.5, dir > 0 ? -Math.PI / 2 : Math.PI / 2, dir > 0 ? Math.PI : 0, dir < 0); ctx.stroke();
+    ctx.restore();
+  },
+  // 罗铮：贴地滑行的照明信号弹，尾部喷火冒烟
+  flare(ctx, x, y, dir, p, t) {
+    ctx.save();
+    for (let i = 1; i <= 6; i++) {
+      ctx.globalAlpha = 0.18 * (7 - i) / 6;
+      ctx.fillStyle = '#9a8f88';
+      ctx.beginPath(); ctx.arc(x - dir * (6 + i * 6), y - i * 1.5 - Math.sin(t * 0.3 + i) * 1.5, 3 + i * 1.2, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+    ctx.fillStyle = '#c0281e'; ctx.fillRect(x - 9, y - 3, 18, 6);
+    ctx.fillStyle = '#ffd8c0'; ctx.fillRect(x - 9, y - 1, 18, 1.2);
+    glowDot(ctx, x - dir * 10, y, 10 + (t % 4), '#ff5a2a');
+    glowDot(ctx, x + dir * 10, y, 6, '#fff0d0', 0.7);
+  },
+  // 苏红：铁皮喇叭喊出的声波（三道弧）
+  sound(ctx, x, y, dir, p, t) { soundWaves(ctx, x, y, dir, t, 1); },
+  megasound(ctx, x, y, dir, p, t) {
+    soundWaves(ctx, x, y, dir, t, 1.8);
+    ctx.save();
+    ctx.font = '900 13px "Noto Sans SC", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.lineWidth = 3; ctx.strokeStyle = '#7a0a06'; ctx.fillStyle = '#fff2b0';
+    ctx.strokeText('安全第一', x, y - 1); ctx.fillText('安全第一', x, y - 1);
+    ctx.restore();
+  },
+  // 苏红：卷着飞出去的红横幅
+  banner(ctx, x, y, dir, p, t) {
+    trail(ctx, x, y, dir, '#ff5a3a', 9);
+    const w = 30, h = 11, wave = Math.sin(t * 0.4) * 2;
+    ctx.save();
+    ctx.fillStyle = '#c8241a';
+    ctx.beginPath();
+    ctx.moveTo(x - w / 2, y - h / 2 + wave); ctx.quadraticCurveTo(x, y - h / 2 - wave, x + w / 2, y - h / 2 + wave);
+    ctx.lineTo(x + w / 2, y + h / 2 + wave); ctx.quadraticCurveTo(x, y + h / 2 - wave, x - w / 2, y + h / 2 + wave);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#ffd24a';
+    ctx.font = '900 8px "Noto Sans SC", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('安全生产', x, y + 0.5);
+    ctx.fillStyle = '#7a4a1a'; ctx.fillRect(x + dir * w / 2 - 1.5, y - h / 2 - 2 + wave, 3, h + 4);
+    ctx.restore();
+  },
+  // 方萤：两盏旋转着飞出去的矿灯
+  lamps(ctx, x, y, dir, p) {
+    for (const [dy, ph] of [[-6, 0], [7, 1.6]]) {
+      const lx = x - dir * (dy > 0 ? 6 : 0), ly = y + dy;
+      trail(ctx, lx, ly, dir, '#bfe9ff', 5);
+      ctx.save();
+      ctx.translate(lx, ly); ctx.rotate(p.x * 0.25 * dir + ph);
+      ctx.fillStyle = '#3a4a5a'; ctx.fillRect(-4, -5, 8, 10);
+      ctx.fillStyle = '#ffe9a0'; ctx.fillRect(-3, -4, 6, 4);
+      ctx.restore();
+      glowDot(ctx, lx, ly - 1, 9, '#ffe9a0');
+    }
+  },
+  // 沈清：一排银针
+  needles(ctx, x, y, dir, p, t) {
+    ctx.save();
+    for (let i = -2; i <= 2; i++) {
+      const ny = y + i * 3.2, nx = x - Math.abs(i) * dir * 3;
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.strokeStyle = 'rgba(200,230,255,0.35)'; ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.moveTo(nx - dir * 16, ny); ctx.lineTo(nx, ny); ctx.stroke();
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.strokeStyle = '#e8eef5'; ctx.lineWidth = 0.8;
+      ctx.beginPath(); ctx.moveTo(nx - dir * 9, ny); ctx.lineTo(nx + dir * 2, ny); ctx.stroke();
+      if ((t + i) % 6 === 0) glowDot(ctx, nx + dir * 2, ny, 3, '#ffffff');
+    }
+    ctx.restore();
+  },
+};
+
+function soundWaves(ctx, x, y, dir, t, k) {
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  for (let i = 0; i < 3; i++) {
+    const r = (6 + i * 7 + (t % 6)) * k;
+    ctx.globalAlpha = 0.85 - i * 0.22;
+    ctx.strokeStyle = i === 0 ? '#ffffff' : '#ffd24a';
+    ctx.lineWidth = (2.6 - i * 0.6) * k;
+    ctx.beginPath();
+    const a0 = dir > 0 ? -0.9 : Math.PI - 0.9, a1 = dir > 0 ? 0.9 : Math.PI + 0.9;
+    ctx.arc(x - dir * 10 * k, y, r, a0, a1);
+    ctx.stroke();
+  }
+  ctx.restore();
 }
 
 export function shade(hex, k) {

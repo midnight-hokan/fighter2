@@ -28,6 +28,7 @@ test('8 名角色两两快速对打（电脑托管）无报错，且都能正常
 test('出招表列出双方所有必杀技和超必杀', async ({ page }) => {
   await page.goto('/');
   await page.keyboard.press('Enter');
+  await page.getByTestId('mode-cpu-normal').click();
   await page.keyboard.press('KeyD');
   await page.keyboard.press('Enter');
   await page.keyboard.press('ArrowRight');

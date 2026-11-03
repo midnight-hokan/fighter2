@@ -13,7 +13,7 @@ import { createArcade } from './ui/arcade.js';
 import { Cutscene } from './ui/cutscene.js';
 import { Versus } from './ui/versus.js';
 import { TouchPad, isTouchDevice, simpleSpecialFor } from './ui/touch.js';
-import { openingScenes, prologueScenes, preFightScenes, endingScenes } from './ui/storyflow.js';
+import { openingScenes, prologueScenes, preFightScenes, endingScenes, midpointScenes, storyOrder } from './ui/storyflow.js';
 import { ROUND } from './engine/constants.js';
 
 // eslint-disable-next-line no-undef
@@ -150,7 +150,7 @@ const menus = TEST_MODE ? null : new Menus(document.getElementById('menu-root'),
     if (m === 'arcade') {
       // 街机模式：P2 由电脑按 createArcade 的顺序安排，选人页上的 P2 光标忽略
       arcadePlayer = characters[0];
-      arcade = createArcade({ roster: theme.roster, player: arcadePlayer, seed: Date.now() % 100000, finalBoss: finalBossId(arcadePlayer) });
+      arcade = createArcade({ roster: theme.roster, player: arcadePlayer, seed: Date.now() % 100000, finalBoss: finalBossId(arcadePlayer), order: storyOrder(theme.story, arcadePlayer) });
       characters = [arcadePlayer, arcade.current().opponent];
     } else {
       arcade = null;
@@ -311,7 +311,8 @@ function handleArcadeResult() {
   running = false;
   if (r === 'next') {
     const cur = arcade.current();
-    playStory(preFightScenes(theme.story, arcadePlayer, cur.opponent, { stage: cur.stage, final: cur.stage === arcade.opponents.length })).then(startArcadeRound);
+    const mid = cur.stage === 4 ? midpointScenes(theme.story, arcadePlayer) : [];
+    playStory([...mid, ...preFightScenes(theme.story, arcadePlayer, cur.opponent, { stage: cur.stage, final: cur.stage === arcade.opponents.length })]).then(startArcadeRound);
   } else {
     audio.stopBgm();
     playStory(endingScenes(theme.story, arcadePlayer)).then(showEndingScreen);
@@ -326,7 +327,7 @@ window.__game = {
   playStory: (kind, a, b, opts) => {
     const st = theme.story;
     const scenes = kind === 'opening' ? openingScenes(st) : kind === 'prologue' ? prologueScenes(st, a)
-      : kind === 'prefight' ? preFightScenes(st, a, b, opts) : kind === 'ending' ? endingScenes(st, a) : [];
+      : kind === 'prefight' ? preFightScenes(st, a, b, opts) : kind === 'midpoint' ? midpointScenes(st, a) : kind === 'ending' ? endingScenes(st, a) : [];
     cutscene.play(scenes);
     return scenes.length;
   },

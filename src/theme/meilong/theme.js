@@ -13,6 +13,18 @@ export default {
   // 街机最后一关（docs/故事设定.md）：固定沈清；玩家选沈清时最后一关为林啸
   finalBoss: { boss: 'c08', ifBoss: 'c01' },
   palette: { ui: '#f2c14e', uiDark: '#1a1410', accent: '#c8452c' },
+  // 飞行道具外观：用角色随身物品。key = 角色id:招式id。fx 是渲染器内置的程序化画法；
+  // sprite（可选，图片放好后再加，否则 404 会报错）：{ src, size（逻辑像素宽）, spin（旋转速度） }，有图片就优先用图片
+  projectiles: {
+    'c01:meiyan': { fx: 'helmet' },
+    'c02:baokong': { fx: 'rope' },
+    'c02:tanshui': { fx: 'flare' },
+    'c05:denghuadan': { fx: 'sound' },
+    'c05:daiteng': { fx: 'banner' },
+    'c05:denghuadrag': { fx: 'megasound' },
+    'c06:jifengdan': { fx: 'lamps' },
+    'c08:huiyan': { fx: 'needles' },
+  },
   audio: {
     title: 'assets/meilong/audio/title.ogg',
     sfx: {

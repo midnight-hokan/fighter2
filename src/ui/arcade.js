@@ -6,13 +6,18 @@ import { createRng } from '../engine/rng.js';
 // 7 战难度曲线：第 1 战简单、第 7 战困难，单调不减
 export const LEVELS = ['easy', 'easy', 'normal', 'normal', 'hard', 'hard', 'hard'];
 
-export function createArcade({ roster, player, seed, finalBoss }) {
+// order（可选）：故事模式的固定挑战顺序（不含最后一关），必须是除玩家和 finalBoss 外的全部对手
+export function createArcade({ roster, player, seed, finalBoss, order = null }) {
   const rng = createRng(seed);
   const others = roster.filter(c => c.id !== player).map(c => c.id);
   // finalBoss：最后一关固定（docs/故事设定.md：第七战永远沈清，玩家是沈清时第七战林啸）。
   // 其余 6 个对手照常洗牌，finalBoss 放最后。
   let opponents;
-  if (finalBoss && others.includes(finalBoss)) {
+  const rest0 = others.filter(id => id !== finalBoss);
+  const orderOk = order && order.length === rest0.length && rest0.every(id => order.includes(id));
+  if (orderOk && finalBoss && others.includes(finalBoss)) {
+    opponents = [...order, finalBoss];
+  } else if (finalBoss && others.includes(finalBoss)) {
     const rest = others.filter(id => id !== finalBoss);
     for (let i = rest.length - 1; i > 0; i--) {
       const j = rng.int(i + 1);

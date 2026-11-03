@@ -21,12 +21,16 @@ test('标题页显示主题标题和版本号', async ({ page }) => {
   await expect(page.getByTestId('version')).toBeVisible();
 });
 
-test('标题 → 选人（8 个角色、5 种模式）→ 开打，全程无报错', async ({ page }) => {
+test('标题 → 选人（8 个角色、故事/对战/训练模式）→ 开打，全程无报错', async ({ page }) => {
   const errors = trackErrors(page);
   await page.goto('/');
   await page.keyboard.press('Enter');
   for (const c of theme.roster) await expect(page.getByTestId(`char-${c.id}`)).toBeVisible();
-  for (const m of ['cpu-easy', 'cpu-normal', 'cpu-hard', '2p', 'training']) await expect(page.getByTestId(`mode-${m}`)).toBeVisible();
+  for (const m of ['arcade', 'cpu-easy', 'cpu-normal', 'cpu-hard', '2p', 'training']) await expect(page.getByTestId(`mode-${m}`)).toBeVisible();
+  // 模式顺序：故事模式排第一（默认选中），对战居中，训练最后
+  expect(await page.locator('.mode').first().getAttribute('data-testid')).toBe('mode-arcade');
+  expect(await page.locator('.mode').last().getAttribute('data-testid')).toBe('mode-training');
+  await page.getByTestId('mode-cpu-normal').click();
   await page.keyboard.press('Enter');
   await page.keyboard.press('Enter');
   await page.waitForFunction(() => window.__game.isRunning());
@@ -36,7 +40,7 @@ test('标题 → 选人（8 个角色、5 种模式）→ 开打，全程无报�
 });
 
 test('键盘：P1 移动和 6 个攻击键', async ({ page }) => {
-  await startFromMenu(page, { modeSteps: 4 }); // 训练模式，对手不动
+  await startFromMenu(page, { modeSteps: 5 }); // 训练模式，对手不动
   const x0 = await page.evaluate(() => window.__game.getState().fighters[0].x);
   await page.keyboard.down('KeyA');
   await page.waitForTimeout(500);
@@ -58,14 +62,14 @@ test('键盘：P1 移动和 6 个攻击键', async ({ page }) => {
 });
 
 test('训练模式：计时显示 ∞，有训练信息', async ({ page }) => {
-  await startFromMenu(page, { modeSteps: 4 });
+  await startFromMenu(page, { modeSteps: 5 });
   expect(await page.evaluate(() => window.__game.mode())).toBe('training');
   await expect(page.getByTestId('timer')).toHaveText('∞');
   await expect(page.getByTestId('training-info')).toContainText('训练');
 });
 
 test('Esc 打开出招表（含必杀技名和通用系统），再按关闭', async ({ page }) => {
-  await startFromMenu(page, { modeSteps: 4 });
+  await startFromMenu(page, { modeSteps: 5 });
   await page.keyboard.press('Escape');
   await expect(page.getByTestId('movelist')).toBeVisible();
   await expect(page.getByTestId('movelist')).toContainText(theme.roster[0].specials[0].name);

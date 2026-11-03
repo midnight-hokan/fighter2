@@ -74,15 +74,18 @@ class Atlas {
     const sx = (idx % j.columns) * j.frameW;
     const sy = Math.floor(idx / j.columns) * j.frameH;
     ctx.save();
-    const filters = [];
-    if (alt) filters.push('hue-rotate(160deg) saturate(0.8)');
-    if (flash) filters.push('brightness(2.4)');
-    if (tint === 'special') filters.push('brightness(1.4) sepia(1) hue-rotate(160deg) saturate(3)');
-    if (tint === 'super') filters.push('brightness(1.5) sepia(1) saturate(4)');
-    if (filters.length) ctx.filter = filters.join(' ');
+    // 软件渲染下 ctx.filter 很慢：只有镜像换色才用滤镜；受击闪白改成 lighter 叠画一遍
+    if (alt) ctx.filter = 'hue-rotate(160deg) saturate(0.8)';
+    if (tint === 'special') ctx.filter = 'brightness(1.4) sepia(1) hue-rotate(160deg) saturate(3)';
+    if (tint === 'super') ctx.filter = 'brightness(1.5) sepia(1) saturate(4)';
     ctx.translate(x, y);
     if (f.facing < 0) ctx.scale(-1, 1);
     ctx.drawImage(this.image, sx, sy, j.frameW, j.frameH, -j.anchor.x / k, -j.anchor.y / k, j.frameW / k, j.frameH / k);
+    if (flash) {
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalAlpha *= 0.85;
+      ctx.drawImage(this.image, sx, sy, j.frameW, j.frameH, -j.anchor.x / k, -j.anchor.y / k, j.frameW / k, j.frameH / k);
+    }
     ctx.restore();
   }
 }

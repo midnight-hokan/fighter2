@@ -371,4 +371,234 @@ export const TRUTH = [
   ] },
 ];
 
-export default { IMAGES, EXPRS, OPENING, PROLOGUE, RIVALS, TAUNTS, CHECKUP, CHECKUP_EXTRA, FINAL_FOR_SHEN, ENDINGS, TRUTH };
+
+// ———————— 故事模式：每个角色固定的挑战顺序（6 战，第七战体检关另算），宿敌放在后面 ————————
+export const ORDER = {
+  c01: ['c05', 'c06', 'c02', 'c04', 'c03', 'c07'],
+  c02: ['c05', 'c07', 'c01', 'c03', 'c06', 'c04'],
+  c03: ['c05', 'c04', 'c02', 'c07', 'c06', 'c01'],
+  c04: ['c06', 'c01', 'c03', 'c07', 'c05', 'c02'],
+  c05: ['c06', 'c02', 'c03', 'c01', 'c07', 'c04'],
+  c06: ['c05', 'c04', 'c01', 'c07', 'c02', 'c03'],
+  c07: ['c05', 'c03', 'c02', 'c04', 'c06', 'c01'],
+  c08: ['c06', 'c05', 'c03', 'c04', 'c02', 'c07'],
+};
+
+// ———————— 故事模式：非宿敌的对战前对话（me = 玩家，opp = 对手）。宿敌对话见 RIVALS ————————
+export const DUELS = {
+  // 林啸
+  'c01>c05': [
+    { who: 'opp', expr: 'smug', text: '采煤队长林啸！来，对着喇叭说两句，给全矿听听。' },
+    { who: 'me', expr: 'normal', text: '苏主任，我是来比武的，不是来上广播的。' },
+    { who: 'opp', expr: 'smug', text: '赢了上头版，输了也上头版。开始吧！' },
+  ],
+  'c01>c06': [
+    { who: 'opp', expr: 'normal', text: '林队，你的 0317 号灯，昨天又晚回来四十分钟。' },
+    { who: 'me', expr: 'hurt', text: '……工作面赶进度，下回一定按时。' },
+    { who: 'opp', expr: 'angry', text: '灯晚回来，我就在灯房一直等。今天你得让我出这口气！' },
+  ],
+  'c01>c02': [
+    { who: 'opp', expr: 'normal', text: '林啸，你们工作面的避险硐室，我上个月刚去检查过。' },
+    { who: 'me', expr: 'normal', text: '罗哥放心，我的兄弟一个都不会让你们背出来。' },
+    { who: 'opp', expr: 'smug', text: '好。那今天，我只把你一个人放倒。' },
+  ],
+  'c01>c04': [
+    { who: 'opp', expr: 'normal', text: '林啸，你们队这个月三张罚单，我都记着。' },
+    { who: 'me', expr: 'angry', text: '严主任，罚单我认，可裁员的事，总得有人去问。' },
+    { who: 'opp', expr: 'smug', text: '想去问？先过我这关。站好，别违章。' },
+  ],
+  // 罗铮
+  'c02>c05': [
+    { who: 'opp', expr: 'smug', text: '救护队的硬汉罗铮！我稿子的标题都想好了：《出生入死十二年》。' },
+    { who: 'me', expr: 'normal', text: '别写我。写写队里那帮年轻人。' },
+    { who: 'opp', expr: 'angry', text: '那你得先赢我，我才听你的！' },
+  ],
+  'c02>c07': [
+    { who: 'opp', expr: 'normal', text: '罗铮，每回你们演练完，澡堂的热水都不够用。' },
+    { who: 'me', expr: 'smug', text: '霍姨，那今天打完，我帮你烧锅炉。' },
+    { who: 'opp', expr: 'smug', text: '先别说大话，站得住再说。' },
+  ],
+  'c02>c01': [
+    { who: 'opp', expr: 'normal', text: '罗哥，我们队的兄弟都说，见了你就踏实。' },
+    { who: 'me', expr: 'normal', text: '最好一辈子别在井下见到我。' },
+    { who: 'opp', expr: 'smug', text: '那就在擂台上见！' },
+  ],
+  'c02>c03': [
+    { who: 'opp', expr: 'angry', text: '你们救护队的设备，又找我们机电队要人修！' },
+    { who: 'me', expr: 'normal', text: '修得好。那台呼吸器，前年救了三个人。' },
+    { who: 'opp', expr: 'smug', text: '……行，这句爱听。手下照样不留情！' },
+  ],
+  // 雷钧
+  'c03>c05': [
+    { who: 'opp', expr: 'smug', text: '雷队！你上回在大会上拍桌子，我可全录下来了。' },
+    { who: 'me', expr: 'angry', text: '录了又怎样？设备的事，我说的没错！' },
+    { who: 'opp', expr: 'smug', text: '那就拿拳头再说一遍，我给你放广播里！' },
+  ],
+  'c03>c04': [
+    { who: 'opp', expr: 'normal', text: '雷钧，三号皮带机的接地，你签了字。' },
+    { who: 'me', expr: 'angry', text: '我签的字，我负责！你查一百遍也是合格！' },
+    { who: 'opp', expr: 'smug', text: '那今天，我查查你本人合不合格。' },
+  ],
+  'c03>c02': [
+    { who: 'opp', expr: 'normal', text: '雷队，我们那台老呼吸器，还是你半夜给修好的。' },
+    { who: 'me', expr: 'smug', text: '记着就好。今天手下留情？' },
+    { who: 'opp', expr: 'smug', text: '不留。这是对你手艺的尊重。' },
+  ],
+  'c03>c07': [
+    { who: 'opp', expr: 'angry', text: '雷钧！澡堂的热水器上个月坏了三天，你们机电队人呢？' },
+    { who: 'me', expr: 'hurt', text: '那个……那三天我们在井下抢修主排水。' },
+    { who: 'opp', expr: 'smug', text: '理由我听了。账，还是要算的！' },
+  ],
+  // 严正
+  'c04>c06': [
+    { who: 'opp', expr: 'normal', text: '严主任，我们灯房的充电架，按你说的全部换了新的。' },
+    { who: 'me', expr: 'normal', text: '我看到了。这是全矿最规范的一间屋子。' },
+    { who: 'opp', expr: 'smug', text: '那今天，我也让你看看我规范的拳法！' },
+  ],
+  'c04>c01': [
+    { who: 'opp', expr: 'normal', text: '严主任，您罚了我们三张单子，兄弟们都挺服气。' },
+    { who: 'me', expr: 'normal', text: '服气就好。我只想你们每个人都平安升井。' },
+    { who: 'opp', expr: 'smug', text: '那您也得平安打完这一场。' },
+  ],
+  'c04>c03': [
+    { who: 'opp', expr: 'angry', text: '严正！又来查我的接线？' },
+    { who: 'me', expr: 'normal', text: '你的接线我不担心。我担心的是你的脾气。' },
+    { who: 'opp', expr: 'angry', text: '那你就试试，我这脾气有多高！' },
+  ],
+  // 苏红
+  'c05>c06': [
+    { who: 'opp', expr: 'normal', text: '苏主任，你那篇写灯房的稿子，我剪下来贴在墙上了。' },
+    { who: 'me', expr: 'smug', text: '那今天这一场，我再给你写一篇。' },
+    { who: 'opp', expr: 'smug', text: '标题我替你想好了——《小灯房打败大喇叭》！' },
+  ],
+  'c05>c02': [
+    { who: 'opp', expr: 'normal', text: '苏主任，采访的事，我真不擅长。' },
+    { who: 'me', expr: 'smug', text: '没事，你不说，我替你说。先打赢我再谈。' },
+    { who: 'opp', expr: 'normal', text: '那就点到为止。' },
+  ],
+  'c05>c03': [
+    { who: 'opp', expr: 'angry', text: '宣传科的！上回你把我拍桌子的样子贴在黑板报上！' },
+    { who: 'me', expr: 'smug', text: '那期黑板报，全矿评了第一。' },
+    { who: 'opp', expr: 'angry', text: '今天你就拍不成了！' },
+  ],
+  'c05>c01': [
+    { who: 'opp', expr: 'normal', text: '苏主任，您也来打擂台？' },
+    { who: 'me', expr: 'angry', text: '六十年的矿史，没几个女人的名字。这一次，我要自己写上去。' },
+    { who: 'opp', expr: 'smug', text: '好。那我不会让着您。' },
+  ],
+  'c05>c07': [
+    { who: 'opp', expr: 'smug', text: '小苏，我当年进决赛的时候，你还没出生呢。' },
+    { who: 'me', expr: 'normal', text: '霍姐，你是我矿史墙上要写的第一个名字。' },
+    { who: 'opp', expr: 'smug', text: '那就先让我看看，你配不配写第二个！' },
+  ],
+  // 方萤
+  'c06>c05': [
+    { who: 'opp', expr: 'smug', text: '小方萤！听说你要修头灯？这可是条大新闻。' },
+    { who: 'me', expr: 'normal', text: '苏姐，修好了再报道，修不好就别写了。' },
+    { who: 'opp', expr: 'smug', text: '那先过我这关，修灯的事我替你喊出去！' },
+  ],
+  'c06>c04': [
+    { who: 'opp', expr: 'normal', text: '方萤，你们灯房是全矿最规范的一间。' },
+    { who: 'me', expr: 'smug', text: '那严主任，今天手下能不能也规范点？' },
+    { who: 'opp', expr: 'normal', text: '规范的意思是：一招都不放水。' },
+  ],
+  'c06>c01': [
+    { who: 'opp', expr: 'hurt', text: '方萤……我那盏灯晚回来的事，真的对不住。' },
+    { who: 'me', expr: 'angry', text: '你知道我在灯房等到几点吗！' },
+    { who: 'opp', expr: 'normal', text: '知道。所以今天，我认真打。' },
+  ],
+  // 霍兰
+  'c07>c05': [
+    { who: 'opp', expr: 'smug', text: '霍姐，矿史墙上的第一个名字，我写的就是你。' },
+    { who: 'me', expr: 'normal', text: '写我干什么。我就是个看澡堂的。' },
+    { who: 'opp', expr: 'angry', text: '看澡堂的，也打进过决赛！今天，我要亲手赢你一次！' },
+  ],
+  'c07>c03': [
+    { who: 'opp', expr: 'hurt', text: '霍姨，热水器那回……真对不住。' },
+    { who: 'me', expr: 'smug', text: '今天打完，你亲自来修。' },
+    { who: 'opp', expr: 'smug', text: '修！先打！' },
+  ],
+  'c07>c02': [
+    { who: 'opp', expr: 'normal', text: '霍姨，您这拖把，比我们的救援钩还沉。' },
+    { who: 'me', expr: 'smug', text: '二十七年了，拖过的地比你们跑过的巷道还长。' },
+    { who: 'opp', expr: 'smug', text: '那今天，让我领教领教。' },
+  ],
+  // 沈清
+  'c08>c06': [
+    { who: 'opp', expr: 'normal', text: '沈大夫？您怎么不在最后一关等着？' },
+    { who: 'me', expr: 'normal', text: '矿长让我守关，可没说我不能先走一遍。' },
+    { who: 'me', expr: 'smug', text: '方萤，你的手腕老是酸，打完我给你看看。' },
+  ],
+  'c08>c05': [
+    { who: 'opp', expr: 'angry', text: '沈清！高中那年你考上了，我没考上。' },
+    { who: 'me', expr: 'normal', text: '你没考医学院，全矿却多了一个最会说话的人。' },
+    { who: 'opp', expr: 'hurt', text: '……你还是这么会讲道理。来吧！' },
+  ],
+  'c08>c03': [
+    { who: 'opp', expr: 'angry', text: '沈大夫，你又要说我血压高？' },
+    { who: 'me', expr: 'smug', text: '上周一百六十。今天这一场，你别激动。' },
+    { who: 'opp', expr: 'angry', text: '……我偏要激动！' },
+  ],
+  'c08>c04': [
+    { who: 'opp', expr: 'normal', text: '沈大夫，我那条腿的旧伤，您比我还清楚。' },
+    { who: 'me', expr: 'normal', text: '十一个小时被困，落下的。我一直记着。' },
+    { who: 'opp', expr: 'smug', text: '那就别手下留情。我想看看自己还行不行。' },
+  ],
+  'c08>c02': [
+    { who: 'opp', expr: 'normal', text: '沈清，你每次跟着我们下井，从没掉过队。' },
+    { who: 'me', expr: 'normal', text: '你们往前冲，总得有人在后面接着。' },
+    { who: 'me', expr: 'smug', text: '今天，换我往前冲。' },
+  ],
+  'c08>c07': [
+    { who: 'opp', expr: 'smug', text: '沈丫头，你小时候在澡堂摔破的膝盖，还是我抱去医院的。' },
+    { who: 'me', expr: 'hurt', text: '……霍姨，这事您就别提了。' },
+    { who: 'me', expr: 'smug', text: '今天，我来看看您的膝盖。' },
+  ],
+};
+
+// ———————— 故事模式：第三战之后的中段剧情（推进"黑岭要变样"的悬念） ————————
+export const MIDPOINT = {
+  c01: [{ img: 'c01_b', cam: 'still', lines: [
+    { who: null, text: '三战三胜。下班的人群里，有人在议论"智能化"三个字。' },
+    { who: 'npc:队员', text: '队长，听说厂家的工程师已经来矿上看过工作面了。' },
+    { who: 'c01', expr: 'angry', text: '那更不能停。赢到最后，我当面去问矿长。' },
+  ] }],
+  c02: [{ img: 'c02_b', cam: 'still', lines: [
+    { who: null, text: '救护队的板子上，又多了一张新设备的说明书：井下救援机器人。' },
+    { who: 'npc:新队员', text: '罗哥，机器都能下井了，还要我们吗？' },
+    { who: 'c02', expr: 'normal', text: '机器能进去的地方，人也得能进去。接着打。' },
+  ] }],
+  c03: [{ img: 'c03_b', cam: 'still', lines: [
+    { who: null, text: '机电队库房门口，停着几个贴着封条的大木箱。' },
+    { who: 'c03', expr: 'angry', text: '新设备？说明书先给我看看！' },
+    { who: 'c03', expr: 'smug', text: '……写得一般。等我拿下头灯，这些铁疙瘩归我管。' },
+  ] }],
+  c04: [{ img: 'c04_b', cam: 'still', lines: [
+    { who: null, text: '深夜的安监科，只亮着一盏台灯。' },
+    { who: 'c04', expr: 'hurt', text: '十一个小时……那时候要是井下少几个人，该多好。' },
+    { who: 'c04', expr: 'normal', text: '继续。剩下的人，我也要一个个看着他们打完。' },
+  ] }],
+  c05: [{ img: 'c05_b', cam: 'still', lines: [
+    { who: null, text: '宣传科的稿纸堆了半桌子，最上面一页只写了一个标题。' },
+    { who: 'c05', expr: 'normal', text: '《黑岭六十年，她们在哪里》。' },
+    { who: 'c05', expr: 'smug', text: '稿子写不完，那就打完再写。' },
+  ] }],
+  c06: [{ img: 'c06_b', cam: 'still', lines: [
+    { who: null, text: '灯房里，几百盏矿灯在充电架上一闪一闪。' },
+    { who: 'c06', expr: 'normal', text: '再赢几场，我就能摸到那盏头灯了。' },
+    { who: 'npc:老师傅', text: '小方，那灯头六十年没亮过，你真有把握？' },
+    { who: 'c06', expr: 'smug', text: '没把握，所以更要试。' },
+  ] }],
+  c07: [{ img: 'c07_b', cam: 'still', lines: [
+    { who: null, text: '澡堂收工，霍兰一把一把清点着更衣柜的钥匙。' },
+    { who: 'c07', expr: 'normal', text: '二十年前那场决赛，也是这么个晚上。' },
+    { who: 'c07', expr: 'smug', text: '这回，我要把那场打完。' },
+  ] }],
+  c08: [{ img: 'c08_b', cam: 'still', lines: [
+    { who: null, text: '矿医院的走廊里，体检报告按名字排得整整齐齐。' },
+    { who: 'c08', expr: 'normal', text: '每个人身上都有旧伤，可没有一个人肯认输。' },
+    { who: 'c08', expr: 'smug', text: '那就让我亲自确认一遍：他们都还打得动。' },
+  ] }],
+};
+
+export default { IMAGES, EXPRS, OPENING, PROLOGUE, RIVALS, TAUNTS, CHECKUP, CHECKUP_EXTRA, FINAL_FOR_SHEN, ENDINGS, TRUTH, ORDER, DUELS, MIDPOINT };
