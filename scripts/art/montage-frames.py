@@ -7,7 +7,11 @@ import json, sys
 from PIL import Image, ImageDraw
 
 ROOT = "/home/yuguang/projects/fighter2"
-cid = sys.argv[1]
+args = [a for a in sys.argv[1:] if not a.startswith("--")]
+cid = args[0]
+SRC = "art-work/frames"
+if "--src" in sys.argv:
+    SRC = sys.argv[sys.argv.index("--src") + 1]
 data = json.load(open(f"{ROOT}/art-work/poses/{cid}.json"))
 anims = data["anims"]
 F = 128
@@ -44,7 +48,7 @@ for r, (anim, idxs) in enumerate(rows):
     y = 8 + r * (F + 8)
     dr.text((10, y + F // 2 - 8), anim, fill=(255, 220, 120))
     for c, i in enumerate(idxs):
-        p = f"{ROOT}/art-work/frames/{cid}/{anim.replace('.', '_')}_{i:02d}.png"
+        p = f"{ROOT}/{SRC}/{cid}/{anim.replace('.', '_')}_{i:02d}.png"
         im = Image.open(p).convert("RGBA").resize((F, F), Image.LANCZOS)
         sheet.paste(im, (LBL + c * F, y), im)
 sheet.convert("RGB").save(f"{ROOT}/docs/art-review/{cid}-frames.png", optimize=True)
