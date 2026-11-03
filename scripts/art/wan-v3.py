@@ -7,7 +7,7 @@
   gen <cid>   逐动画：Wan 视频（length 对齐 8k+1）→ 取 pick 帧 → BiRefnet 批量抠图
               → 逐帧逆仿射回 1024 → art-work/frames-v3/<cid>/<anim>_<k:02d>.png + mp4 归档
   contact <cid>  帧联系表 docs/art-review/v3-<cid>.jpg
-  finish <cid>   frame-qc(--no-pose) + pack-atlas --v3 + contact + 结果报告
+  finish <cid>   frame-qc(K/G/P, poses-v3) + pack-atlas --v3 + contact + 结果报告
   run             8 角色顺序全量（心跳守护 + 逐人 commit），断点续跑（按产物存在性跳过）
 
 复刻试点（c04 cr.hk 已验证）：骨架渲染/fit/提示词/节点参数全部与 wan-pilot 一致。
@@ -21,6 +21,7 @@ from PIL import Image, ImageDraw
 PY = "/home/yuguang/latentsync-env/bin/python"
 ROOT = os.path.expanduser("~/projects/fighter2")
 WORK = os.path.join(ROOT, "art-work/wan-v3")
+REFDIR = os.path.join(WORK, "ref")
 FRAMES = os.path.join(ROOT, "art-work/frames-v3")
 ANIMATE = os.path.join(ROOT, "art-work/animate")
 REV = os.path.join(ROOT, "docs/art-review")
@@ -81,7 +82,7 @@ POSE_PROMPTS = {
   "hengsaotui":"a low banner sweep, sweeping kick with the banner roll","denghuadrag":"a horn drag strike, pulling the horn across","hengfuchou":"a banner elbow, striking with the elbow",
   "guangbohuiyin":"a broadcast echo wave, both hands pushing out a wave","biaoyuqiang":"a slogan wall, both arms spreading a barrier","zhenerlong":"a final dragon strike, horn thrust combo",
   # c06 灯影（跑灯）
-  "shenfengt":"a fast chain strike, quick successive jabs","feihua":"a flying kick, quick spinning kick","jifengdan":"a fast lamp flash strike, both lamps forward",
+    "shanfengt":"a high-speed charging dash, body lunging forward, lead fist driving a rushing punch","feihua":"a flying kick, quick spinning kick","jifengdan":"a fast lamp flash strike, both lamps forward",
   "dengliandian":"a lamp chain jab, quick double lamp thrust","jifenglong":"a gale needle thrust, fast straight jab","dikonghuachan":"a ground to air spark, low rising kick",
   "denglianxiaza":"a lamp chain down slam, both lamps driving down","liuguanglianwu":"a flowing light dance, multi-hit combo","qiandengzhaojing":"a front lamp flash, both lamps thrusting forward",
   # c07 老抠（保洁）
@@ -199,6 +200,131 @@ def resample_dense(seq, n):
         i1 = min(m - 1, i0 + 1)
         out.append(lerp_kp(seq[i0], seq[i1], pos - i0))
     return out
+
+
+# ---------------- 格斗架势参考图（01:30 规范：参考图用全身格斗架势，非站立立绘） ----------------
+EDIT_UNET = "qwen_image_edit_2511_fp8mixed.safetensors"
+EDIT_CLIP = "qwen_2.5_vl_7b_fp8_scaled.safetensors"
+EDIT_VAE = "qwen_image_vae.safetensors"
+REFGEN_PROMPT = ("Convert this standing portrait into a full-body dynamic fighting stance: "
+                 "one foot forward, knees bent, fists raised in a martial arts guard, ready to fight. "
+                 "Full body visible from head to feet, same character, identical face and outfit, "
+                 "plain light beige studio background, no text, no visual effects")
+REFGEN_NEG = ("text, watermark, deformed, extra limbs, multiple people, sitting, lying down, "
+              "close-up, half body, visual effects, fire, lightning")
+
+
+def wf_refgen(ref_name, prompt, neg, seed, prefix):
+    """Edit-2511 img2img（denoise 0.55）+ BiRefNet 抠图副产物（供覆盖度/直方图评分）"""
+    return {
+        "1": {"class_type": "UNETLoader", "inputs": {"unet_name": EDIT_UNET, "weight_dtype": "default"}},
+        "2": {"class_type": "CLIPLoader", "inputs": {"clip_name": EDIT_CLIP, "type": "qwen_image"}},
+        "3": {"class_type": "VAELoader", "inputs": {"vae_name": EDIT_VAE}},
+        "4": {"class_type": "LoadImage", "inputs": {"image": ref_name}},
+        "5": {"class_type": "TextEncodeQwenImageEditPlus",
+              "inputs": {"clip": ["2", 0], "prompt": prompt, "image1": ["4", 0], "vae": ["3", 0]}},
+        "6": {"class_type": "VAEEncode", "inputs": {"pixels": ["4", 0], "vae": ["3", 0]}},
+        "7": {"class_type": "KSampler",
+              "inputs": {"model": ["1", 0], "positive": ["5", 0], "negative": ["5", 0],
+                         "latent_image": ["6", 0], "seed": seed, "steps": 15, "cfg": 1.0,
+                         "sampler_name": "euler", "scheduler": "simple", "denoise": 0.55}},
+        "8": {"class_type": "VAEDecode", "inputs": {"samples": ["7", 0], "vae": ["3", 0]}},
+        "9": {"class_type": "SaveImage", "inputs": {"images": ["8", 0], "filename_prefix": prefix}},
+        "10": {"class_type": "LoadBackgroundRemovalModel", "inputs": {"bg_removal_name": "birefnet.safetensors"}},
+        "11": {"class_type": "RemoveBackground", "inputs": {"bg_removal_model": ["10", 0], "image": ["8", 0]}},
+        "12": {"class_type": "InvertMask", "inputs": {"mask": ["11", 0]}},
+        "13": {"class_type": "JoinImageWithAlpha", "inputs": {"image": ["8", 0], "alpha": ["12", 0]}},
+        "14": {"class_type": "SaveImage", "inputs": {"images": ["13", 0], "filename_prefix": prefix + "_fin"}},
+    }
+
+
+def _lab_hist(img, bins=6, topn=24):
+    """LAB 6x6x6 直方图 top-24 归一（与 frame-qc ID 检查同族判据，抓服装/身份漂移）"""
+    lab = img.convert("LAB").resize((48, 48))
+    c = {}
+    for (L, A, B) in lab.getdata():
+        k = (min(L * bins // 256, bins - 1), min(A * bins // 256, bins - 1), min(B * bins // 256, bins - 1))
+        c[k] = c.get(k, 0) + 1
+    total = lab.width * lab.height
+    return {k: v / total for k, v in sorted(c.items(), key=lambda x: -x[1])[:topn]}
+
+
+def _lab_dist(h1, h2):
+    keys = set(h1) | set(h2)
+    return sum(abs(h1.get(k, 0) - h2.get(k, 0)) for k in keys) / 2
+
+
+def _coverage_alpha(img):
+    a = img.getchannel("A").histogram()
+    return sum(a[128:]) / (img.width * img.height)
+
+
+def _refgen_sheet(cid, portrait, cands, picked):
+    """docs/art-review/wan-v3-refgen-<cid>.jpg：立绘 | cand0 | cand1（标注选中）"""
+    import shutil as _sh
+    cells = [Image.open(portrait).convert("RGB")] + [Image.open(r).convert("RGB") for r, _ in cands]
+    w, h = 512, 512
+    sheet = Image.new("RGB", (w * 3 + 8 * 2, h + 28), (245, 243, 240))
+    from PIL import ImageDraw
+    dr = ImageDraw.Draw(sheet)
+    labels = [f"portrait", f"cand0{'  <-- picked' if picked == 0 else ''}", f"cand1{'  <-- picked' if picked == 1 else ''}"]
+    for i, (im, lb) in enumerate(zip(cells, labels)):
+        sheet.paste(im.resize((w, h), Image.Resampling.LANCZOS), (8 + i * (w + 8), 28))
+        dr.text((12 + i * (w + 8), 8), lb, fill=(30, 30, 30))
+    out = os.path.join(ROOT, "docs", "art-review", f"wan-v3-refgen-{cid}.jpg")
+    sheet.save(out, quality=88)
+    return out
+
+
+def refgen(cid):
+    """格斗架势参考图：Edit-2511 两候选 → LAB 直方图+覆盖度评分自动挑优 → 480 上传 wanv3_<cid>_ref.png。
+    失败（OOM/超时）抛异常由调用方降级为站立立绘参考（prep_ref 兜底）。"""
+    portrait = os.path.join(REV, f"{cid}-portrait.png")
+    if not os.path.exists(portrait):
+        raise RuntimeError(f"portrait missing: {portrait}")
+    os.makedirs(REFDIR, exist_ok=True)
+    cands = []
+    base_hist = _lab_hist(Image.open(portrait).convert("RGB"))
+    for k in range(2):
+        tag = f"wanv3_{cid}_ref_cand{k}"
+        upload(f"{tag}_src.png", portrait)
+        try:
+            wf = wf_refgen(f"{tag}_src.png", REFGEN_PROMPT, REFGEN_NEG,
+                           int(time.time()) * 100 + k, f"f2v3_{cid}_ref_cand{k}")
+            out = wait_done(queue_prompt(wf), timeout=1800)
+            raw = os.path.join(REFDIR, f"{cid}_cand{k}_raw.png")
+            fin = os.path.join(REFDIR, f"{cid}_cand{k}_fin.png")
+            view_image(out["9"], out["9"]["images"][0]["images"][0]["filename"], raw)
+            view_image(out["14"], out["14"]["images"][0]["images"][0]["filename"], fin)
+            cands.append((raw, fin))
+        finally:
+            try:
+                os.remove(os.path.join(INPUT_DIR, f"{tag}_src.png"))
+            except OSError:
+                pass
+    if len(cands) < 2:
+        raise RuntimeError("refgen: candidate generation failed")
+    scored = []
+    for k, (raw, fin) in enumerate(cands):
+        d = _lab_dist(_lab_hist(Image.open(raw).convert("RGB")), base_hist)
+        cov = _coverage_alpha(Image.open(fin))
+        scored.append((d, cov, k))
+        log(f"refgen {cid} cand{k}: lab_dist={d:.4f} coverage={cov:.1%}")
+    scored.sort()
+    d, cov, k = scored[0]
+    raw, fin = cands[k]
+    best = os.path.join(REFDIR, f"{cid}_stance.png")
+    import shutil as _sh
+    _sh.copy(raw, best)
+    sheet = _refgen_sheet(cid, portrait, cands, k)
+    log(f"refgen {cid}: picked cand{k} (lab_dist={d:.4f}, cov={cov:.1%}) -> {best}; sheet {sheet}")
+    # 480 参考图（与 prep_ref 同款 bbox_fit；底色取 raw 左上角，保持与生成背景一致）
+    bg = Image.open(raw).convert("RGB").getpixel((4, 4))
+    canvas, _ = bbox_fit(raw, bg, 45, bg)
+    canvas.save(os.path.join(REFDIR, f"{cid}_480.png"))
+    upload(f"wanv3_{cid}_ref.png", os.path.join(REFDIR, f"{cid}_480.png"))
+    log(f"refgen {cid}: uploaded wanv3_{cid}_ref.png (fighting stance ref)")
+
 
 def anim_plan(cid, anim):
     """返回 (dense 关键点列表, 驱动长度 L, pick 列表（L 内索引）)"""
@@ -455,9 +581,10 @@ def finish(cid):
     if missing:
         log(f"finish {cid}: 缺帧 {len(missing)} 动画，如 {missing[:5]}")
         return False
-    log(f"finish {cid}: 46 动画齐帧，跑 frame-qc --no-pose")
-    r = subprocess.run([sys.executable, "scripts/art/frame-qc.py", "--chars", cid, "--no-pose",
-                        "--src", "art-work/frames-v3"], cwd=ROOT, capture_output=True, text=True, timeout=3600)
+    log(f"finish {cid}: 46 动画齐帧，跑 frame-qc（K/G/P，目标骨架 poses-v3）")
+    r = subprocess.run([sys.executable, "scripts/art/frame-qc.py", "--chars", cid,
+                        "--src", "art-work/frames-v3", "--poses", "poses-v3"],
+                       cwd=ROOT, capture_output=True, text=True, timeout=5400)
     with open(os.path.join(CK, f"v3-qc-{cid}.log"), "w") as f:
         f.write(r.stdout + "\n--- stderr ---\n" + r.stderr)
     qtail = (r.stdout.strip().splitlines() or [""])[-1]
@@ -472,16 +599,44 @@ def finish(cid):
     return ok
 
 # ---------- run（8 角色顺序 + 心跳守护） ----------
+def _inbox_record(cid, h, nfr, mins, qtail):
+    """INBOX 01:30 条目末尾（下一个 ## 标题前）追加一行完成记录，单独提交"""
+    import datetime
+    ip = os.path.join(ROOT, "INBOX.md")
+    lines = open(ip, encoding="utf-8").read().splitlines(keepends=True)
+    start = next((i for i, l in enumerate(lines) if "2026-11-04 01:30" in l), None)
+    if start is None:
+        log("run: INBOX 未找到 01:30 条目，跳过记录")
+        return
+    end = next((i for i in range(start + 1, len(lines)) if lines[i].startswith("## ")), len(lines))
+    rec = (f"  - ✅ {cid} 完成 {datetime.datetime.now().strftime('%H:%M')}: commit {h}, "
+           f"{nfr} 帧, {mins:.0f} 分钟, {qtail}\n")
+    lines.insert(end, rec)
+    open(ip, "w", encoding="utf-8").write("".join(lines))
+    subprocess.run(["git", "add", "INBOX.md"], cwd=ROOT, capture_output=True)
+    subprocess.run(["git", "commit", "-m", f"INBOX: v3 {cid} 完成 {h}"], cwd=ROOT, capture_output=True)
+
+
 def run():
+    import signal as _sig
     os.makedirs(CK, exist_ok=True)
     hb = os.path.join(CK, "heartbeat")
-    p = subprocess.Popen(f"while :; do touch {hb}; sleep 300; done", shell=True)
-    log(f"run: 心跳守护 pid={p.pid}")
+    p = subprocess.Popen(f"while :; do touch {hb}; sleep 300; done", shell=True,
+                         start_new_session=True)
+    log(f"run: 心跳守护 pid={p.pid}（独立进程组，killpg 清理）")
     done, failed = [], []
     try:
         for cid in ORDER:
+            t_cid = time.time()
             log(f"===== {cid} 开始 =====")
             try:
+                # 01:30 规范：每个人开工前先查 INBOX（拉取对方新指示/修改要求）
+                subprocess.run(["git", "pull", "--rebase", "--autostash"], cwd=ROOT,
+                               capture_output=True)
+                try:
+                    refgen(cid)
+                except Exception as e:
+                    log(f"run: {cid} refgen 失败（{str(e)[:120]}），降级站立立绘参考")
                 prep(cid)
                 fails = gen(cid)
                 if fails:
@@ -489,22 +644,46 @@ def run():
                     log(f"run: {cid} 有 {len(fails)} 动画失败，跳过 finish，继续下一人")
                     continue
                 if finish(cid):
-                    subprocess.run(["git", "pull", "--rebase", "--autostash"], cwd=ROOT, capture_output=True)
+                    subprocess.run(["git", "pull", "--rebase", "--autostash"], cwd=ROOT,
+                                   capture_output=True)
                     subprocess.run(["git", "add", f"public/assets/meilong/{cid}/",
-                                    "public/assets/manifest.json", f"docs/art-review/v3-{cid}.jpg"], cwd=ROOT)
+                                    "public/assets/manifest.json", f"docs/art-review/v3-{cid}.jpg"],
+                                   cwd=ROOT)
                     subprocess.run(["git", "commit", "-m",
                                     f"v3 {cid}: 46 动画全量帧（Wan2.2-Animate 驱动 + BiRefnet 抠图 + 逆仿射回 1024）"],
                                    cwd=ROOT, capture_output=True)
+                    h = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=ROOT,
+                                       capture_output=True, text=True).stdout.strip()
+                    nfr = len([f for f in os.listdir(os.path.join(FRAMES, cid)) if f.endswith(".png")])
+                    qf = os.path.join(CK, f"v3-qc-{cid}.log")
+                    qtail = ""
+                    if os.path.exists(qf):
+                        qtail = (open(qf).read().strip().splitlines() or [""])[-1][:120]
+                    try:
+                        _inbox_record(cid, h, nfr, (time.time() - t_cid) / 60, qtail)
+                    except Exception as e:
+                        log(f"run: {cid} INBOX 记录失败: {e}")
                     done.append(cid)
-                    log(f"run: {cid} 已提交")
+                    log(f"run: {cid} 已提交 {h}")
                 else:
                     failed.append((cid, ["finish 红灯"]))
             except Exception as e:
                 log(f"run: {cid} 异常: {e}")
                 failed.append((cid, [str(e)[:100]]))
     finally:
+        for _s in (_sig.SIGTERM, _sig.SIGKILL):
+            try:
+                os.killpg(p.pid, _s)
+            except Exception:
+                break
+            if _s == _sig.SIGTERM:
+                time.sleep(2)
+        # 验证心跳停止前进（35s 间隔两次采样）
         try:
-            p.terminate()
+            m1 = os.path.getmtime(hb)
+            time.sleep(35)
+            m2 = os.path.getmtime(hb)
+            log(f"run: 心跳停跳检查 {'OK' if abs(m2 - m1) < 1 else '仍在前进，需人工检查!'}")
         except Exception:
             pass
     log(f"run: 结束。完成 {done}，失败 {failed}")
@@ -514,6 +693,8 @@ def main():
     cid = sys.argv[2] if len(sys.argv) > 2 else None
     if cmd == "prep" and cid:
         prep(cid)
+    elif cmd == "refgen" and cid:
+        refgen(cid)
     elif cmd == "gen" and cid:
         gen(cid)
     elif cmd == "contact" and cid:

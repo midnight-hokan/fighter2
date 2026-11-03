@@ -562,6 +562,7 @@ def main():
     ap.add_argument("--only", default="", help="只查文件名包含该子串的帧（调试）")
     ap.add_argument("--src", default="", help="帧目录根（默认 art-work/frames；"
                                                "如 art-work/fixed 则查 art-work/fixed/<cid>/）")
+    ap.add_argument("--poses", default="poses", help="poses JSON 子目录（默认 poses；v3 帧用 poses-v3，帧清单/目标骨架以该目录为准）")
     args = ap.parse_args()
     os.makedirs(CHK, exist_ok=True)
 
@@ -574,7 +575,7 @@ def main():
     report = {"ts": time.strftime("%Y-%m-%d %H:%M:%S"), "thresholds": TH, "characters": {}}
     for cid in args.chars:
         t1 = time.time()
-        poses = json.load(open(os.path.join(ART, "poses", f"{cid}.json")))
+        poses = json.load(open(os.path.join(ART, args.poses, f"{cid}.json")))
         fdir = os.path.join(args.src, cid) if args.src else os.path.join(ART, "frames", cid)
         pdir = os.path.join(ART, "pose-img", cid)
         palette = load_palette_greens(cid)
