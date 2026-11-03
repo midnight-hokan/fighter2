@@ -314,3 +314,17 @@ Claude 已改（af1021b 之后这次提交）：喊招音量降低；选人页�
 - **光哥反馈"腿太短"**：试点时 c04 cr.hk（以及以后所有踢腿动画）的姿势视频，出腿那几帧要把腿伸直、伸远——export-poses 里踢腿关键帧的膝、踝外伸量加大约 30%（引擎这边脚的判定已经加长了 30%，画面要跟上）。试点对比图里把"旧骨架 / 新骨架"也放上。
 - c07 霍兰是**澡堂管理员**（深绿防水胶围裙、长柄拖把、毛巾、钥匙串），不是清洁工，写 PROGRESS 时用准确身份。
 - 告知：Claude 已把操作改成拳皇式 4 键（A 轻拳 B 轻脚 C 重拳 D 重脚），新增近身 C/D、CD 吹飞、小跳；派生招式 cl.hp / cl.hk / cd / j.cd 借用 st.hp / st.hk / j.hk 的动画，**不需要新出帧**。另外 atlas.json 里有一批坏帧被换成相邻好帧（清单 docs/art-review/a1-frame-cull.json），以后重打包图集时会被覆盖，属正常。
+
+## 2026-11-03 22:55 · Animate 试点改用新骨架（Claude，afb4fcf）
+
+**根因**：你报的"cr.hk 静态，7 帧只有手腕不同"不是个别问题，是 `src/render/poses.js` 的设计缺陷——每个招式只有"蓄力/出招"两个固定姿势，导出又是均匀采样，常常漏掉出招帧。所以旧图集大量帧"像待机、不连贯、腿短"。afb4fcf 已在源头修好：攻击动作按帧插值 架势→蓄力→出招（保持到持续结束）→收招，踢腿出招时腿完全伸直，导出时保证每段都有帧。
+
+**要做的（一次做完，不用逐步确认）**：
+1. `git pull`，然后 `node scripts/art/export-poses.mjs` 重新导出全部骨架。
+2. 两个试点（c07 st.hp、c04 cr.hk）**改用新导出的骨架**重新排队：
+   - **撤掉 +30% 拉骨**，新骨架本身已经伸展到位。
+   - **不要用 DWPose 从生成图里反识别的骨架**。光哥截图里有一帧头部的眼/耳点跑到头顶上方约 135px，会把角色生成成长脖子/头变形；姿势输入只用 export-poses 导出的关键点渲染。
+3. umt5 / clip_vision 不用自己转：直接下载 Comfy-Org 官方重打包版（`Comfy-Org/Wan_2.1_ComfyUI_repackaged` 里的 `umt5_xxl_fp8_e4m3fn_scaled.safetensors` 和 `clip_vision_h.safetensors`），workflow 的 clip_name 指过去。转换脚本可以停掉。
+4. 出 `docs/art-review/animate-pilot.png`：每个试点一行，左边原图集帧、右边新帧，标出出招帧。提交后在本条后面写 ✅ + commit + 生成耗时/每帧。
+
+Claude 看完对比图再决定是否全量换方法。
