@@ -130,9 +130,16 @@ def wait_done(pid, timeout=2700):
         time.sleep(3)
     raise TimeoutError("prompt " + pid + " timeout")
 
-def view_image(node_out, filename, local):
-    url = (f"{CUI}/view?filename={urllib.parse.quote(filename)}"
-           f"&subfolder={node_out.get('subfolder', '')}&type={node_out.get('type', 'output')}")
+def _save_imgs(o):
+    """SaveImage 输出取平图列表：本机构建扁平 [{filename,subfolder,type}]，标准版双层 [[{...}]]"""
+    imgs = o.get("images", [])
+    if imgs and isinstance(imgs[0], list):
+        return imgs[0]
+    return imgs
+
+def view_image(im, local):
+    url = (f"{CUI}/view?filename={urllib.parse.quote(im['filename'])}"
+           f"&subfolder={im.get('subfolder', '')}&type={im.get('type', 'output')}")
     with urllib.request.urlopen(url, timeout=300) as r, open(local, "wb") as f:
         shutil.copyfileobj(r, f)
 
@@ -294,8 +301,8 @@ def refgen(cid):
             out = wait_done(queue_prompt(wf), timeout=1800)
             raw = os.path.join(REFDIR, f"{cid}_cand{k}_raw.png")
             fin = os.path.join(REFDIR, f"{cid}_cand{k}_fin.png")
-            view_image(out["9"], out["9"]["images"][0]["images"][0]["filename"], raw)
-            view_image(out["14"], out["14"]["images"][0]["images"][0]["filename"], fin)
+            view_image(_save_imgs(out["9"])[0], raw)
+            view_image(_save_imgs(out["14"])[0], fin)
             cands.append((raw, fin))
         finally:
             try:
@@ -319,8 +326,9 @@ def refgen(cid):
     sheet = _refgen_sheet(cid, portrait, cands, k)
     log(f"refgen {cid}: picked cand{k} (lab_dist={d:.4f}, cov={cov:.1%}) -> {best}; sheet {sheet}")
     # 480 参考图（与 prep_ref 同款 bbox_fit；底色取 raw 左上角，保持与生成背景一致）
-    bg = Image.open(raw).convert("RGB").getpixel((4, 4))
-    canvas, _ = bbox_fit(raw, bg, 45, bg)
+    im = Image.open(raw).convert("RGB")
+    bg = im.getpixel((4, 4))
+    canvas, _ = bbox_fit(im, bg, 45, bg)
     canvas.save(os.path.join(REFDIR, f"{cid}_480.png"))
     upload(f"wanv3_{cid}_ref.png", os.path.join(REFDIR, f"{cid}_480.png"))
     log(f"refgen {cid}: uploaded wanv3_{cid}_ref.png (fighting stance ref)")
@@ -452,12 +460,11 @@ def cutout_batch(cid, safe, tmp, idxs, prefix):
     wf["701"] = {"class_type": "SaveImage", "inputs": {"images": ["700", 0], "filename_prefix": prefix}}
     pid = queue_prompt(wf)
     out = wait_done(pid, timeout=900)
-    saved = out["701"]["images"][0]["images"]
+    saved = _save_imgs(out["701"])
     res = {}
     for j, i in enumerate(idxs):
-        fn = saved[j]["filename"]
         local = os.path.join(tmp, f"cut_{i:04d}.png")
-        view_image(out["701"], fn, local)
+        view_image(saved[j], local)
         res[i] = local
     return res
 
@@ -497,9 +504,9 @@ def gen_anim(cid, anim, attempt=0):
     t0 = time.time()
     pid = queue_prompt(wf)
     out = wait_done(pid, timeout=3000)
-    imgs = out["403"]["images"][0]["images"]
+    imgs = _save_imgs(out["403"])
     for i, im in enumerate(imgs):
-        view_image(out["403"], im["filename"], os.path.join(tmp, f"{i:04d}.png"))
+        view_image(im, os.path.join(tmp, f"{i:04d}.png"))
     # mp4 归档（不进仓库）
     os.makedirs(os.path.join(ANIMATE, cid), exist_ok=True)
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-framerate", "16",
