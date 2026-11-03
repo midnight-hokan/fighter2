@@ -47,8 +47,10 @@ export function validateAtlas(json, character, img) {
   return errs;
 }
 
+// 拳皇式派生招式借用已有动画：近身重拳/重脚用站立版，吹飞攻击用站立重脚，空中吹飞用跳重脚
+const ANIM_ALIAS = { 'cl.hp': 'st.hp', 'cl.hk': 'st.hk', cd: 'st.hk', 'j.cd': 'j.hk' };
 export function animKeyFor(f) {
-  if (f.action === 'attack' && f.move) return f.move.id;
+  if (f.action === 'attack' && f.move) return ANIM_ALIAS[f.move.id] ?? f.move.id;
   if (f.action === 'blockstun' && f.blockLow) return 'crblock';
   return f.action;
 }

@@ -49,10 +49,10 @@ describe('E5 气槽（拳皇97 进阶模式）', () => {
     expect(s.at(-1).fighters[1].hp).toBe(700);
   });
 
-  it('爆气：轻中重拳同按，消耗 1 颗豆，进入 MAX 状态并计时', () => {
+  it('爆气：A+B+C（轻拳+轻脚+重拳）同按，消耗 1 颗豆，进入 MAX 状态并计时', () => {
     const g = newGame({ p1x: 200, p2x: 500 });
     g.debug.setMeter(0, 2);
-    const s = play(g, [[{ lp: true, mp: true, hp: true }, {}, 1], [{}, {}, 30]]);
+    const s = play(g, [[{ lp: true, lk: true, hp: true }, {}, 1], [{}, {}, 30]]);
     expect(events(s, 'max')).toHaveLength(1);
     expect(s.at(-1).fighters[0].meter.stocks).toBe(1);
     expect(s.at(-1).fighters[0].meter.max).toBeGreaterThan(0);
@@ -64,7 +64,7 @@ describe('E5 气槽（拳皇97 进阶模式）', () => {
   it('爆气按键有 3 帧宽容（先按的轻拳会被取消）', () => {
     const g = newGame({ p1x: 200, p2x: 500 });
     g.debug.setMeter(0, 1);
-    const s = play(g, [[{ lp: true }, {}, 1], [{ lp: true, mp: true }, {}, 1], [{ lp: true, mp: true, hp: true }, {}, 1], [{}, {}, 10]]);
+    const s = play(g, [[{ lp: true }, {}, 1], [{ lp: true, hp: true }, {}, 1], [{ lp: true, lk: true, hp: true }, {}, 1], [{}, {}, 10]]);
     expect(events(s, 'max')).toHaveLength(1);
   });
 
@@ -73,7 +73,7 @@ describe('E5 气槽（拳皇97 进阶模式）', () => {
     const n = play(normal, [[{ mp: true }, {}, 1], [{}, {}, 30]]).at(-1).fighters[1].hp;
     const g = newGame({ p1x: 364, p2x: 404 });
     g.debug.setMeter(0, 1);
-    play(g, [[{ lp: true, mp: true, hp: true }, {}, 1], [{}, {}, 25]]);
+    play(g, [[{ lp: true, lk: true, hp: true }, {}, 1], [{}, {}, 25]]);
     g.debug.setX(0, g.getState().fighters[1].x - 40);
     const before = g.getState().fighters[0].meter.gauge;
     const m = play(g, [[{ mp: true }, {}, 1], [{}, {}, 30]]).at(-1);
@@ -84,7 +84,7 @@ describe('E5 气槽（拳皇97 进阶模式）', () => {
   it('MAX 超必杀：爆气中输入超必杀，再消耗 1 豆，结束爆气，伤害更高', () => {
     const g = newGame(CLOSE);
     g.debug.setMeter(0, 2);
-    play(g, [[{ lp: true, mp: true, hp: true }, {}, 1], [{}, {}, 25]]);
+    play(g, [[{ lp: true, lk: true, hp: true }, {}, 1], [{}, {}, 25]]);
     g.debug.setX(0, g.getState().fighters[1].x - 40);
     const s = play(g, [...superInput(), [{}, {}, 120]]);
     const sup = events(s, 'super');
@@ -132,7 +132,7 @@ describe('E5 气槽（拳皇97 进阶模式）', () => {
   it('豆跨回合保留，爆气在回合结束时取消', () => {
     const g = newGame({ p1x: 200, p2x: 500 });
     g.debug.setMeter(0, 3);
-    play(g, [[{ lp: true, mp: true, hp: true }, {}, 1], [{}, {}, 25]]);
+    play(g, [[{ lp: true, lk: true, hp: true }, {}, 1], [{}, {}, 25]]);
     g.debug.setHp(1, 0);
     idle(g, 1);
     expect(g.getState().fighters[0].meter.max).toBe(0);

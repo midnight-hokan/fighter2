@@ -55,7 +55,8 @@ export function createAI(level = 'normal', seed = 1, character = null) {
   let backHeld = 0;
   const ch = character ?? {};
   const normals = Object.entries(ch.normals ?? {}).map(([id, m]) => ({ id, ...m, reach: reachOf(m) }));
-  const ground = normals.filter(n => !n.id.startsWith('j.'));
+  // 拳皇式 4 键：电脑也只用 A/B/C/D（不用中拳中脚）
+  const ground = normals.filter(n => !n.id.startsWith('j.') && !/m[pk]$/.test(n.id));
   const specials = (ch.specials ?? []).map(s => ({ ...s, parsed: parseCommand(s.input) }));
   const supers = (ch.supers ?? []).map(s => ({ ...s, parsed: parseCommand(s.input) }));
   const projectile = specials.find(s => s.projectile);
@@ -109,7 +110,7 @@ export function createAI(level = 'normal', seed = 1, character = null) {
     }
 
     // 气槽
-    if (self.meter.stocks >= 2 && self.meter.max === 0 && r() < cfg.max) return queue([{ lp: true, mp: true, hp: true }, {}]);
+    if (self.meter.stocks >= 2 && self.meter.max === 0 && r() < cfg.max) return queue([{ lp: true, lk: true, hp: true }, {}]);
     if (self.meter.stocks >= 1 && supers.length && dist < 120 && r() < cfg.super) {
       const s = supers[Math.floor(r() * supers.length)];
       return useCmd(s, s.parsed.button === 'K' ? 'hk' : 'hp');
@@ -118,7 +119,7 @@ export function createAI(level = 'normal', seed = 1, character = null) {
     // 远距离
     if (dist > 150) {
       if (projectile && !state.projectiles.some(p => p.owner === me) && r() < cfg.special) {
-        const strength = ['lp', 'mp', 'hp'][Math.floor(r() * 3)];
+        const strength = ['lp', 'hp'][Math.floor(r() * 2)];
         const s = projectile.parsed.button === 'K' ? strength.replace('p', 'k') : strength;
         if (projectile.parsed.type === 'charge' && backHeld < 42) return queue(Array.from({ length: 16 }, () => ({ [back]: true })));
         return useCmd(projectile, s);
@@ -141,10 +142,10 @@ export function createAI(level = 'normal', seed = 1, character = null) {
         const n = cancelable[Math.floor(r() * cancelable.length)];
         const [stance, b] = n.id.split('.');
         const first = { [b]: true, down: stance === 'cr' };
-        const tail = commandToInputs(follow.parsed, self.facing, { button: follow.parsed.button === 'K' ? 'mk' : 'mp' });
+        const tail = commandToInputs(follow.parsed, self.facing, { button: follow.parsed.button === 'K' ? 'lk' : 'lp' });
         return queue([first, { down: stance === 'cr' }, { down: stance === 'cr' }, ...tail]);
       }
-      if (rush && r() < cfg.special * 0.4 && rush.parsed.type !== 'charge') return useCmd(rush, rush.parsed.button === 'K' ? 'mk' : 'mp');
+      if (rush && r() < cfg.special * 0.4 && rush.parsed.type !== 'charge') return useCmd(rush, rush.parsed.button === 'K' ? 'hk' : 'hp');
       const n = inReach[Math.floor(r() * inReach.length)];
       const [stance, b] = n.id.split('.');
       return queue([{ [b]: true, down: stance === 'cr' }, { down: stance === 'cr' }, {}]);

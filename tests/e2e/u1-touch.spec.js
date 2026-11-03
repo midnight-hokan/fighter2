@@ -56,7 +56,8 @@ test('摇杆移动、攻击键出招、必杀键一键发动必杀技', async ({
   expect(x1, '推摇杆向右应前进').toBeGreaterThan(x0 + 10);
   await page.waitForTimeout(300);
   await press(page, 'touch-hp');
-  await page.waitForFunction(() => window.__game.getState().fighters[0].move?.id === 'st.hp', null, { timeout: 2000 });
+  // 走近后按 C：贴身是近身版 cl.hp，离远是 st.hp
+  await page.waitForFunction(() => /^(st|cl)\.hp$/.test(window.__game.getState().fighters[0].move?.id ?? ''), null, { timeout: 2000 });
   await page.waitForFunction(() => !window.__game.getState().fighters[0].move, null, { timeout: 3000 });
   const sp = await page.evaluate(() => window.__game.getState().fighters[0].charId);
   await press(page, 'touch-sp');

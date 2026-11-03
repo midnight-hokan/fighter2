@@ -4,7 +4,7 @@
 export const isTouchDevice = () => new URLSearchParams(location.search).has('touch')
   || (typeof matchMedia !== 'undefined' && matchMedia('(pointer: coarse)').matches);
 
-const BTNS = [['lp', '轻拳'], ['mp', '中拳'], ['hp', '重拳'], ['lk', '轻脚'], ['mk', '中脚'], ['hk', '重脚']];
+const BTNS = [['lp', 'A'], ['lk', 'B'], ['hp', 'C'], ['hk', 'D']];
 
 export class TouchPad {
   constructor(parent, { onKey, onSpecial }) {

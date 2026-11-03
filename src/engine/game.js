@@ -1,7 +1,7 @@
 // 格斗引擎内核：纯逻辑，不依赖 DOM / 渲染，可在 Node 中运行。
 // 固定 60Hz：每调用一次 step() 推进一帧。同种子 + 同输入序列 → 完全相同的结果。
 import {
-  STAGE, MAX_SEPARATION, PHYS, INPUT, METER, STUN, HITSTOP, SUPER_FREEZE,
+  STAGE, MAX_SEPARATION, PHYS, INPUT, METER, STUN, HITSTOP, SUPER_FREEZE, KOF,
   KNOCKDOWN_FRAMES, ROLL, MAX_START_FRAMES, THROW_PROTECT, ATTACKS, ROUND, STRENGTH, COMBO,
 } from './constants.js';
 import { normalizeInput, InputHistory, matchCommand, strengthOf } from './input.js';
@@ -200,6 +200,8 @@ export class Game {
         f.vx = dir * st.jumpH;
         f.jumpDir = dir;
         f.airAttackUsed = false;
+        f.hopWindow = KOF.hopWindow;   // 起跳后几帧内松开"上" → 小跳
+        f.airFrames = 0;
         this.setAction(f, 'jump');
       }
       return;
@@ -230,7 +232,7 @@ export class Game {
     const ch = this.ch(f);
 
     // 爆气：轻中重拳同时按
-    if (f.meter.stocks >= 1 && f.meter.max === 0 && h.simul(['lp', 'mp', 'hp'])) {
+    if (f.meter.stocks >= 1 && f.meter.max === 0 && h.simul(['lp', 'lk', 'hp'])) {
       this._startMax(f);
       return true;
     }
@@ -250,10 +252,13 @@ export class Game {
         return true;
       }
     }
-    // 普通技（同时按多个键时取最重的）
+    // CD 吹飞攻击：重拳 + 重脚
+    if (h.simul(['hp', 'hk']) && ch.normals.cd) { this._startMove(f, ch.normals.cd); return true; }
+    // 普通技（同时按多个键时取最重的）；站立 C/D 贴身时用近身版
     const pick = ['hp', 'hk', 'mp', 'mk', 'lp', 'lk'].find(b => last.pressed[b]);
     if (pick) {
-      const m = ch.normals[`${last.input.down ? 'cr' : 'st'}.${pick}`];
+      const near = !last.input.down && (pick === 'hp' || pick === 'hk') && Math.abs(opp.x - f.x) <= KOF.closeRange;
+      const m = (near && ch.normals[`cl.${pick}`]) || ch.normals[`${last.input.down ? 'cr' : 'st'}.${pick}`];
       if (m) { this._startMove(f, m); return true; }
     }
     return false;
@@ -298,6 +303,7 @@ export class Game {
   _tryAirNormal(f) {
     const last = this.histories[f.index].latest();
     if (this._trySpecial(f)) return;
+    if (this.histories[f.index].simul(['hp', 'hk']) && this.ch(f).normals['j.cd']) { f.airAttackUsed = true; this._startMove(f, this.ch(f).normals['j.cd']); return; }
     const order = ['hp', 'hk', 'mp', 'mk', 'lp', 'lk'];
     const pick = order.find(b => last.pressed[b]);
     if (!pick) return;
@@ -340,6 +346,7 @@ export class Game {
     const mv = f.move;
     if (!mv || mv.def.kind !== 'normal' || !mv.connected || !f.grounded || mv.def.id.startsWith('j.')) return null;
     const rank = { l: 1, m: 2, h: 3 };
+    if (!mv.def.id.includes('.') || mv.def.id.startsWith('cl.')) return null;
     const cur = rank[STRENGTH[mv.def.id.split('.')[1]]];
     const last = this.histories[f.index].latest();
     const btn = ['hp', 'hk', 'mp', 'mk', 'lp', 'lk'].find(b => last.pressed[b]);
@@ -390,7 +397,7 @@ export class Game {
     // 卡拉取消：普通技出手 3 帧内补齐同时按键 → 爆气 / 回避
     if (mv.def.kind === 'normal' && f.actionFrame <= INPUT.simulWindow && f.grounded) {
       const h = this.histories[f.index];
-      if (f.meter.stocks >= 1 && f.meter.max === 0 && h.simul(['lp', 'mp', 'hp'])) { this._startMax(f); return; }
+      if (f.meter.stocks >= 1 && f.meter.max === 0 && h.simul(['lp', 'lk', 'hp'])) { this._startMax(f); return; }
       if (h.simul(['lp', 'lk'])) { this._startRoll(f); return; }
     }
     // 取消：命中/被防后，可取消成必杀或超必杀
@@ -512,6 +519,17 @@ export class Game {
       if (--f.slide.frames <= 0) f.slide = null;
     }
     if (f.grounded) return;
+    // 小跳：起跳后 hopWindow 帧内松开"上"，把跳跃改成矮而快的小跳
+    if (f.hopWindow > 0) {
+      f.hopWindow--;
+      f.airFrames = (f.airFrames ?? 0) + 1;
+      if (f.action === 'jump' && !this.inputs[f.index]?.up) {
+        const vyHop = this.ch(f).stats.jumpV * KOF.hopMul - PHYS.gravity * (f.airFrames - 1);
+        if (vyHop < f.vy) f.vy = vyHop;
+        f.hop = true;
+        f.hopWindow = 0;
+      }
+    }
     f.x += f.vx;
     f.y += f.vy;
     f.vy -= PHYS.gravity;

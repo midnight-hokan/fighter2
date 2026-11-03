@@ -59,6 +59,14 @@ export const COMBO = {
 };
 export const SUPER_FREEZE = 30;
 export const KNOCKDOWN_FRAMES = 50;
+// 拳皇式系统（4 键 A 轻拳 / B 轻脚 / C 重拳 / D 重脚）
+export const KOF = {
+  closeRange: 52,        // 双方距离 ≤ 此值时，站立 C/D 变成近身版（快、可取消）
+  kickReach: 1.3,        // 脚的判定横向加长（腿比手长）
+  hopMul: 0.68,          // 小跳：起跳后 4 帧内松开上 → 跳跃初速 ×0.68（更低更快落地）
+  hopWindow: 4,
+};
+
 export const ROLL = { frames: 26, invuln: [1, 16], speed: 4 };
 export const MAX_START_FRAMES = 20;
 export const THROW_PROTECT = 8;     // 受击/防御硬直结束后的防投帧数

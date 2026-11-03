@@ -1,13 +1,14 @@
 // 键盘与手柄。键位改动时 README 和出招表说明要同步。
 export const KEYMAP = [
-  // P1：WASD 移动；U I O = 轻/中/重拳；J K L = 轻/中/重脚
-  { KeyW: 'up', KeyS: 'down', KeyA: 'left', KeyD: 'right', KeyU: 'lp', KeyI: 'mp', KeyO: 'hp', KeyJ: 'lk', KeyK: 'mk', KeyL: 'hk' },
-  // P2：方向键移动；小键盘 7 8 9 = 轻/中/重拳；4 5 6 = 轻/中/重脚
-  { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', Numpad7: 'lp', Numpad8: 'mp', Numpad9: 'hp', Numpad4: 'lk', Numpad5: 'mk', Numpad6: 'hk' },
+  // 拳皇式 4 键：A 轻拳 / B 轻脚 / C 重拳 / D 重脚
+  // P1：WASD 移动；J = A　K = B　U = C　I = D
+  { KeyW: 'up', KeyS: 'down', KeyA: 'left', KeyD: 'right', KeyJ: 'lp', KeyK: 'lk', KeyU: 'hp', KeyI: 'hk' },
+  // P2：方向键移动；小键盘 1 = A　2 = B　4 = C　5 = D
+  { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', Numpad1: 'lp', Numpad2: 'lk', Numpad4: 'hp', Numpad5: 'hk' },
 ];
 
-// 标准手柄布局：X=轻拳 Y=中拳 RB=重拳 A=轻脚 B=中脚 RT=重脚，十字键/左摇杆移动
-const PAD = { 2: 'lp', 3: 'mp', 5: 'hp', 0: 'lk', 1: 'mk', 7: 'hk', 12: 'up', 13: 'down', 14: 'left', 15: 'right' };
+// 标准手柄（拳皇布局）：X=A 轻拳 A=B 轻脚 Y=C 重拳 B=D 重脚，十字键/左摇杆移动
+const PAD = { 2: 'lp', 0: 'lk', 3: 'hp', 1: 'hk', 12: 'up', 13: 'down', 14: 'left', 15: 'right' };
 
 export class Controls {
   constructor() {

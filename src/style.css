@@ -199,3 +199,7 @@ body.touch .power { top: calc(env(safe-area-inset-top, 0px) + 70px); }
   filter: drop-shadow(0 3px 0 #000); pointer-events: none; }
 .counter-pop.p1 { left: 4vw; } .counter-pop.p2 { right: 4vw; }
 .counter-pop.pop { animation: combo-pop .25s ease-out; }
+
+/* 拳皇式 4 键触屏：2×2 排列，按钮加大 */
+.tp-btns { grid-template-columns: repeat(2, min(18vh, 76px)); }
+.tp-btn { width: min(18vh, 76px); height: min(18vh, 76px); font-size: 22px; }

@@ -39,14 +39,14 @@ test('标题 → 选人（8 个角色、故事/对战/训练模式）→ 开打�
   expect(errors).toEqual([]);
 });
 
-test('键盘：P1 移动和 6 个攻击键', async ({ page }) => {
+test('键盘：P1 移动和 4 个攻击键（拳皇式 A B C D）', async ({ page }) => {
   await startFromMenu(page, { modeSteps: 5 }); // 训练模式，对手不动
   const x0 = await page.evaluate(() => window.__game.getState().fighters[0].x);
   await page.keyboard.down('KeyA');
   await page.waitForTimeout(500);
   await page.keyboard.up('KeyA');
   expect(await page.evaluate(() => window.__game.getState().fighters[0].x)).toBeLessThan(x0 - 10);
-  for (const [key, id] of [['KeyU', 'st.lp'], ['KeyI', 'st.mp'], ['KeyO', 'st.hp'], ['KeyJ', 'st.lk'], ['KeyK', 'st.mk'], ['KeyL', 'st.hk']]) {
+  for (const [key, id] of [['KeyJ', 'st.lp'], ['KeyK', 'st.lk'], ['KeyU', /^(st|cl)\.hp$/], ['KeyI', /^(st|cl)\.hk$/]]) {
     await page.waitForTimeout(600);
     await page.evaluate(() => {
       window.__seen = [];
@@ -57,7 +57,8 @@ test('键盘：P1 移动和 6 个攻击键', async ({ page }) => {
     await page.waitForTimeout(150);
     await page.keyboard.up(key);
     await page.waitForTimeout(400);
-    expect(await page.evaluate(() => window.__seen), key).toContain(id);
+    const seen = await page.evaluate(() => window.__seen);
+    if (id instanceof RegExp) expect(seen.some(x => id.test(x ?? '')), key).toBe(true); else expect(seen, key).toContain(id);
   }
 });
 

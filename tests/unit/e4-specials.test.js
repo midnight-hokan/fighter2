@@ -71,8 +71,8 @@ describe('E4 必杀技与取消', () => {
     expect(s.some(t => t.fighters[0].move?.id === 'ball')).toBe(true);
   });
 
-  it('不可取消的普通技（站立重拳）不能取消', () => {
-    const g = newGame({ p1x: 364, p2x: 404 });
+  it('不可取消的普通技（远距离站立重拳）不能取消', () => {
+    const g = newGame({ p1x: 340, p2x: 404 });
     const s = play(g, [[{ hp: true }, {}, 1], [{}, {}, 9], ...motion(236, 'hp'), [{}, {}, 3]]);
     const ballFrame = s.findIndex(t => t.fighters[0].move?.id === 'ball');
     expect(ballFrame).toBe(-1);

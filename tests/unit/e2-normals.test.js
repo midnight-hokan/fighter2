@@ -53,7 +53,7 @@ describe('E2 普通技与防御', () => {
   it('跳攻（上段）蹲防挡不住，站防可以', () => {
     const run = (p2) => {
       const g = newGame({ p1x: 280, p2x: 380 });
-      const s = play(g, [[{ up: true, right: true }, p2, 4], [{ right: true }, p2, 28], [{ hk: true }, p2, 1], [{}, p2, 40]]);
+      const s = play(g, [[{ up: true, right: true }, p2, 8], [{ right: true }, p2, 24], [{ hk: true }, p2, 1], [{}, p2, 40]]);
       return { hp: s.at(-1).fighters[1].hp, blocks: events(s, 'block').length, hits: events(s, 'hit').length };
     };
     const crouch = run({ right: true, down: true });
@@ -117,7 +117,7 @@ describe('E2 普通技与防御', () => {
 
   it('跳跃：起跳前有预备帧，之后离地并落回', () => {
     const g = newGame();
-    const s = play(g, [[{ up: true }, {}, 1], [{}, {}, 80]]);
+    const s = play(g, [[{ up: true }, {}, 8], [{}, {}, 80]]);
     expect(s[0].fighters[0].action).toBe('prejump');
     expect(Math.max(...s.map(t => t.fighters[0].y))).toBeGreaterThan(60);
     expect(s.at(-1).fighters[0].grounded).toBe(true);
@@ -125,7 +125,7 @@ describe('E2 普通技与防御', () => {
 
   it('越过对手后朝向翻转', () => {
     const g = newGame({ p1x: 370, p2x: 398 });
-    const s = play(g, [[{ up: true, right: true }, {}, 2], [{ right: true }, {}, 80]]);
+    const s = play(g, [[{ up: true, right: true }, {}, 8], [{ right: true }, {}, 80]]);
     const [a, b] = s.at(-1).fighters;
     expect(a.x).toBeGreaterThan(b.x);
     expect(a.facing).toBe(-1);
