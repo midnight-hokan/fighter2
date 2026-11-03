@@ -9,7 +9,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import theme from '../../src/theme/index.js';
 import { requiredAnims } from '../../src/render/atlas.js';
-import { POSES, guessAnim, skeleton } from '../../src/render/poses.js';
+import { POSES, guessAnim, attackPose, skeleton } from '../../src/render/poses.js';
 
 const out = process.argv[2] && !process.argv[2].startsWith('--') ? process.argv[2] : 'art-work/poses';
 const si = process.argv.indexOf('--scale');
@@ -49,6 +49,17 @@ function keypoints(pose) {
   ];
 }
 
+// 完整版采样：保证"蓄力→出招→收招"每段都有帧（均匀采样容易漏掉只有 2–4 帧的出招段，动画就像没出手）
+function fullFrames(m, n, total) {
+  const st = m.startup ?? 5, ac = m.active ?? 3;
+  const nA = Math.min(2, Math.max(1, n - 2)), nS = Math.max(1, Math.round((n - nA) * 0.45)), nR = Math.max(0, n - nA - nS);
+  const out = [];
+  for (let i = 0; i < nS; i++) out.push(Math.max(1, Math.round(((i + 1) / (nS + 1)) * st + 0.5)));
+  out.push(st + 1); if (nA > 1) out.push(st + Math.max(1, ac));
+  for (let i = 0; i < nR; i++) out.push(Math.round(st + ac + ((i + 1) / (nR + 0.6)) * (total - st - ac)));
+  return out.slice(0, n);
+}
+
 mkdirSync(out, { recursive: true });
 for (const ch of theme.roster) {
   const anims = {};
@@ -69,9 +80,14 @@ for (const ch of theme.roster) {
       // 精简版：普通技取"蓄力、出招"两帧，必杀技取"蓄力、出招、收招"三帧；完整版均匀采样
       const frame = LITE
         ? (n === 2 ? [Math.max(1, Math.round(m.startup / 2)), m.startup + 1][i] : [Math.max(1, Math.round(m.startup / 2)), m.startup + 1, m.startup + m.active + Math.round((m.recovery ?? 10) / 2)][i])
-        : Math.max(1, Math.round(((i + 0.5) / n) * total));
+        : fullFrames(m, n, total)[i];
       const active = frame > m.startup && frame <= m.startup + m.active + 2;
-      return { keypoints: keypoints(fn(frame, frame / total, active)), active };
+      const animName = POSES[m.anim] ? m.anim : guessAnim(key);
+      // 关键帧插值：架势 → 蓄力 → 出招 → 收招（旋风腿、投技仍按时间函数）
+      const pose = ['spin', 'throw', 'grab'].includes(animName)
+        ? fn(frame, frame / total, active)
+        : attackPose(animName, frame, m.startup ?? 5, m.active ?? 3, m.recovery ?? 10);
+      return { keypoints: keypoints(pose), active };
     });
     anims[key] = { fps: Math.round((n * 60) / total), loop: false, frames };
   }
