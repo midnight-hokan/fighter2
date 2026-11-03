@@ -472,8 +472,11 @@ def main():
                 fails.append("G")
             elif base is None and rec["ghost"] > TH["ghost_delta"]:
                 fails.append("G")
+            # P 只作参考不计 fail（2026-11-03 判定）：DWPose 对动态姿势/特效帧误报率高
+            # （抽视检证实 PCK≈0 帧多数姿势正确，检测/分配崩），PCK p50≈0.46 为管线常态。
+            # 低 PCK 帧走抽视检（p-debug-overlay.py），真缺陷才修。
             if rec["pck"] is not None and rec["pck"] < TH["pck"]:
-                fails.append("P")
+                rec["pck_low"] = True
             rec["fails"] = fails
             results[fname] = rec
             cells.append((fname, fimg, "".join(fails)))
@@ -485,8 +488,8 @@ def main():
                 if base is not None and rec["ghost"] > base + TH["ghost_delta"]:
                     fails.append("G")
                 if rec["pck"] is not None and rec["pck"] < TH["pck"]:
-                    fails.append("P")
-                order = {"S": 0, "K": 1, "G": 2, "P": 3}
+                    rec["pck_low"] = True
+                order = {"S": 0, "K": 1, "G": 2}
                 rec["fails"] = sorted(set(fails), key=lambda x: order[x])
                 for k, (_, _, fs) in enumerate(cells):
                     if cells[k][0] == fname:

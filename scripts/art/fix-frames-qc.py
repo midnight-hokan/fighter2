@@ -77,7 +77,7 @@ def main():
         for fname, rec in crep.get("frames", {}).items():
             fails = rec.get("fails", [])
             need_local = any(f in ("S", "K") for f in fails)
-            need_regen = any(f in ("G", "P") for f in fails)
+            need_regen = any(f in ("G",) for f in fails)  # P 已降级参考项，不进 fails
             if not need_local and not need_regen:
                 continue
             if need_regen:
