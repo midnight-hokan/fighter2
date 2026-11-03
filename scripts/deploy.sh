@@ -18,6 +18,8 @@ VERSION=$(git rev-parse --short HEAD 2>/dev/null || echo dev)
 if git status --porcelain 2>/dev/null | grep -q .; then VERSION="${VERSION}+"; fi
 export APP_VERSION="$VERSION"
 
+# 大图生成/更新 WebP 副本（运行时优先加载，体积约十分之一）；只有 PNG 内容变了才重新生成
+python3 scripts/assets-webp.py
 npx vite build >/dev/null
 printf '{"version":"%s","time":"%s"}\n' "$VERSION" "$(date -u +%FT%TZ)" > dist/version.json
 echo "构建完成：版本 $VERSION"

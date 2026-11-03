@@ -134,6 +134,8 @@ test('精灵图：清单里登记的角色改用精灵图绘制', async ({ page 
   await page.route('**/assets/manifest.json', r => r.fulfill({ json: { [theme.id]: { [c.id]: `assets/${theme.id}/${c.id}/atlas.json` } } }));
   await page.route(`**/assets/${theme.id}/${c.id}/atlas.json`, r => r.fulfill({ json: atlas }));
   await page.route(`**/assets/${theme.id}/${c.id}/atlas.png`, r => r.fulfill({ body: solidPng(64, 96, [0, 255, 0]), contentType: 'image/png' }));
+  // 运行时优先请求同名 .webp：这里让它 404，强制回退到上面伪造的 PNG
+  await page.route(`**/assets/${theme.id}/${c.id}/atlas.webp`, r => r.fulfill({ status: 404, body: '' }));
   await openTestMode(page);
   await page.waitForFunction((id) => window.__game.renderInfo().atlases.includes(id), c.id);
   await page.evaluate((id) => { window.__game.reset({ p1: id, p1x: 300, p2x: 470 }); window.__game.step(5); }, c.id);

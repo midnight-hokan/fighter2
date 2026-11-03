@@ -93,30 +93,46 @@ class Atlas {
 export class AtlasStore {
   constructor(themeId) { this.themeId = themeId; this.map = new Map(); this.errors = {}; }
 
-  async load(roster) {
-    let manifest = {};
-    try {
-      const r = await fetch('assets/manifest.json', { cache: 'no-cache' });
-      if (r.ok) manifest = await r.json();
-    } catch { /* 没有清单就全部用占位小人 */ }
-    const entries = manifest[this.themeId] ?? {};
-    await Promise.all(Object.entries(entries).map(async ([id, path]) => {
-      const ch = roster.find(c => c.id === id);
-      if (!ch) return;
-      try {
-        const json = await (await fetch(path, { cache: 'no-cache' })).json();
-        const base = path.slice(0, path.lastIndexOf('/') + 1);
-        const image = await new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = rej; im.src = base + json.image; });
-        const errs = validateAtlas(json, ch, image);
-        if (errs.length) { this.errors[id] = errs; console.warn(`精灵图 ${id} 不合格，改用占位小人：`, errs); return; }
-        this.map.set(id, new Atlas(json, image));
-      } catch (e) {
-        this.errors[id] = [String(e)];
-        console.warn(`精灵图 ${id} 加载失败：`, e);
-      }
+  // 清单只取一次
+  manifest() {
+    this.manifestP ??= fetch('assets/manifest.json', { cache: 'no-cache' })
+      .then(r => (r.ok ? r.json() : {})).catch(() => ({}));
+    return this.manifestP;
+  }
+
+  // 全部加载（测试和预取用）
+  async load(roster) { return this.ensure(roster, roster.map(c => c.id)); }
+
+  // 按需加载指定角色（对战双方），已加载或正在加载的不会重复请求
+  async ensure(roster, ids) {
+    const entries = (await this.manifest())[this.themeId] ?? {};
+    this.pending ??= new Map();
+    await Promise.all(ids.filter(id => entries[id]).map((id) => {
+      if (!this.pending.has(id)) this.pending.set(id, this.loadOne(roster, id, entries[id]));
+      return this.pending.get(id);
     }));
   }
 
+  async loadOne(roster, id, path) {
+    const ch = roster.find(c => c.id === id);
+    if (!ch) return;
+    try {
+      const json = await (await fetch(path, { cache: 'no-cache' })).json();
+      const base = path.slice(0, path.lastIndexOf('/') + 1);
+      // 优先加载同名 .webp（体积约 PNG 的十分之一），失败再回退原图
+      const load = (src) => new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = rej; im.src = src; });
+      const src = base + json.image;
+      const image = /\.png$/.test(src) ? await load(src.replace(/\.png$/, '.webp')).catch(() => load(src)) : await load(src);
+      const errs = validateAtlas(json, ch, image);
+      if (errs.length) { this.errors[id] = errs; console.warn(`精灵图 ${id} 不合格，改用占位小人：`, errs); return; }
+      this.map.set(id, new Atlas(json, image));
+    } catch (e) {
+      this.errors[id] = [String(e)];
+      console.warn(`精灵图 ${id} 加载失败：`, e);
+    }
+  }
+
+  has(id) { return this.map.has(id); }
   get(id) { return this.map.get(id) ?? null; }
   loadedIds() { return [...this.map.keys()]; }
 }

@@ -50,10 +50,19 @@ const versus = new Versus(document.body, theme);
 function startFight(bannerText) {
   // 引擎只在第 2 回合起发 round 事件，第 1 回合的开场白和播报在这里补上
   const go = () => { running = true; hud.flashBanner(bannerText, 60); hud.queue = [[theme.text.fight, 40]]; audio.handleVoice({ type: 'round', number: 1 }); audio.handleAnnouncer({ type: 'round', number: 1 }); draw(game.getState()); };
-  if (!cutscenesOn) return go();
+  // 双方图集没到就先等（最多 20 秒），免得开打时显示占位小人
+  const ids = [chars[0].id, chars[1].id];
+  const loaded = () => ids.every(id => renderer.atlases.has(id) || renderer.atlases.errors[id]);
+  const ready = Promise.race([renderer.atlases.ensure(theme.roster, ids), new Promise(r => setTimeout(r, 20000))]);
+  if (!cutscenesOn) {
+    if (loaded()) return go();
+    running = false;
+    hud.flashBanner('加载角色中…', 9999);
+    return ready.then(go);
+  }
   running = false;
   const stage = theme.stages[renderer.stageIndex];
-  versus.play(chars[0], chars[1], { caption: stage?.name ?? '' }).then(go);
+  Promise.all([versus.play(chars[0], chars[1], { caption: stage?.name ?? '' }), ready]).then(go);
 }
 
 let game = new Game({ seed: 1, characters: [theme.roster[0], theme.roster[Math.min(1, theme.roster.length - 1)]] });
@@ -80,7 +89,13 @@ let dummy = 0;
 const queued = [[], []];
 
 // 美术与音频资源：全部异步加载，缺什么就用程序化兜底（火柴人 / 色块背景 / 合成音）
-const assetsReady = Promise.all([renderer.atlases.load(theme.roster), loadStageImages(theme.stages), audio.preload(theme)]);
+// 资源加载：测试环境一次性全部加载；真实玩家按需加载（对战双方的图集开打前加载，其余后台慢慢预取），
+// 避免慢网下一开页面就同时下载几十 MB、导致开打时图还没到而显示占位小人
+const EAGER = TEST_MODE || navigator.webdriver;
+const assetsReady = EAGER
+  ? Promise.all([renderer.atlases.load(theme.roster), loadStageImages(theme.stages), audio.preload(theme)])
+  : Promise.all([loadStageImages(theme.stages), audio.preload(theme, { bgm: false })]);
+if (!EAGER) assetsReady.then(async () => { for (const c of theme.roster) await renderer.atlases.ensure(theme.roster, [c.id]); });
 
 function dummyController(state, me) {
   const self = state.fighters[me];

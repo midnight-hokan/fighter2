@@ -94,8 +94,11 @@ export function loadStageImages(stages) {
     if (IMAGES.has(src)) return res();
     const im = new Image();
     im.onload = () => { IMAGES.set(src, im); res(); };
-    im.onerror = () => { console.warn(`场景图片 ${src} 加载失败，跳过该图层`); res(); };
-    im.src = src;
+    im.onerror = () => {
+      if (im.src.endsWith('.webp')) { im.src = src; return; }   // webp 没有就回退原图
+      console.warn(`场景图片 ${src} 加载失败，跳过该图层`); res();
+    };
+    im.src = /\.png$/.test(src) ? src.replace(/\.png$/, '.webp') : src;
   })));
 }
 export const stageImagesLoaded = () => [...IMAGES.keys()];

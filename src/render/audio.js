@@ -116,12 +116,13 @@ export class Audio {
   }
 
   // 预加载音频文件（不需要用户交互：用离线上下文解码）
-  async preload(theme) {
+  // bgm:false 时不预载场景配乐（慢网下太大，播放时再按需加载）
+  async preload(theme, { bgm = true } = {}) {
     this.sfx = theme.audio?.sfx ?? {};
     this.voice = theme.audio?.voice ?? {};
     this.announcer = theme.audio?.announcer ?? {};
     const voicePaths = [...Object.values(this.voice).flatMap(v => Object.values(v)), ...Object.values(this.announcer)];
-    const paths = [theme.audio?.title, ...Object.values(this.sfx), ...voicePaths, ...(theme.stages ?? []).map(s => s.bgm?.file)].filter(Boolean);
+    const paths = [theme.audio?.title, ...Object.values(this.sfx), ...voicePaths, ...(bgm ? (theme.stages ?? []).map(s => s.bgm?.file) : [])].filter(Boolean);
     await Promise.all([...new Set(paths)].map(p => this.loadFile(p)));
   }
 

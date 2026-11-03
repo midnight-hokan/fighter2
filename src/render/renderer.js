@@ -28,7 +28,8 @@ function portrait(themeId, charId) {
     const im = new Image();
     const rec = { im, ok: false };
     im.onload = () => { rec.ok = true; };
-    im.src = src;
+    im.onerror = () => { if (im.src.endsWith('.webp')) im.src = src; };
+    im.src = src.replace(/\.png$/, '.webp');
     PORTRAITS.set(src, rec);
   }
   const r = PORTRAITS.get(src);

@@ -9,7 +9,7 @@
     "tests/e2e/a2-stage-art.spec.js": "824d0788695d5aaa39cf60a8b1727b8d14d3afdea125dbfc646cad1940b513a4",
     "tests/e2e/a3-audio.spec.js": "ebdf657dd474252cdc8a48f7731cd4bc1a06e71b2d1139671b9e2cc19709ae07",
     "tests/e2e/c3-cutscene.spec.js": "dc3c6e4f77d81a3409bb715015d07bab035b7838e56b2c4b81b96f31a732d175",
-    "tests/e2e/e8-ui.spec.js": "17ceebf3a07450c553e42202a82dae8abf31b85a07d9eec23d437bd1dec66050",
+    "tests/e2e/e8-ui.spec.js": "adefa2093305385ba71ef0b44a79034d7f8c05e354a47056e148f08cd6718490",
     "tests/e2e/r2-stages.spec.js": "c2734f812cadbdffeeec7b04b655c7ba0a7dc5c943e21a05a14c7e9c498a07a9",
     "tests/e2e/r3-arcade.spec.js": "f4cb8c42b03e7cf984f9a19ba43656fef9495153dd5a76b2162e0e342bf0141c",
     "tests/e2e/r4-delivery.spec.js": "65cef44600e179ddafc99a304c5e6d780dbd16d2530a1b8c324ceb1292a4b5e4",
@@ -36,6 +36,7 @@
     "tests/unit/r3-arcade.test.js": "424d96d18ee737bc4c87c5ca480a996f9298ee2b7a93e31ef12a3a349631653c",
     "tests/unit/r4-delivery.test.js": "9e129d068ccb1a2e4c29a30fd0c6b3222f24e5b3435d7a98db9c933ff88a260e",
     "tests/unit/u1-simple-input.test.js": "afe821f7a36a02b882696980d3c23e2432d33f0a462930ea13c40032966561e7",
+    "tests/unit/u1-webp.test.js": "ae3876b66b635b6d8f7e9c5210d1f5f850b809b866b27c293912d992fa96accd",
     "tests/unit/v1-combo.test.js": "c771896ca4c781578be215273678b171070800aa86374a0bbda7ec876c2f0428",
     "tests/unit/v2-hd-art.test.js": "f84ac9867a9028950010c4dc8cb2a4cd7780464a3007f9b719aca07e8b9cfa2f",
     "vite.config.js": "f4ec640edd27b83b6da1838570bd8bca1a398067d607967744e0ed6f1d444c7c"

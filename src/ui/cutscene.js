@@ -24,13 +24,26 @@ export class Cutscene {
     this.si = 0;
     this.li = -1;
     this.active = true;
+    this.preload(scenes);
     return new Promise((res) => { this.done = res; this.showScene(); this.next(); });
   }
 
   info() { return { active: this.active, scene: this.active ? this.si : -1, line: this.active ? this.li : -1, text: this.active ? this.fullText : '' }; }
 
-  imgPath(id) { return `assets/${this.theme.id}/scenes/${id}.png`; }
-  portraitPath(id, expr) { return `assets/${this.theme.id}/portraits/${id}/${expr || 'normal'}.png`; }
+  // 优先 .webp（小得多），加载失败回退 .png
+  imgPath(id, ext = 'webp') { return `assets/${this.theme.id}/scenes/${id}.${ext}`; }
+  portraitPath(id, expr, ext = 'webp') { return `assets/${this.theme.id}/portraits/${id}/${expr || 'normal'}.${ext}`; }
+
+  // 提前把这段过场要用的场景图和立绘拉进浏览器缓存，避免慢网下边播边等
+  preload(scenes) {
+    const urls = new Set();
+    for (const s of scenes) {
+      if (s.img) urls.add(this.imgPath(s.img));
+      for (const l of s.lines ?? []) if (l.who && !String(l.who).startsWith('npc:')) urls.add(this.portraitPath(l.who, l.expr));
+      if (s.vs) { urls.add(this.portraitPath(s.vs.me, 'normal')); urls.add(this.portraitPath(s.vs.opp, 'normal')); }
+    }
+    this.preloaded = [...urls].map(u => { const im = new Image(); im.src = u; return im; });
+  }
 
   showScene() {
     const s = this.scenes[this.si];
@@ -47,7 +60,7 @@ export class Cutscene {
     const img = this.root.querySelector('.cs-img');
     if (img) {
       img.onload = () => { img.classList.add('ok'); this.root.querySelector('.cs-fallback')?.remove(); };
-      img.onerror = () => img.remove();
+      img.onerror = () => { if (img.src.endsWith('.webp')) img.src = this.imgPath(s.img, 'png'); else img.remove(); };
       img.src = this.imgPath(s.img);
     }
     if (s.vs) { this.setPortrait('left', s.vs.me, 'normal'); this.setPortrait('right', s.vs.opp, 'normal'); }
@@ -65,7 +78,10 @@ export class Cutscene {
     const tryLoad = (e, fallback) => {
       const im = new Image();
       im.onload = () => { if (el.dataset.id === id) el.innerHTML = ''; el.appendChild(im); };
-      im.onerror = () => { if (fallback) tryLoad(fallback, null); };
+      im.onerror = () => {
+        if (im.src.endsWith('.webp')) { im.src = this.portraitPath(id, e, 'png'); return; }
+        if (fallback) tryLoad(fallback, null);
+      };
       im.src = this.portraitPath(id, e);
     };
     tryLoad(expr, expr !== 'normal' ? 'normal' : null);
