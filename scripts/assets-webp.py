@@ -10,7 +10,7 @@ from PIL import Image
 ROOT = os.path.join(os.path.dirname(__file__), '..', 'public', 'assets')
 # (glob, 质量)：图集保留较高质量；立绘带透明；场景图不透明
 RULES = [
-    ('*/c0*/atlas.png', 90),
+    ('*/c0*/atlas.png', 80),
     ('*/portraits/*/*.png', 85),
     ('*/scenes/*.png', 80),
     ('*/stages/*/*.png', 85),

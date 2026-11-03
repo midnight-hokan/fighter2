@@ -50,10 +50,10 @@ const versus = new Versus(document.body, theme);
 function startFight(bannerText) {
   // 引擎只在第 2 回合起发 round 事件，第 1 回合的开场白和播报在这里补上
   const go = () => { running = true; hud.flashBanner(bannerText, 60); hud.queue = [[theme.text.fight, 40]]; audio.handleVoice({ type: 'round', number: 1 }); audio.handleAnnouncer({ type: 'round', number: 1 }); draw(game.getState()); };
-  // 双方图集没到就先等（最多 20 秒），免得开打时显示占位小人
+  // 双方图集没到就先等（最多 60 秒），免得开打时显示占位小人
   const ids = [chars[0].id, chars[1].id];
   const loaded = () => ids.every(id => renderer.atlases.has(id) || renderer.atlases.errors[id]);
-  const ready = Promise.race([renderer.atlases.ensure(theme.roster, ids), new Promise(r => setTimeout(r, 20000))]);
+  const ready = Promise.race([renderer.atlases.ensure(theme.roster, ids), new Promise(r => setTimeout(r, 60000))]);
   if (!cutscenesOn) {
     if (loaded()) return go();
     running = false;
@@ -95,8 +95,7 @@ const EAGER = TEST_MODE || navigator.webdriver;
 const assetsReady = EAGER
   ? Promise.all([renderer.atlases.load(theme.roster), loadStageImages(theme.stages), audio.preload(theme)])
   : Promise.all([loadStageImages(theme.stages), audio.preload(theme, { bgm: false })]);
-// 后台预取晚 5 秒再开始，先把带宽让给标题页和选人页的小图
-if (!EAGER) assetsReady.then(() => setTimeout(async () => { for (const c of theme.roster) await renderer.atlases.ensure(theme.roster, [c.id]); }, 5000));
+// 不做全量后台预取：带宽留给当前要用的图（选人后立刻加载双方，故事模式提前一战预取下个对手）
 
 function dummyController(state, me) {
   const self = state.fighters[me];
@@ -172,6 +171,8 @@ const menus = TEST_MODE ? null : new Menus(document.getElementById('menu-root'),
       arcade = null;
     }
     newGame({ characters, seed: Date.now() % 100000, training });
+    // 选完人立刻开始下载双方图集（故事模式的过场期间就能下完）；故事模式顺带预取下一战对手
+    renderer.atlases.ensure(theme.roster, [...characters, ...(arcade ? arcade.opponents.slice(1, 2) : [])]);
     const level = m === 'arcade' ? arcade.current().level : (m.startsWith('cpu-') ? m.slice(4) : 'normal');
     dummyAI = createAI('normal', 99, chars[1]);
     controllers = [
@@ -277,6 +278,8 @@ function startArcadeRound() {
   hideArcadeOverlay();
   audio.ensure();
   audio.playBgm(theme.stages[renderer.stageIndex].bgm);
+  const nextOpp = arcade.opponents[arcade.index + 1];
+  if (nextOpp) renderer.atlases.ensure(theme.roster, [nextOpp]);
   startFight(`第 ${cur.stage} 战 · ${opp.name}（${opp.title} · ${LEVEL_LABEL[cur.level]}）`);
 }
 
