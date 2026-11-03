@@ -457,10 +457,13 @@ def cutout_batch(cid, safe, tmp, idxs, prefix):
             wf[bid] = {"class_type": "ImageBatch", "inputs": {"image1": [prev, 0], "image2": [nid, 0]}}
             prev = bid
     wf["700"] = {"class_type": "RemoveBackground", "inputs": {"bg_removal_model": ["500", 0], "image": [prev, 0]}}
-    wf["701"] = {"class_type": "SaveImage", "inputs": {"images": ["700", 0], "filename_prefix": prefix}}
+    # 与 gen_frames.py 同款 RGBA 链：RemoveBackground 输出 MASK(背景=1) → 反相=主体 alpha → JoinImageWithAlpha 合成 RGBA
+    wf["702"] = {"class_type": "InvertMask", "inputs": {"mask": ["700", 0]}}
+    wf["703"] = {"class_type": "JoinImageWithAlpha", "inputs": {"image": [prev, 0], "alpha": ["702", 0]}}
+    wf["704"] = {"class_type": "SaveImage", "inputs": {"images": ["703", 0], "filename_prefix": prefix}}
     pid = queue_prompt(wf)
     out = wait_done(pid, timeout=900)
-    saved = _save_imgs(out["701"])
+    saved = _save_imgs(out["704"])
     res = {}
     for j, i in enumerate(idxs):
         local = os.path.join(tmp, f"cut_{i:04d}.png")
