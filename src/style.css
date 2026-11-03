@@ -187,3 +187,15 @@ body.touch .power { top: calc(env(safe-area-inset-top, 0px) + 70px); }
   text-shadow: none; filter: drop-shadow(0 4px 0 #a2321f) drop-shadow(0 8px 0 #000) drop-shadow(0 0 24px rgba(255,160,40,.7)); }
 .banner.ko { font-size: 120px; background: linear-gradient(#fffbe0, #ffe14d 40%, #ff5a1f); -webkit-background-clip: text; background-clip: text; color: transparent;
   text-shadow: none; filter: drop-shadow(0 6px 0 #c8452c) drop-shadow(0 12px 0 #000) drop-shadow(0 0 40px rgba(255,80,30,.9)); }
+
+/* 暂停页音量滑块 */
+.pause .volume { display: flex; gap: 28px; justify-content: center; margin: 6px 0 14px; pointer-events: auto; flex-wrap: wrap; }
+.pause .volume label { display: flex; align-items: center; gap: 8px; font-size: 15px; color: #f4e7c8; }
+.pause .volume input { width: 140px; accent-color: #ffd23f; }
+
+/* 反击提示 */
+.counter-pop { position: absolute; top: 150px; font-size: 30px; font-weight: 900; font-style: italic; letter-spacing: 2px;
+  background: linear-gradient(#fff, #ff9a5a 50%, #e0201a); -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 3px 0 #000); pointer-events: none; }
+.counter-pop.p1 { left: 4vw; } .counter-pop.p2 { right: 4vw; }
+.counter-pop.pop { animation: combo-pop .25s ease-out; }

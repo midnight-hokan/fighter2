@@ -14,7 +14,7 @@
     "tests/e2e/r3-arcade.spec.js": "f4cb8c42b03e7cf984f9a19ba43656fef9495153dd5a76b2162e0e342bf0141c",
     "tests/e2e/r4-delivery.spec.js": "65cef44600e179ddafc99a304c5e6d780dbd16d2530a1b8c324ceb1292a4b5e4",
     "tests/e2e/u1-touch.spec.js": "0fe80f6a738814b8bbce2e805ef2b77c225195b2d62db92ecddf0d75dc6ff491",
-    "tests/e2e/v1-vfx.spec.js": "61f4fa0d8ff119cedf0c2292fedb6669a850f11e6d2779139f4f3af9f689c26f",
+    "tests/e2e/v1-vfx.spec.js": "bb62119259d782cd3c88a4be0b33e1d2ad7b667b2e849fd0640ec380bbf29130",
     "tests/unit/_assets.js": "7ee7523674da351a9d750d90d6dbc93ae88d5b3e8c3da48e25091c79d2a393fc",
     "tests/unit/_fixtures.js": "74b199e63096a9489b4d08a29efeb061e5c2b61ece9cb3f337eb75ebf9d07433",
     "tests/unit/a1-sprites.test.js": "1444f7bdfb91d92064b6be4e91295725b5a1d74575e6098ead18396cf72d47e9",
@@ -36,6 +36,7 @@
     "tests/unit/r3-arcade.test.js": "424d96d18ee737bc4c87c5ca480a996f9298ee2b7a93e31ef12a3a349631653c",
     "tests/unit/r4-delivery.test.js": "9e129d068ccb1a2e4c29a30fd0c6b3222f24e5b3435d7a98db9c933ff88a260e",
     "tests/unit/u1-simple-input.test.js": "afe821f7a36a02b882696980d3c23e2432d33f0a462930ea13c40032966561e7",
+    "tests/unit/v1-combo.test.js": "c771896ca4c781578be215273678b171070800aa86374a0bbda7ec876c2f0428",
     "tests/unit/v2-hd-art.test.js": "f84ac9867a9028950010c4dc8cb2a4cd7780464a3007f9b719aca07e8b9cfa2f",
     "vite.config.js": "f4ec640edd27b83b6da1838570bd8bca1a398067d607967744e0ed6f1d444c7c"
   }

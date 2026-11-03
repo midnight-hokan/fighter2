@@ -39,6 +39,9 @@ export const SYSTEM_MOVES = [
   ['防御反击', '防御中 重拳 + 重脚', '消耗 1 豆，弹开对手'],
   ['防御回避', '防御中 轻拳 + 轻脚', '消耗 1 豆，从防御中翻滚脱身'],
   ['防御', '按住 ←（蹲防 ↙）', '下段攻击要蹲防，跳攻要站防'],
+  ['连段', '轻 → 轻 / 中 → 重（命中或被防后接着按）', '地面普通技逐级取消；轻攻击最多连 2 次'],
+  ['取消必杀', '可取消的普通技命中后输入必杀/超必杀', '标准连招：轻 → 中 → 必杀'],
+  ['反击', '在对手出招时打中他', '显示"反击"，硬直更长，更好接连段'],
 ];
 
 export function systemHtml() {
@@ -137,13 +140,27 @@ export class Menus {
 }
 
 export class Pause {
-  constructor(root) { this.root = root; this.open = false; }
+  // audio（可选）：有 setVolume/volume 时，暂停页显示 背景音乐 / 音效 / 语音 三个音量滑块
+  constructor(root, audio = null) { this.root = root; this.open = false; this.audio = audio; }
   toggle(chars) {
     this.open = !this.open;
     this.root.innerHTML = this.open ? `<div class="screen pause" data-testid="movelist">
       <h2>出招表（Esc 继续，Backspace 回选人）</h2>
+      ${this.volumeHtml()}
       <div class="lists">${chars.map(moveListHtml).join('')}${systemHtml()}</div></div>` : '';
+    if (this.open) this.bindVolume();
     return this.open;
+  }
+  volumeHtml() {
+    if (!this.audio) return '';
+    const v = this.audio.volume;
+    const row = (k, label) => `<label>${label}<input type="range" min="0" max="100" value="${Math.round(v[k] * 100)}" data-testid="vol-${k}" data-k="${k}"></label>`;
+    return `<div class="volume">${row('bgm', '背景音乐')}${row('sfx', '音效')}${row('voice', '语音')}</div>`;
+  }
+  bindVolume() {
+    this.root.querySelectorAll('.volume input').forEach(el => {
+      el.oninput = () => this.audio.setVolume(el.dataset.k, Number(el.value) / 100);
+    });
   }
   close() { this.open = false; this.root.innerHTML = ''; }
 }

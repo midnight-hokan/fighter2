@@ -55,6 +55,7 @@ export class Renderer {
     this.darken = 0;
     this.frameCount = 0;
     this.hitFlash = [0, 0];
+    this.jitter = [0, 0];          // 受击抖动剩余帧数
     this.trails = [[], []];     // 残影：最近几帧的位置与动作
     this.wasGrounded = [true, true];
     this.cutin = null;          // { player, charId, name, sdm, t }
@@ -84,6 +85,8 @@ export class Renderer {
         if (big) this.shake = Math.max(this.shake, sup ? 9 : 5);
         else this.shake = Math.max(this.shake, 2);
         this.hitFlash[e.defender] = sup ? 5 : 3;
+        if (e.counter) { this.stats.counters = (this.stats.counters ?? 0) + 1; this.flash = Math.max(this.flash, 2); this.shake = Math.max(this.shake, 4); }
+        this.jitter[e.defender] = sup ? 14 : big ? 10 : 6;
         if (big) this.punchZoom(sup ? 1.14 : 1.05, e.x, e.y);
       }
       if (e.type === 'block') this.shake = Math.max(this.shake, 1.5);
@@ -211,7 +214,10 @@ export class Renderer {
 
   drawFighter(f, ch, cam, state) {
     const ctx = this.ctx;
-    const x = f.x - cam;
+    // 受击抖动：顿帧期间被打的一方左右小幅震动
+    let jx = 0;
+    if (this.jitter[f.index] > 0) { jx = (this.jitter[f.index] % 2 ? 1.6 : -1.6); this.jitter[f.index]--; }
+    const x = f.x - cam + jx;
     const y = GROUND - f.y;
     const atlas = this.atlases.get(ch.id);
     const mirrorSame = state.fighters[0].charId === state.fighters[1].charId && f.index === 1;

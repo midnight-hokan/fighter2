@@ -18,6 +18,30 @@ function tone(ctx, out, f0, f1, dur, type = 'square', vol = 0.15, delay = 0) {
   o.stop(t + dur + 0.02);
 }
 
+// 低频闷响：重击/反击/超必杀命中时叠加
+function thump(ctx, out, k = 1) {
+  const t = ctx.currentTime;
+  const o = ctx.createOscillator();
+  const g = ctx.createGain();
+  o.type = 'sine';
+  o.frequency.setValueAtTime(110, t);
+  o.frequency.exponentialRampToValueAtTime(42, t + 0.18);
+  g.gain.setValueAtTime(0.5 * k, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+  o.connect(g).connect(out);
+  o.start(t); o.stop(t + 0.26);
+}
+
+const VOL_KEY = 'fighter2-volume';
+const VOL_DEFAULT = { bgm: 0.8, sfx: 1, voice: 0.8 };
+function loadVolume() {
+  try {
+    const v = JSON.parse(localStorage.getItem(VOL_KEY) ?? 'null');
+    if (v && typeof v === 'object') return { ...VOL_DEFAULT, ...v };
+  } catch { /* 读不到用默认 */ }
+  return { ...VOL_DEFAULT };
+}
+
 function noise(ctx, out, dur, vol = 0.2) {
   const len = Math.floor(ctx.sampleRate * dur);
   const buf = ctx.createBuffer(1, len, ctx.sampleRate);
@@ -73,6 +97,8 @@ export class Audio {
   constructor() {
     this.ctx = null;
     this.out = null;
+    this.bus = null;            // 分轨音量：{ bgm, sfx, voice }，各自接到 out
+    this.volume = loadVolume();
     this.muted = false;
     this.log = [];
     this.bgmTimer = null;
@@ -121,16 +147,16 @@ export class Audio {
   }
 
   info() {
-    return { loaded: [...this.buffers.keys()], failed: Object.fromEntries(this.failed), now: this.now };
+    return { loaded: [...this.buffers.keys()], failed: Object.fromEntries(this.failed), now: this.now, volume: { ...this.volume } };
   }
 
-  playBuffer(buf, { loop = false, vol = 1, delay = 0 } = {}) {
+  playBuffer(buf, { loop = false, vol = 1, delay = 0, bus = 'sfx' } = {}) {
     const s = this.ctx.createBufferSource();
     const g = this.ctx.createGain();
     g.gain.value = vol;
     s.buffer = buf;
     s.loop = loop;
-    s.connect(g).connect(this.out);
+    s.connect(g).connect(this.bus?.[bus] ?? this.out);
     s.start(this.ctx.currentTime + delay);
     return s;
   }
@@ -141,7 +167,7 @@ export class Audio {
     const buf = path && this.buffers.get(path);
     if (!buf || this.ctx?.state !== 'running') return;
     // 喊招压低到音效之下（光哥试玩反馈：喊招太响）；开场白和 KO 台词稍响一点
-    this.playBuffer(buf, { vol: line === 'special' ? 0.38 : line === 'super' ? 0.5 : 0.6, delay });
+    this.playBuffer(buf, { vol: line === 'special' ? 0.38 : line === 'super' ? 0.5 : 0.6, delay, bus: 'voice' });
   }
 
   // 播报员：round1/round2/round3/final/fight/ko/timeup/perfect/win（theme.audio.announcer，缺文件就不播）
@@ -151,7 +177,7 @@ export class Audio {
     const path = this.announcer?.[key];
     const buf = path && this.buffers.get(path);
     if (!buf || this.ctx?.state !== 'running') return;
-    this.playBuffer(buf, { vol: 0.85, delay });
+    this.playBuffer(buf, { vol: 0.85, delay, bus: 'voice' });
   }
 
   handleAnnouncer(e) {
@@ -182,7 +208,21 @@ export class Audio {
     this.out = this.ctx.createGain();
     this.out.gain.value = this.muted ? 0 : 0.6;
     this.out.connect(this.ctx.destination);
+    this.bus = {};
+    for (const k of ['bgm', 'sfx', 'voice']) {
+      this.bus[k] = this.ctx.createGain();
+      this.bus[k].gain.value = this.volume[k];
+      this.bus[k].connect(this.out);
+    }
     return this.ctx;
+  }
+
+  // 分轨音量（0–1），自动记住
+  setVolume(kind, v) {
+    if (!(kind in this.volume)) return;
+    this.volume[kind] = Math.max(0, Math.min(1, Number(v)));
+    if (this.bus?.[kind]) this.bus[kind].gain.value = this.volume[kind];
+    try { localStorage.setItem(VOL_KEY, JSON.stringify(this.volume)); } catch { /* 隐私模式等存不了就算了 */ }
   }
 
   toggleMute() {
@@ -205,7 +245,9 @@ export class Audio {
       const path = this.sfx[key] ?? this.sfx[e.type];
       const buf = path && this.buffers.get(path);
       if (buf) this.playBuffer(buf, { vol: 0.9 });
-      else SOUNDS[e.type](this.ctx, this.out, e);
+      else SOUNDS[e.type](this.ctx, this.bus?.sfx ?? this.out, e);
+      // 重击和反击：叠一记低频闷响，打击更"沉"
+      if (e.type === 'hit' && (e.damage >= 90 || e.counter || e.kind === 'super')) thump(this.ctx, this.bus?.sfx ?? this.out, e.kind === 'super' ? 1 : 0.7);
     }
   }
 
@@ -218,7 +260,7 @@ export class Audio {
       this.now = { mode: 'file', src: bgm.file };
       this.loadFile(bgm.file).then((buf) => {
         if (token !== this.bgmToken) return;
-        if (buf && this.ensure()) this.bgmNode = this.playBuffer(buf, { loop: true, vol: 0.5 });
+        if (buf && this.ensure()) this.bgmNode = this.playBuffer(buf, { loop: true, vol: 0.5, bus: 'bgm' });
         else if (bgm.tempo) this.playSynth(bgm);
       });
       return;
@@ -234,8 +276,8 @@ export class Audio {
       if (this.ctx?.state === 'running' && !this.muted) {
         const b = song.bass[step % song.bass.length];
         const l = song.lead[step % song.lead.length];
-        tone(this.ctx, this.out, midi(b), midi(b), 0.12, 'triangle', 0.08);
-        if (l) tone(this.ctx, this.out, midi(l), midi(l), 0.1, 'square', 0.035);
+        tone(this.ctx, this.bus?.bgm ?? this.out, midi(b), midi(b), 0.12, 'triangle', 0.08);
+        if (l) tone(this.ctx, this.bus?.bgm ?? this.out, midi(l), midi(l), 0.1, 'square', 0.035);
       }
       step++;
     };

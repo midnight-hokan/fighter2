@@ -40,7 +40,7 @@ const touch = isTouchDevice() ? new TouchPad(document.body, {
   },
 }) : null;
 if (touch) controls.extra = [() => touch.read(), null];
-const pause = new Pause(document.getElementById('pause-root'));
+const pause = new Pause(document.getElementById('pause-root'), audio);
 // 过场：自动化测试（navigator.webdriver）和 ?test=1 下默认关闭，?cutscenes=1 或 __game.cutscenes(true) 强制打开
 const cutscene = new Cutscene(document.body, theme);
 let cutscenesOn = params.has('cutscenes') || (!navigator.webdriver && !TEST_MODE);
@@ -350,6 +350,7 @@ window.__game = {
   renderInfo: () => renderer.info(),
   assetsReady: () => assetsReady.then(() => true),
   audioFiles: () => audio.info(),
+  setVolume: (k, v) => audio.setVolume(k, v),
   audioInfo: () => ({ log: [...audio.log], announcer: [...audio.announcerLog], sounds: Object.fromEntries(Object.entries(SOUNDS).map(([k, v]) => [k, typeof v === 'function'])) }),
   isRunning: () => running,
   mode: () => mode,

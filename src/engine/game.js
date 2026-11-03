@@ -2,7 +2,7 @@
 // 固定 60Hz：每调用一次 step() 推进一帧。同种子 + 同输入序列 → 完全相同的结果。
 import {
   STAGE, MAX_SEPARATION, PHYS, INPUT, METER, STUN, HITSTOP, SUPER_FREEZE,
-  KNOCKDOWN_FRAMES, ROLL, MAX_START_FRAMES, THROW_PROTECT, ATTACKS, ROUND,
+  KNOCKDOWN_FRAMES, ROLL, MAX_START_FRAMES, THROW_PROTECT, ATTACKS, ROUND, STRENGTH, COMBO,
 } from './constants.js';
 import { normalizeInput, InputHistory, matchCommand, strengthOf } from './input.js';
 import { prepareCharacter, resolveStrength, totalFrames } from './character.js';
@@ -313,22 +313,41 @@ export class Game {
       else if (h.simul(['hp', 'hk'])) f.queued = { kind: 'gc', type: 'blowback' };
       return;
     }
-    if (f.action !== 'attack' || !f.move.connected || !f.move.def.cancel || f.move.cancelUsed || f.queued) return;
+    if (f.action !== 'attack' || !f.move.connected || f.move.cancelUsed || f.queued) return;
     const h = this.histories[f.index];
-    if (f.meter.stocks >= 1) {
-      for (const s of this.ch(f).supers) {
+    if (f.move.def.cancel) {
+      if (f.meter.stocks >= 1) {
+        for (const s of this.ch(f).supers) {
+          const btn = matchCommand(h, s.parsed);
+          if (btn) { f.queued = { kind: 'super', move: resolveStrength(s, strengthOf(btn)), sdm: f.meter.max > 0 }; return; }
+        }
+      }
+      for (const s of this.ch(f).specials) {
         const btn = matchCommand(h, s.parsed);
-        if (btn) { f.queued = { kind: 'super', move: resolveStrength(s, strengthOf(btn)), sdm: f.meter.max > 0 }; return; }
+        if (!btn) continue;
+        const m = resolveStrength(s, strengthOf(btn));
+        if (m.projectile && this.projectiles.some(p => p.owner === f.index)) continue;
+        f.queued = { kind: 'special', move: m };
+        return;
       }
     }
-    for (const s of this.ch(f).specials) {
-      const btn = matchCommand(h, s.parsed);
-      if (!btn) continue;
-      const m = resolveStrength(s, strengthOf(btn));
-      if (m.projectile && this.projectiles.some(p => p.owner === f.index)) continue;
-      f.queued = { kind: 'special', move: m };
-      return;
-    }
+    const chain = this._chainTarget(f);
+    if (chain) f.queued = { kind: 'chain', move: chain };
+  }
+
+  // 连段（chain）：地面普通技命中或被防后，按更重一级的键可直接取消：轻→轻（最多 2 次）/中，中→重，重→不能。
+  _chainTarget(f) {
+    const mv = f.move;
+    if (!mv || mv.def.kind !== 'normal' || !mv.connected || !f.grounded || mv.def.id.startsWith('j.')) return null;
+    const rank = { l: 1, m: 2, h: 3 };
+    const cur = rank[STRENGTH[mv.def.id.split('.')[1]]];
+    const last = this.histories[f.index].latest();
+    const btn = ['hp', 'hk', 'mp', 'mk', 'lp', 'lk'].find(b => last.pressed[b]);
+    if (!btn || !cur) return null;
+    const r = rank[STRENGTH[btn]];
+    const ok = r === cur + 1 || (r === 1 && cur === 1 && (mv.chain ?? 0) < COMBO.lightChains);
+    if (!ok) return null;
+    return this.ch(f).normals[`${last.input.down ? 'cr' : 'st'}.${btn}`] ?? null;
   }
 
   // ============================================================ 招式进行
@@ -380,9 +399,14 @@ export class Game {
       f.queued = null;
       if (q.kind === 'super' && f.meter.stocks >= 1) { this._startMove(f, q.move, { sdm: f.meter.max > 0 }); f.move.cancelUsed = true; return; }
       if (q.kind === 'special') { this._startMove(f, q.move); f.move.cancelUsed = true; return; }
+      if (q.kind === 'chain') { const c = (mv.chain ?? 0) + 1; this._startMove(f, q.move); f.move.chain = c; return; }
     }
     if (mv.connected && mv.def.cancel && !mv.cancelUsed && f.grounded) {
       if (this._trySuper(f) || this._trySpecial(f)) { f.move.cancelUsed = true; return; }
+    }
+    if (mv.connected && !mv.cancelUsed) {
+      const nxt = this._chainTarget(f);
+      if (nxt) { const c = (mv.chain ?? 0) + 1; this._startMove(f, nxt); f.move.chain = c; return; }
     }
     mv.frame++;
     this._applyMoveMotion(f);
@@ -676,7 +700,11 @@ export class Game {
 
     const comboing = HIT_STATES.has(d.action);
     d.combo = comboing ? d.combo + 1 : 1;
-    const dmg = Math.round(m.damage * mul);
+    // 反击（Counter）：对手出招的发生帧或持续帧中被打中 → 硬直和顿帧加长，便于追击
+    const counter = !comboing && d.action === 'attack' && !!d.move && d.move.frame <= d.move.def.startup + d.move.def.active;
+    // 连段伤害修正：第 3 击起每击 -10%，普通/必杀最低 50%，超必杀最低 60%
+    const scale = d.combo >= 3 ? Math.max(kind === 'super' ? COMBO.superMinScale : COMBO.minScale, 1 - COMBO.scalePerHit * (d.combo - 2)) : 1;
+    const dmg = Math.round(m.damage * mul * scale);
     d.hp = Math.max(0, d.hp - dmg);
     d.lastHitFrame = this.frame;
     if (d.action === 'dizzy') {
@@ -700,15 +728,15 @@ export class Game {
     } else {
       d.action = 'hitstun';
       d.actionFrame = 0;
-      d.hitstun = m.hitstun;
+      d.hitstun = m.hitstun + (counter ? COMBO.counterHitstun : 0);
       this._push(d, att, m.pushback, fromX);
     }
-    this.hitstop = Math.max(this.hitstop, m.hitstop ?? (kind === 'super' ? HITSTOP.super : HITSTOP[strength] ?? HITSTOP.m));
+    this.hitstop = Math.max(this.hitstop, (m.hitstop ?? (kind === 'super' ? HITSTOP.super : HITSTOP[strength] ?? HITSTOP.m)) + (counter ? COMBO.counterHitstop : 0));
     this._gain(att, baseGain);
     this._gain(d, dmg * METER.gain.damagedPerPoint);
     this.emit('hit', {
       attacker: att.index, defender: d.index, damage: dmg, combo: d.combo, id: m.id, kind,
-      x: d.x, y: d.y + 60, sdm: !!att.move?.sdm && src === 'move',
+      x: d.x, y: d.y + 60, sdm: !!att.move?.sdm && src === 'move', counter,
     });
   }
 

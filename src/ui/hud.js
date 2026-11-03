@@ -24,6 +24,8 @@ export class Hud {
       </div>
       <div class="combo p1" data-testid="combo-p1"></div>
       <div class="combo p2" data-testid="combo-p2"></div>
+      <div class="counter-pop p1" data-testid="counter-p1"></div>
+      <div class="counter-pop p2" data-testid="counter-p2"></div>
       <div class="power p1"><span class="stocks" data-testid="stocks-p1">0</span><div class="gauge"><div class="gfill" data-testid="gauge-p1"></div></div><div class="maxbar" data-testid="max-p1"></div></div>
       <div class="power p2"><span class="stocks" data-testid="stocks-p2">0</span><div class="gauge"><div class="gfill" data-testid="gauge-p2"></div></div><div class="maxbar" data-testid="max-p2"></div></div>
       <div class="banner" data-testid="banner"></div>
@@ -36,6 +38,8 @@ export class Hud {
     this.shownCombo = ['', ''];
     this.red = [1, 1];
     this.comboShow = [0, 0];
+    this.counterShow = [0, 0];
+    this.shownCounter = ['', ''];
     this.comboText = ['', ''];
     this.bannerTimer = 0;
     this.bannerText = '';
@@ -51,6 +55,7 @@ export class Hud {
     const T = this.theme.text;
     for (const e of state.events) {
       if (e.type === 'hit' && e.combo >= 2) { this.comboText[e.attacker] = `${e.combo} 连击`; this.comboShow[e.attacker] = 70; }
+      if (e.type === 'hit' && e.counter) this.counterShow[e.attacker] = 50;
       if (e.type === 'round') { this.flashBanner(T.round(e.number), 60); this.queue = [[T.fight, 40]]; }
       // 超必杀的提示改由画布上的切入演出负责（renderer.drawCutin）
     }
@@ -78,6 +83,9 @@ export class Hud {
       const c = this.q(`combo-${k}`);
       const ct = this.comboShow[i]-- > 0 ? this.comboText[i] : '';
       if (ct !== this.shownCombo[i]) { this.shownCombo[i] = ct; c.textContent = ct; this.pop(c); }
+      const cnt = this.q(`counter-${k}`);
+      const txt = this.counterShow[i]-- > 0 ? '反击！COUNTER' : '';
+      if (txt !== this.shownCounter[i]) { this.shownCounter[i] = txt; cnt.textContent = txt; if (txt) this.pop(cnt); }
     });
     this.q('timer').textContent = state.training ? '∞' : String(state.round.timer);
     const r = state.round;

@@ -47,6 +47,16 @@ export const METER = {
 
 export const STUN = { decayDelay: 90, decayPerFrame: 0.5, dizzyFrames: 150 };
 export const HITSTOP = { l: 6, m: 8, h: 10, super: 14, block: 5 };
+
+// 连段与反击
+export const COMBO = {
+  lightChains: 2,       // 轻→轻 最多连 2 次
+  scalePerHit: 0.1,     // 第 3 击起每击伤害 -10%
+  minScale: 0.5,        // 普通技/必杀最低 50%
+  superMinScale: 0.6,   // 超必杀最低 60%
+  counterHitstun: 4,    // 反击额外硬直
+  counterHitstop: 3,    // 反击额外顿帧
+};
 export const SUPER_FREEZE = 30;
 export const KNOCKDOWN_FRAMES = 50;
 export const ROLL = { frames: 26, invuln: [1, 16], speed: 4 };

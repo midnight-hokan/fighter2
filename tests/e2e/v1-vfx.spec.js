@@ -106,3 +106,21 @@ test('飞行道具用角色随身物品：林啸的矿灯光弹画成矿灯帽�
   expect(n.item).toBeGreaterThan(0);
   expect(errors).toEqual([]);
 });
+
+test('暂停页有 背景音乐/音效/语音 三个音量滑块，调整后生效并记住', async ({ page }) => {
+  const errors = trackErrors(page);
+  await page.goto('/');
+  await page.keyboard.press('Enter');
+  await page.getByTestId('mode-cpu-normal').click();
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(() => window.__game.isRunning());
+  await page.keyboard.press('Escape');
+  for (const k of ['bgm', 'sfx', 'voice']) await expect(page.getByTestId(`vol-${k}`)).toBeVisible();
+  await page.getByTestId('vol-voice').fill('20');
+  expect((await page.evaluate(() => window.__game.audioFiles().volume)).voice).toBeCloseTo(0.2, 2);
+  await page.reload();
+  await page.waitForFunction(() => !!window.__game);
+  expect((await page.evaluate(() => window.__game.audioFiles().volume)).voice).toBeCloseTo(0.2, 2);
+  expect(errors).toEqual([]);
+});
