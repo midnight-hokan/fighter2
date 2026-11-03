@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync, existsSync } from 'node:fs';
 import theme from '../../src/theme/index.js';
 import { validateAtlas } from '../../src/render/atlas.js';
-import { pub, exists, size, sha, pngSize } from './_assets.js';
+import { pub, exists, size, sha, imageSize } from './_assets.js';
 
 const manifest = () => JSON.parse(readFileSync('public/assets/manifest.json', 'utf8'));
 
@@ -20,7 +20,7 @@ describe('A1 角色精灵图', () => {
       const json = JSON.parse(readFileSync(pub(path), 'utf8'));
       const img = path.slice(0, path.lastIndexOf('/') + 1) + json.image;
       expect(exists(img), img).toBe(true);
-      expect(validateAtlas(json, c, pngSize(img)), c.id).toEqual([]);
+      expect(validateAtlas(json, c, imageSize(img)), c.id).toEqual([]);  // V2 起图集可以是 WebP
       expect(json.frameH, `${c.id} 单帧太小`).toBeGreaterThanOrEqual(96);
       expect(size(img), `${c.id} 图集超过 8MB`).toBeLessThan(8 * 1024 * 1024);
     }

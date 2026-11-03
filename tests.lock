@@ -17,7 +17,7 @@
     "tests/e2e/v1-vfx.spec.js": "bb62119259d782cd3c88a4be0b33e1d2ad7b667b2e849fd0640ec380bbf29130",
     "tests/unit/_assets.js": "7ee7523674da351a9d750d90d6dbc93ae88d5b3e8c3da48e25091c79d2a393fc",
     "tests/unit/_fixtures.js": "74b199e63096a9489b4d08a29efeb061e5c2b61ece9cb3f337eb75ebf9d07433",
-    "tests/unit/a1-sprites.test.js": "1444f7bdfb91d92064b6be4e91295725b5a1d74575e6098ead18396cf72d47e9",
+    "tests/unit/a1-sprites.test.js": "f8937fbba4285f3bab551896a65c07e4435e5f287a08efa484850c1beee3cb57",
     "tests/unit/a2-stage-art.test.js": "7db627ae29bc8bdf4f3b50d2a261e260954b1a934e93d99dbf36e73d74d7b35d",
     "tests/unit/a3-audio.test.js": "f7579f43d4ff8441d01701aab173f497381d62755c3537d63801fc7c1d3a9941",
     "tests/unit/c1-story-mode.test.js": "c015f4e8c6075039ee27ef64dad50e03a0731d964f23905ae5b7ebb2216aedf6",

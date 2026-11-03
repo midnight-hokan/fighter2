@@ -47,10 +47,21 @@ export function validateAtlas(json, character, img) {
   return errs;
 }
 
-// 拳皇式派生招式借用已有动画：近身重拳/重脚用站立版，吹飞攻击用站立重脚，空中吹飞用跳重脚
-const ANIM_ALIAS = { 'cl.hp': 'st.hp', 'cl.hk': 'st.hk', cd: 'st.hk', 'j.cd': 'j.hk' };
+// 图集里没有某个动画时借用的动画（v2 新动画陆续交付，交付前用旧动画顶上）：
+// 近身重拳/重脚用站立版，吹飞攻击用站立重脚，空中吹飞用跳重脚，开场/挑衅/第二胜利姿势用待机/胜利，
+// 4 键后不用的中拳中脚用轻拳轻脚
+export const ANIM_ALIAS = {
+  'cl.hp': 'st.hp', 'cl.hk': 'st.hk', cd: 'st.hk', 'j.cd': 'j.hk',
+  intro: 'idle', taunt: 'win', win2: 'win',
+  'st.mp': 'st.lp', 'st.mk': 'st.lk', 'cr.mp': 'cr.lp', 'cr.mk': 'cr.lk', 'j.mp': 'j.lp', 'j.mk': 'j.lk',
+};
+export function resolveAnim(animations, key) {
+  let k = key;
+  for (let i = 0; i < 3 && !animations[k] && ANIM_ALIAS[k]; i++) k = ANIM_ALIAS[k];
+  return animations[k] ? k : 'idle';
+}
 export function animKeyFor(f) {
-  if (f.action === 'attack' && f.move) return ANIM_ALIAS[f.move.id] ?? f.move.id;
+  if (f.action === 'attack' && f.move) return f.move.id;
   if (f.action === 'blockstun' && f.blockLow) return 'crblock';
   if (f.action === 'run') return 'walkf';
   if (f.action === 'backstep') return 'walkb';
@@ -60,9 +71,10 @@ export function animKeyFor(f) {
 class Atlas {
   constructor(json, image) { this.json = json; this.image = image; }
 
-  frameIndex(key, f) {
-    const a = this.json.animations[key] ?? this.json.animations.idle;
-    if (f.action === 'attack' && f.move && this.json.animations[key]) {
+  frameIndex(key0, f) {
+    const key = resolveAnim(this.json.animations, key0);
+    const a = this.json.animations[key];
+    if (f.action === 'attack' && f.move && key !== 'idle') {
       const k = Math.min(a.frames.length - 1, Math.floor(((f.move.frame - 1) / Math.max(1, f.move.total)) * a.frames.length));
       return a.frames[k];
     }
@@ -121,8 +133,12 @@ export class AtlasStore {
     const ch = roster.find(c => c.id === id);
     if (!ch) return;
     try {
-      const json = await (await fetch(path, { cache: 'no-cache' })).json();
+      const getJson = async (p) => { const r = await fetch(p, { cache: 'no-cache' }); if (!r.ok) throw new Error(`${p} ${r.status}`); return r.json(); };
       const base = path.slice(0, path.lastIndexOf('/') + 1);
+      let json = await getJson(path);
+      // 手机（粗指针）改用 json.sd 指向的 160 像素版（v3 打包才有），解码后内存约为高清版的 40%
+      const coarse = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+      if (coarse && json.sd) json = await getJson(base + json.sd).catch(() => json);
       // 优先加载同名 .webp（体积约 PNG 的十分之一），失败再回退原图
       const load = (src) => new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = rej; im.src = src; });
       const src = base + json.image;
