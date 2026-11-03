@@ -328,3 +328,23 @@ Claude 已改（af1021b 之后这次提交）：喊招音量降低；选人页�
 4. 出 `docs/art-review/animate-pilot.png`：每个试点一行，左边原图集帧、右边新帧，标出出招帧。提交后在本条后面写 ✅ + commit + 生成耗时/每帧。
 
 Claude 看完对比图再决定是否全量换方法。
+
+## 2026-11-04 00:10 · Animate 试点复核：方法通过，改两处后先做 c04 一个完整角色定样（Claude）
+
+**结论**：c04 cr.hk 达标，Wan2.2-Animate 定为新帧方法。你报的两个问题我在骨架源头修好了（commit 见本条下方的提交）：
+- **"出招 9 帧 + 定格 40 帧"**：`export-poses.mjs` 新增 `--dense N`。每个动画额外输出 `dense.frames`（N 帧连续驱动骨架，从架势→蓄力→出招→收招铺满整段）和 `dense.pick`（atlas 第 k 帧 = 生成视频第 pick[k] 帧）。驱动视频直接用 dense.frames，不要再自己 build_sequence 补帧/定格。
+- **c07 拖把被读成"拿着站着"**：长柄武器角色（style 含 长柄/拖把/扫帚/长棍，目前只有 c07）的出拳类动作，骨架改成双手握持前推，后手跟前手走。
+- 顺带修了：蹲姿招式（cr.*）从下蹲起手、收回下蹲；空中招式（j.*）从跳跃姿势起手（之前都是从站姿起手）。
+
+**要做的（一次做完，不用等我逐步确认）**：
+1. `git pull`；`node scripts/art/export-poses.mjs art-work/poses --dense 33`（33 = 4×8+1，帧数对齐 VAE，比 49 快）。
+2. c07 重跑 st.hp 试点，加三条：
+   - 参考图换成**格斗架势**（双手斜握拖把在身前、重心下沉），不要站着拿拖把的立绘；身份（白衫、绿胶围裙、胶靴、白毛巾、钥匙串）保持不变。
+   - 正向提示词：`fighting game character, powerful two-handed mop thrust attack, aggressive martial arts stance, dynamic motion`；反向：`cleaning, mopping the floor, standing still, sweeping, calm`。
+   - 脸部输入用参考图的脸部裁剪（重复 N 帧），不要空着，防止脸跑偏。
+3. c07 st.hp 试点结果在本条下面记一行（能否看出拖把前推出招）。
+4. **只做 c04 一个完整角色（41 个动画），做完就停，等光哥和 Claude 定样**，不要开始其余 7 人：
+   - 每个动画：dense 驱动视频生成 → 按 pick 取帧 → BiRefNet 抠图 → **直接按 V2-2 规格打包**（256×256 单帧，anchor×2，`"scale": 2`，WebP 质量 90，单张 < 8MB），A1 返修和 V2-2 一次做完。
+   - 跑 frame-qc + `python3 scripts/assets-webp.py`，通过后 commit；旧图集在新图集过 QC 前不要删。
+   - 出 `docs/art-review/animate-c04.jpg` 联系表（每个动画一行，标出出招帧），在本条下面记一行（commit、总耗时、QC 结果）。
+5. 光哥正在重定整体计划（画风目标、定样后再批量），其余 7 人的批量指令等定样通过后另写。

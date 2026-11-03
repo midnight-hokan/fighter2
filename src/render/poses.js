@@ -71,7 +71,7 @@ export function poseFor(state) {
     key = f.move.anim && POSES[f.move.anim] ? f.move.anim : guessAnim(f.move.id);
     const rec = Math.max(1, f.move.total - f.move.startup - f.move.active);
     // 飞行道具、旋风腿等按时间变化的动画仍用原函数；其余攻击用关键帧插值
-    if (!['spin', 'throw', 'grab'].includes(key)) return attackPose(key, f.move.frame, f.move.startup, f.move.active, rec, f.actionFrame);
+    if (!['spin', 'throw', 'grab'].includes(key)) return attackPose(key, f.move.frame, f.move.startup, f.move.active, rec, f.actionFrame, guardFor(f.move.id));
     p = Math.min(1, f.move.frame / Math.max(1, f.move.total));
     active = f.move.frame > f.move.startup && f.move.frame <= f.move.startup + f.move.active + 2;
   }
@@ -118,11 +118,17 @@ function mix(A, B, k) {
 }
 const ease = (k) => k * k * (3 - 2 * k);
 
-export function attackPose(anim, frame, startup, active, recovery, t = frame) {
+// 架势：蹲姿招式从下蹲起手、收回下蹲；空中招式用跳跃姿势；其余站姿
+export function guardFor(id) {
+  const stance = (id ?? '').split('.')[0];
+  return stance === 'cr' ? POSES.crouch() : stance === 'j' ? POSES.jump(10) : POSES.idle(0);
+}
+
+export function attackPose(anim, frame, startup, active, recovery, t = frame, guard = null) {
   const fn = POSES[anim] ?? POSES.punch;
   const total = startup + active + recovery;
   const p = frame / Math.max(1, total);
-  const G = POSES.idle(0);
+  const G = guard ?? POSES.idle(0);
   const W = fn(t, p, false);
   const S = fn(t, p, true);
   const w1 = Math.max(1, Math.round(startup * 0.55));

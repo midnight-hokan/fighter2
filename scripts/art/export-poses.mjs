@@ -2,6 +2,7 @@
 // 导出每个角色每个动画的骨架关键点（OpenPose COCO-18 格式），给 ControlNet 生成精灵帧用。
 // 用法：node scripts/art/export-poses.mjs [输出目录=art-work/poses] [--scale 8] [--lite]
 // --lite：精简关键帧版（约 85 帧/人，完整版约 200 帧/人），先上线后补帧时用
+// --dense N：额外输出连续驱动骨架（见下）
 // 输出：<目录>/<角色id>.json
 //   { id, frameW, frameH, anchor, scale, anims: { <动画名>: { fps, loop, frames: [ { keypoints: [[x,y,置信度]×18] } ] } } }
 // 坐标是放大 scale 倍后的像素（默认 8 倍 = 1024×1024，适合扩散模型），缩回 1 倍就是 atlas 的单帧坐标。
@@ -9,12 +10,16 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import theme from '../../src/theme/index.js';
 import { requiredAnims } from '../../src/render/atlas.js';
-import { POSES, guessAnim, attackPose, skeleton } from '../../src/render/poses.js';
+import { POSES, guessAnim, attackPose, guardFor, skeleton } from '../../src/render/poses.js';
 
 const out = process.argv[2] && !process.argv[2].startsWith('--') ? process.argv[2] : 'art-work/poses';
 const si = process.argv.indexOf('--scale');
 const scale = si > 0 ? Number(process.argv[si + 1]) : 8;
 const LITE = process.argv.includes('--lite');
+// --dense N：每个动画额外输出 N 帧连续驱动骨架（给 Wan2.2-Animate 当驱动视频，动作铺满整段，不再"出招 9 帧 + 定格 40 帧"），
+// 以及 pick：atlas 第 k 帧取驱动视频第 pick[k] 帧。N 建议 4k+1（17/33/49）。
+const di = process.argv.indexOf('--dense');
+const DENSE = di > 0 ? Number(process.argv[di + 1]) : 0;
 const FRAME = { w: 128, h: 128, anchor: { x: 64, y: 112 } }; // 脚底以下留 16px：下蹲、扫腿时脚会略低于地面
 
 // 状态动画：帧数、fps、是否循环、用哪个姿态函数采样
@@ -30,6 +35,12 @@ const STATE = LITE ? STATE_LITE : {
   knockdown: [3, 8, false], dizzy: [6, 8, true], roll: [6, 14, false], maxstart: [4, 10, false], ko: [3, 6, false],
   win: [6, 8, true], throw: [5, 12, false], gc: [4, 12, false],
 };
+
+// 双手长柄武器（拖把、扫帚、长棍）：出拳类动作改成双手握持前推，后手跟着前手走，
+// 否则驱动骨架是单手出拳，生成模型会把武器画成"竖着拿着站着"
+const POLE = /长柄|拖把|扫帚|长棍/;
+const POLE_ANIMS = new Set(['punch', 'heavy', 'upper', 'uppercut', 'fireball', 'super', 'rush']);
+function twoHand(pose) { return { ...pose, armB: [pose.armF[0] - 0.12, pose.armF[1] + 0.3] }; }
 
 function moveDef(ch, key) {
   if (ch.normals?.[key]) return { id: key, ...ch.normals[key] };
@@ -69,6 +80,14 @@ for (const ch of theme.roster) {
       const fn = key === 'throw' ? (t) => POSES.throw(t, t / 30) : key === 'gc' ? (t) => POSES.heavy(t, t / 24, t > 8) : POSES[key];
       const frames = Array.from({ length: n }, (_, i) => ({ keypoints: keypoints(fn(Math.round((i * 60) / fps), i / Math.max(1, n - 1), false)) }));
       anims[key] = { fps, loop, frames };
+      if (DENSE) {
+        const span = Math.max(1, (n * 60) / fps); // 一个循环（或整段）的游戏帧数
+        const tAt = (j) => (loop ? (j * span) / DENSE : (j * span) / Math.max(1, DENSE - 1));
+        anims[key].dense = {
+          frames: Array.from({ length: DENSE }, (_, j) => ({ keypoints: keypoints(fn(tAt(j), j / Math.max(1, DENSE - 1), false)) })),
+          pick: Array.from({ length: n }, (_, i) => Math.min(DENSE - 1, Math.round(((i * 60) / fps / span) * (loop ? DENSE : DENSE - 1)))),
+        };
+      }
       continue;
     }
     const m = moveDef(ch, key);
@@ -76,20 +95,34 @@ for (const ch of theme.roster) {
     const isNormal = !!ch.normals?.[key];
     const n = LITE ? (isNormal ? 2 : 3) : Math.max(3, Math.min(8, Math.ceil(total / 5)));
     const fn = POSES[m.anim] ?? POSES[guessAnim(key)];
+    const animName = POSES[m.anim] ? m.anim : guessAnim(key);
+    const pole = POLE.test(ch.style ?? '') && POLE_ANIMS.has(animName);
+    const poseAt = (frame) => {
+      const active = frame > m.startup && frame <= m.startup + m.active + 2;
+      // 关键帧插值：架势 → 蓄力 → 出招 → 收招（旋风腿、投技仍按时间函数）
+      const p = ['spin', 'throw', 'grab'].includes(animName)
+        ? fn(frame, frame / total, active)
+        : attackPose(animName, frame, m.startup ?? 5, m.active ?? 3, m.recovery ?? 10, frame, guardFor(key));
+      return pole ? twoHand(p) : p;
+    };
+    const picks = [];
     const frames = Array.from({ length: n }, (_, i) => {
       // 精简版：普通技取"蓄力、出招"两帧，必杀技取"蓄力、出招、收招"三帧；完整版均匀采样
       const frame = LITE
         ? (n === 2 ? [Math.max(1, Math.round(m.startup / 2)), m.startup + 1][i] : [Math.max(1, Math.round(m.startup / 2)), m.startup + 1, m.startup + m.active + Math.round((m.recovery ?? 10) / 2)][i])
         : fullFrames(m, n, total)[i];
       const active = frame > m.startup && frame <= m.startup + m.active + 2;
-      const animName = POSES[m.anim] ? m.anim : guessAnim(key);
-      // 关键帧插值：架势 → 蓄力 → 出招 → 收招（旋风腿、投技仍按时间函数）
-      const pose = ['spin', 'throw', 'grab'].includes(animName)
-        ? fn(frame, frame / total, active)
-        : attackPose(animName, frame, m.startup ?? 5, m.active ?? 3, m.recovery ?? 10);
-      return { keypoints: keypoints(pose), active };
+      picks.push(frame);
+      return { keypoints: keypoints(poseAt(frame)), active };
     });
     anims[key] = { fps: Math.round((n * 60) / total), loop: false, frames };
+    if (DENSE) {
+      // 驱动视频从第 0 帧（架势）铺到最后一帧（收招回架势），动作占满整段
+      anims[key].dense = {
+        frames: Array.from({ length: DENSE }, (_, j) => ({ keypoints: keypoints(poseAt((j * total) / (DENSE - 1))) })),
+        pick: picks.map(f => Math.min(DENSE - 1, Math.round((f * (DENSE - 1)) / total))),
+      };
+    }
   }
   const file = `${out}/${ch.id}.json`;
   writeFileSync(file, JSON.stringify({ id: ch.id, name: ch.name, style: ch.style, colors: ch.colors, frameW: FRAME.w, frameH: FRAME.h, anchor: FRAME.anchor, scale, anims }));
