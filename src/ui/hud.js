@@ -73,7 +73,12 @@ export class Hud {
         const img = this.root.querySelector(`[data-face="${k}"]`);
         img.style.visibility = 'hidden';
         img.onload = () => { img.style.visibility = 'visible'; };
-        img.onerror = () => { img.style.visibility = 'hidden'; };
+        img.onerror = () => {
+          // 慢网偶发失败：最多重试 3 次
+          const n = +(img.dataset.retry || 0);
+          if (n < 3) { img.dataset.retry = n + 1; setTimeout(() => { img.src = img.src.split('?')[0] + '?r=' + (n + 1); }, 800 * (n + 1)); } else img.style.visibility = 'hidden';
+        };
+        img.dataset.retry = 0;
         img.src = `assets/${this.theme.id}/select/${f.charId}.jpg`;
       }
       this.q(`wins-${k}`).textContent = '◆'.repeat(state.round.wins[i]);

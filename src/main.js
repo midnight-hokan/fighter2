@@ -95,7 +95,8 @@ const EAGER = TEST_MODE || navigator.webdriver;
 const assetsReady = EAGER
   ? Promise.all([renderer.atlases.load(theme.roster), loadStageImages(theme.stages), audio.preload(theme)])
   : Promise.all([loadStageImages(theme.stages), audio.preload(theme, { bgm: false })]);
-if (!EAGER) assetsReady.then(async () => { for (const c of theme.roster) await renderer.atlases.ensure(theme.roster, [c.id]); });
+// 后台预取晚 5 秒再开始，先把带宽让给标题页和选人页的小图
+if (!EAGER) assetsReady.then(() => setTimeout(async () => { for (const c of theme.roster) await renderer.atlases.ensure(theme.roster, [c.id]); }, 5000));
 
 function dummyController(state, me) {
   const self = state.fighters[me];

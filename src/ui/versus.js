@@ -12,7 +12,7 @@ export class Versus {
   card(c, side) {
     const img = `assets/${this.theme.id}/select/${c.id}.jpg`;
     return `<div class="vs-side vs-${side}" style="--c:${c.colors?.primary ?? '#888'}">
-      <img src="${img}" alt="" onerror="this.remove()">
+      <img src="${img}" alt="" onerror="const n=+(this.dataset.retry||0);if(n<3){this.dataset.retry=n+1;const s=this.src.split('?')[0];setTimeout(()=>{this.src=s+'?r='+(n+1)},800*(n+1))}else this.remove()">
       <div class="vs-name"><b>${c.name}</b><span>${c.title ?? ''}</span></div></div>`;
   }
 
