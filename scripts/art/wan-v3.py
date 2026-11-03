@@ -401,7 +401,7 @@ def wan_wf(cid, safe, L, anim):
     ref_name = f"wanv3_{cid}_ref.png"
     wf = {
       "1": {"class_type": "UNETLoader", "inputs": {"unet_name": WAN_UNET, "weight_dtype": "default"}},
-      "2": {"class_type": "WanAnimate2Cache", "inputs": {"model": ["1", 0]}},
+      "2": {"class_type": "WanAnimate2Cache", "inputs": {"model": ["1", 0], "device": "cpu", "dtype": "default"}},
       "3": {"class_type": "CLIPLoader", "inputs": {"clip_name": WAN_TEXT, "type": "wan"}},
       "4": {"class_type": "CLIPTextEncode", "inputs": {"clip": ["3", 0], "text": POS_BASE}},
       "5": {"class_type": "CLIPTextEncode", "inputs": {"clip": ["3", 0], "text": NEG_BASE}},
@@ -410,9 +410,9 @@ def wan_wf(cid, safe, L, anim):
       "7": {"class_type": "CLIPVisionLoader", "inputs": {"clip_name": WAN_CLIPV}},
       "12": {"class_type": "VAELoader", "inputs": {"vae_name": WAN_VAE}},
       "20": {"class_type": "LoadImage", "inputs": {"image": ref_name}},
-      "21": {"class_type": "CLIPVisionEncode", "inputs": {"clip_vision": ["7", 0], "image": ["20", 0]}},
+      "21": {"class_type": "CLIPVisionEncode", "inputs": {"clip_vision": ["7", 0], "image": ["20", 0], "crop": "center"}},
       "22": {"class_type": "LoadImage", "inputs": {"image": f"wanv3_{cid}_{safe}_pose_0000.png"}},
-      "23": {"class_type": "CLIPVisionEncode", "inputs": {"clip_vision": ["7", 0], "image": ["22", 0]}},
+      "23": {"class_type": "CLIPVisionEncode", "inputs": {"clip_vision": ["7", 0], "image": ["22", 0], "crop": "center"}},
     }
     # 49..L 个 pose LoadImage：节点 100+i (i=0..L-1)
     for i in range(L):
