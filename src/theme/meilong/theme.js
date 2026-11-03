@@ -16,13 +16,14 @@ export default {
   // 飞行道具外观：用角色随身物品。key = 角色id:招式id。fx 是渲染器内置的程序化画法；
   // sprite（可选，图片放好后再加，否则 404 会报错）：{ src, size（逻辑像素宽）, spin（旋转速度） }，有图片就优先用图片
   projectiles: {
-    'c01:meiyan': { fx: 'helmet' },
-    'c02:baokong': { fx: 'rope' },
-    'c02:tanshui': { fx: 'flare' },
+    'c01:meiyan': { fx: 'helmet', sprite: { src: 'assets/meilong/projectiles/c01_helmet.png', size: 30, spin: 14 } },
+    'c02:baokong': { fx: 'rope', sprite: { src: 'assets/meilong/projectiles/c02_rope.png', size: 34, spin: 12 } },
+    'c02:tanshui': { fx: 'flare', sprite: { src: 'assets/meilong/projectiles/c02_flare.png', size: 30, spin: 0 } },
     'c05:denghuadan': { fx: 'sound' },
-    'c05:daiteng': { fx: 'banner' },
+    'c05:daiteng': { fx: 'banner', sprite: { src: 'assets/meilong/projectiles/c05_banner.png', size: 40, spin: 0 } },
     'c05:denghuadrag': { fx: 'megasound' },
-    'c06:jifengdan': { fx: 'lamps' },
+    'c06:jifengdan': { fx: 'lamps', sprite: { src: 'assets/meilong/projectiles/c06_lamp.png', size: 20, spin: 8 } },
+    // c08:huiyan 银针贴图 2 候选均过细淡（QC 不通过，INBOX 标注可选）→ 保留程序化画法
     'c08:huiyan': { fx: 'needles' },
   },
   audio: {
