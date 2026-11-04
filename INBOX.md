@@ -391,3 +391,4 @@ Claude 看完对比图再决定是否全量换方法。
 **不要动**：`src/engine/`、`tests/`、`tests.lock`。引擎和角色数据（新招式的判定、元素、平衡）由 Claude 同步在做；图集先到也没关系，引擎还没用到的新动画不会播放，用不上的动画会自动回退到旧动画。
   - ✅ c04 完成 01:13: commit 022667f, 330 帧, 169 分钟, [0;93m2026-11-04 01:08:21.081785079 [W:onnxruntime:Default, onnxruntime_pybind_state.cc:994 CreateExecutionProviderInst
   - ✅ c07 完成 03:54: commit d096636, 388 帧, 161 分钟, [0;93m2026-11-04 03:48:54.910204261 [W:onnxruntime:Default, onnxruntime_pybind_state.cc:994 CreateExecutionProviderInst
+  - ✅ c01 完成 06:46: commit 9e2c6f3, 341 帧, 6 分钟, [0;93m2026-11-04 06:40:54.451103267 [W:onnxruntime:Default, onnxruntime_pybind_state.cc:994 CreateExecutionProviderInst
