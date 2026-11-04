@@ -1,0 +1,168 @@
+{
+  "id": "c04",
+  "initial": [
+    "core"
+  ],
+  "variants": {
+    "hd": {
+      "segments": [
+        {
+          "file": "hd/c04-core.webp",
+          "meta": "hd/c04-core.json",
+          "tier": "core",
+          "page": 1,
+          "bytes": 1471406,
+          "anims": [
+            "idle",
+            "walkf",
+            "walkb",
+            "crouch",
+            "prejump",
+            "jump",
+            "blockstun",
+            "crblock",
+            "hitstun",
+            "airhit",
+            "knockdown",
+            "dizzy",
+            "roll",
+            "ko",
+            "intro",
+            "st.lp",
+            "st.hp",
+            "st.lk",
+            "st.hk",
+            "cr.lp",
+            "cr.hp",
+            "cr.lk",
+            "cr.hk",
+            "j.lp",
+            "j.hp",
+            "j.lk",
+            "j.hk",
+            "cl.hp",
+            "cl.hk",
+            "cd",
+            "j.cd"
+          ]
+        },
+        {
+          "file": "hd/c04-express.webp",
+          "meta": "hd/c04-express.json",
+          "tier": "express",
+          "page": 1,
+          "bytes": 182486,
+          "anims": [
+            "win",
+            "win2",
+            "taunt"
+          ]
+        },
+        {
+          "file": "hd/c04-skill.webp",
+          "meta": "hd/c04-skill.json",
+          "tier": "skill",
+          "page": 1,
+          "bytes": 978628,
+          "anims": [
+            "maxstart",
+            "throw",
+            "gc",
+            "denghua",
+            "shanguang",
+            "jifenghua",
+            "fadanjia",
+            "huaying",
+            "huabuditi",
+            "kaifadan",
+            "quanmiantingchan",
+            "anquandajiancha"
+          ]
+        }
+      ],
+      "total_bytes": 2632520,
+      "max_segment_bytes": 1471406,
+      "under_target": true
+    },
+    "sd": {
+      "segments": [
+        {
+          "file": "sd/c04-core.webp",
+          "meta": "sd/c04-core.json",
+          "tier": "core",
+          "page": 1,
+          "bytes": 747562,
+          "anims": [
+            "idle",
+            "walkf",
+            "walkb",
+            "crouch",
+            "prejump",
+            "jump",
+            "blockstun",
+            "crblock",
+            "hitstun",
+            "airhit",
+            "knockdown",
+            "dizzy",
+            "roll",
+            "ko",
+            "intro",
+            "st.lp",
+            "st.hp",
+            "st.lk",
+            "st.hk",
+            "cr.lp",
+            "cr.hp",
+            "cr.lk",
+            "cr.hk",
+            "j.lp",
+            "j.hp",
+            "j.lk",
+            "j.hk",
+            "cl.hp",
+            "cl.hk",
+            "cd",
+            "j.cd"
+          ]
+        },
+        {
+          "file": "sd/c04-express.webp",
+          "meta": "sd/c04-express.json",
+          "tier": "express",
+          "page": 1,
+          "bytes": 92342,
+          "anims": [
+            "win",
+            "win2",
+            "taunt"
+          ]
+        },
+        {
+          "file": "sd/c04-skill.webp",
+          "meta": "sd/c04-skill.json",
+          "tier": "skill",
+          "page": 1,
+          "bytes": 486426,
+          "anims": [
+            "maxstart",
+            "throw",
+            "gc",
+            "denghua",
+            "shanguang",
+            "jifenghua",
+            "fadanjia",
+            "huaying",
+            "huabuditi",
+            "kaifadan",
+            "quanmiantingchan",
+            "anquandajiancha"
+          ]
+        }
+      ],
+      "total_bytes": 1326330,
+      "max_segment_bytes": 747562,
+      "under_target": true
+    }
+  }
+}

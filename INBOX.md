@@ -392,3 +392,59 @@ Claude 看完对比图再决定是否全量换方法。
   - ✅ c04 完成 01:13: commit 022667f, 330 帧, 169 分钟, [0;93m2026-11-04 01:08:21.081785079 [W:onnxruntime:Default, onnxruntime_pybind_state.cc:994 CreateExecutionProviderInst
   - ✅ c07 完成 03:54: commit d096636, 388 帧, 161 分钟, [0;93m2026-11-04 03:48:54.910204261 [W:onnxruntime:Default, onnxruntime_pybind_state.cc:994 CreateExecutionProviderInst
   - ✅ c01 完成 06:46: commit 9e2c6f3, 341 帧, 6 分钟, [0;93m2026-11-04 06:40:54.451103267 [W:onnxruntime:Default, onnxruntime_pybind_state.cc:994 CreateExecutionProviderInst
+
+## 2026-11-04 07:45 光哥直接裁决：v3 图集分包（BLOCKERS「U1 c04 atlas 超限」关闭路径）
+
+裁决原文（光哥 07:4x，TG）：
+- **不改 U1 阈值，不降 q。走资源分包**：
+  1. atlas 按动画段拆分，单包目标 ≤1.5MB，必要时按帧预算分页
+  2. 运行时按需加载解码，首屏只加载默认角色 idle/attack
+  3. 总量指标从「≤25MB 静态总量」改为「首屏预算 + 按需总量」双指标
+- 先拿 c04 出拆分 PoC，附实际加载耗时，今天内给结论。
+- c03–c08 照常跑，不要停。
+
+### 执行分工与状态
+
+**资产侧（大炮，✅ 已做，本次提交）**
+- `scripts/art/split-atlas.py`：v3 分包打包脚本（生产可复用，8 人重打包直接用它）。输入与 pack-atlas.py --v3 相同，输出 hd/sd 两套分包 + segments.json 段索引。三档分段：
+  - core（首屏）：idle/walkf/walkb/crouch/prejump/jump/hitstun/blockstun/crblock/airhit/knockdown/dizzy/roll/ko/intro + 全部普通技（st/cr/j × lp/hp/lk/hk + mp/mk alias + cl.hp/cl.hk/cd/j.cd）
+  - skill（按需，首屏后后台预取）：throw/gc/maxstart + 全部特殊技/新招式
+  - express（按需，回合结束/胜利前预取）：win/win2/taunt
+  - 分页算法：动画边界贪心，单动画超限按帧预算二分；alias 跨段校验（mp/mk→lp/lk 同在 core，天然满足）
+- c04 PoC 产物 + 实测（`docs/poc-split/c04/`，`node tests/poc/measure-split.mjs` 复现；playwright 冷缓存 3 次中位数，localhost）：
+
+| 包 | HD 256px（KB / 解码 / 解码后RAM） | SD 160px |
+|---|---|---|
+| baseline 单体 330帧 | 2569KB / 241ms / 84MB | 1293KB / 112ms / 33MB |
+| 首屏 core 188帧 | 1437KB / 150ms / 48MB | 730KB / 65ms / 19MB |
+| 按需 skill 118帧 | 956KB / 103ms / 32MB | 475KB / 47ms / 13MB |
+| 按需 express 24帧 | 178KB / 24ms / 8MB | 90KB / 10ms / 3MB |
+
+- 全部单包 ≤1.5MB（HD 最大 1.40MB）；分包后总量 2.51MB < 单体 2.63MB（16 列网格尾部 padding 减少）
+- 首屏定义说明：裁决原文「idle/attack」，实际取 core 包 = 开场即对战所需最小集合（移动/防御/倒地/intro + 全普通技）。若光哥要严格只留 idle+attack，改 split-atlas.py 的 TIER_CORE 清单重跑即可（脚本支持任意分段）
+- 首屏实测以解码为主（localhost fetch ~10ms）；真实设备网络耗时 = 字节÷带宽（1.44MB：10Mbps≈1.15s / 50Mbps≈0.23s）。对战开始需双方 core（HD ≤3MB / SD ≤1.5MB）
+
+**引擎侧（Claude，高优先）**
+- `src/render/atlas.js` 的 `AtlasStore.loadOne` 现在是单体：fetch atlas.json（coarse→sd）→ 1 张图 → validateAtlas 要求全部动画在同一 json。改段加载：
+  1. 角色目录存在 `segments.json` 则走分包路径（结构见 docs/poc-split/c04/segments.json：variants.{hd,sd}.segments[] 每项 {file, meta, tier, page, bytes, anims}，initial=["core"]）；不存在则走原单体路径（兼容未重打包角色）
+  2. 首屏：只 fetch+解码 tier=core 段（HD/SD 按 coarse pointer 选择，同现有逻辑）→ 建 Atlas
+  3. skill/express：首屏完成后后台预取（或对应动画首次触发时懒加载），pending Map 去重（同 ensure 现有模式）
+  4. 每段 json 与现有 atlas.json 同构（image/frameW/frameH/columns/anchor/scale/animations，帧索引为段内局部），frameIndex/draw 的 UV 计算零改动，只需 anim→(段, 局部索引) 映射层
+  5. validateAtlas 改逐段校验（各段验自己的 anims）；requiredAnims 完整性校验移到「全部段 animations 合并后」
+- 参考实测：首屏 core 解码 150ms（headless 桌面），按需单段 ≤103ms，后台预取无感
+
+**测试侧（Claude）**
+- U1（tests/unit/u1-webp.test.js）双指标改写，替换「≤25MB 静态总量 + 单张图集 2MB」：
+  1. 单包 ≤1.5MB：public/assets 下所有 webp ≤1.5MB
+  2. 按需总量 ≤35MB：webp 总（8 人 v3 HD+SD ≈28MB + 立绘/场景/舞台/道具 ≈4.3MB ≈ 32MB，留 ~8% 余量）
+  3. 保留 assets-webp.py --check 新鲜度 + webp-manifest.json 检查
+  4. 过渡期：未重打包的 v2 单体 + 现有 v3 单体（c01/c04）会临时违反第 1 条——建议测试内置白名单（列角色 id），最终状态白名单必须清空
+- 纠错：06:30 巡检「只有 c04 超限」不准确——`/c0\d/atlas.webp$/` 正则命中 c01（2.29MB）和 c07 v2 单体（2.99MB），共 3 张 >2MB；双指标改写一并覆盖
+
+**资产侧后续（大炮，等引擎合入后执行，引擎未合入前不动 public/）**
+- 8 人 v3 run 完成后（或某人提交且 run 空闲时）逐人重打包：`python3 scripts/art/split-atlas.py art-work/poses-v3/<cid>.json art-work/frames-v3/<cid> --out public/assets/meilong/<cid> --target 1.5` → 删单体 atlas.webp/atlas-sd.webp（atlas.json/atlas-sd.json 可留作回退，引擎按 segments.json 有无自动分流）→ commit
+- 顺序铁律：先引擎、后资产——引擎段加载没合入前删单体图集，线上立刻挂
+
+**约束**
+- v3 run（c03 gen 进行中 → c02/c05/c06/c08）照常跑不停不杀；wan-v3.py finish 步保持单体打包不动（run 活着不改编排脚本，且运行中进程不重读磁盘代码）
+- PoC 文件在 docs/poc-split/，不进 public/、不进线上体积
