@@ -286,6 +286,9 @@ def _refgen_sheet(cid, portrait, cands, picked):
 def refgen(cid):
     """格斗架势参考图：Edit-2511 两候选 → LAB 直方图+覆盖度评分自动挑优 → 480 上传 wanv3_<cid>_ref.png。
     失败（OOM/超时）抛异常由调用方降级为站立立绘参考（prep_ref 兜底）。"""
+    if os.path.exists(os.path.join(REFDIR, f"{cid}_480.png")):
+        log(f"refgen {cid}: {cid}_480.png 已存在，跳过（删该文件可强制重生成）")
+        return
     portrait = os.path.join(REV, f"{cid}-portrait.png")
     if not os.path.exists(portrait):
         raise RuntimeError(f"portrait missing: {portrait}")
@@ -639,6 +642,12 @@ def run():
         for cid in ORDER:
             t_cid = time.time()
             log(f"===== {cid} 开始 =====")
+            # 断点续跑：已提交角色（联系表在 git 中）整段跳过，防重启重跑 refgen/finish 写重复 INBOX 记录
+            if subprocess.run(["git", "ls-files", f"docs/art-review/v3-{cid}.jpg"],
+                              cwd=ROOT, capture_output=True).stdout.strip():
+                log(f"run: {cid} 已提交（联系表在 git），跳过")
+                done.append(cid)
+                continue
             try:
                 # 01:30 规范：每个人开工前先查 INBOX（拉取对方新指示/修改要求）
                 subprocess.run(["git", "pull", "--rebase", "--autostash"], cwd=ROOT,
