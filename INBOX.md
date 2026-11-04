@@ -389,3 +389,4 @@ Claude 看完对比图再决定是否全量换方法。
 - 元素音效：火、电、蒸汽、声波、光、针、气流 7 种，每种 3 个变体。存 `public/assets/meilong/sfx/elem_<fire|elec|steam|sonic|light|needle|wind>_<1-3>.ogg`，每个 0.3–1.2 秒，响度和现有 hit_heavy 接近。引擎接线 Claude 做。
 
 **不要动**：`src/engine/`、`tests/`、`tests.lock`。引擎和角色数据（新招式的判定、元素、平衡）由 Claude 同步在做；图集先到也没关系，引擎还没用到的新动画不会播放，用不上的动画会自动回退到旧动画。
+  - ✅ c04 完成 01:13: commit 022667f, 330 帧, 169 分钟, [0;93m2026-11-04 01:08:21.081785079 [W:onnxruntime:Default, onnxruntime_pybind_state.cc:994 CreateExecutionProviderInst
