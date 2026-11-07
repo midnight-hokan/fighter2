@@ -27,7 +27,7 @@ ANIMATE = os.path.join(ROOT, "art-work/animate")
 REV = os.path.join(ROOT, "docs/art-review")
 CK = os.path.join(ROOT, ".check")
 LOG = os.path.join(CK, "v3-frames.log")
-CUI = "http://localhost:8188"
+CUI = os.environ.get("WAN_COMFY", "http://localhost:8188")
 INPUT_DIR = os.path.expanduser("~/ComfyUI/input")
 
 W, H = 480, 832                 # ComfyUI 驱动/生成画布（9:16）
