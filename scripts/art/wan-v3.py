@@ -532,6 +532,7 @@ def gen_anim(cid, anim, attempt=0):
         if os.path.exists(p):
             os.remove(p)
     shutil.rmtree(tmp, ignore_errors=True)
+    open(os.path.join(CK, "heartbeat"), "a").close()
     log(f"gen {cid}/{anim}: {n_final} 帧完成，{time.time() - t0:.0f}s (att{attempt})")
     return True
 
