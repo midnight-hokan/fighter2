@@ -632,6 +632,11 @@ def _inbox_record(cid, h, nfr, mins, qtail):
 
 def run():
     import signal as _sig
+    order = ORDER
+    only = os.environ.get("WAN_ONLY")
+    if only:
+        order = [c for c in ORDER if c in only.split(",")]
+    hook = os.environ.get("WAN_DONE_HOOK", "1") != "0"
     os.makedirs(CK, exist_ok=True)
     hb = os.path.join(CK, "heartbeat")
     p = subprocess.Popen(f"while :; do touch {hb}; sleep 300; done", shell=True,
@@ -639,7 +644,7 @@ def run():
     log(f"run: 心跳守护 pid={p.pid}（独立进程组，killpg 清理）")
     done, failed = [], []
     try:
-        for cid in ORDER:
+        for cid in order:
             t_cid = time.time()
             log(f"===== {cid} 开始 =====")
             # 断点续跑：已提交角色（联系表在 git 中）整段跳过，防重启重跑 refgen/finish 写重复 INBOX 记录
@@ -650,8 +655,9 @@ def run():
                 continue
             try:
                 # 01:30 规范：每个人开工前先查 INBOX（拉取对方新指示/修改要求）
-                subprocess.run(["git", "pull", "--rebase", "--autostash"], cwd=ROOT,
-                               capture_output=True)
+                if hook:
+                    subprocess.run(["git", "pull", "--rebase", "--autostash"], cwd=ROOT,
+                                   capture_output=True)
                 try:
                     refgen(cid)
                 except Exception as e:
@@ -662,30 +668,35 @@ def run():
                     failed.append((cid, fails))
                     log(f"run: {cid} 有 {len(fails)} 动画失败，跳过 finish，继续下一人")
                     continue
-                if finish(cid):
-                    subprocess.run(["git", "pull", "--rebase", "--autostash"], cwd=ROOT,
-                                   capture_output=True)
-                    subprocess.run(["git", "add", f"public/assets/meilong/{cid}/",
-                                    "public/assets/manifest.json", f"docs/art-review/v3-{cid}.jpg"],
-                                   cwd=ROOT)
-                    subprocess.run(["git", "commit", "-m",
-                                    f"v3 {cid}: 46 动画全量帧（Wan2.2-Animate 驱动 + BiRefnet 抠图 + 逆仿射回 1024）"],
-                                   cwd=ROOT, capture_output=True)
-                    h = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=ROOT,
-                                       capture_output=True, text=True).stdout.strip()
-                    nfr = len([f for f in os.listdir(os.path.join(FRAMES, cid)) if f.endswith(".png")])
-                    qf = os.path.join(CK, f"v3-qc-{cid}.log")
-                    qtail = ""
-                    if os.path.exists(qf):
-                        qtail = (open(qf).read().strip().splitlines() or [""])[-1][:120]
-                    try:
-                        _inbox_record(cid, h, nfr, (time.time() - t_cid) / 60, qtail)
-                    except Exception as e:
-                        log(f"run: {cid} INBOX 记录失败: {e}")
-                    done.append(cid)
-                    log(f"run: {cid} 已提交 {h}")
-                else:
+                rc = finish(cid)
+                if not rc:
                     failed.append((cid, ["finish 红灯"]))
+                    continue
+                if not hook:
+                    done.append(cid)
+                    log(f"run: {cid} finish 完成（WAN_DONE_HOOK=0，提交由外部负责）")
+                    continue
+                subprocess.run(["git", "pull", "--rebase", "--autostash"], cwd=ROOT,
+                                   capture_output=True)
+                subprocess.run(["git", "add", f"public/assets/meilong/{cid}/",
+                                "public/assets/manifest.json", f"docs/art-review/v3-{cid}.jpg"],
+                               cwd=ROOT)
+                subprocess.run(["git", "commit", "-m",
+                                f"v3 {cid}: 46 动画全量帧（Wan2.2-Animate 驱动 + BiRefnet 抠图 + 逆仿射回 1024）"],
+                               cwd=ROOT, capture_output=True)
+                h = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=ROOT,
+                                   capture_output=True, text=True).stdout.strip()
+                nfr = len([f for f in os.listdir(os.path.join(FRAMES, cid)) if f.endswith(".png")])
+                qf = os.path.join(CK, f"v3-qc-{cid}.log")
+                qtail = ""
+                if os.path.exists(qf):
+                    qtail = (open(qf).read().strip().splitlines() or [""])[-1][:120]
+                try:
+                    _inbox_record(cid, h, nfr, (time.time() - t_cid) / 60, qtail)
+                except Exception as e:
+                    log(f"run: {cid} INBOX 记录失败: {e}")
+                done.append(cid)
+                log(f"run: {cid} 已提交 {h}")
             except Exception as e:
                 log(f"run: {cid} 异常: {e}")
                 failed.append((cid, [str(e)[:100]]))
