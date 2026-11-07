@@ -28,7 +28,7 @@ REV = os.path.join(ROOT, "docs/art-review")
 CK = os.path.join(ROOT, ".check")
 LOG = os.path.join(CK, "v3-frames.log")
 CUI = os.environ.get("WAN_COMFY", "http://localhost:8188")
-INPUT_DIR = os.path.expanduser("~/ComfyUI/input")
+INPUT_DIR = os.environ.get("WAN_COMFY_INPUT", os.path.expanduser("~/ComfyUI/input"))
 
 W, H = 480, 832                 # ComfyUI 驱动/生成画布（9:16）
 TARGET_H = int(H * 0.88)        # 主体占高 732（试点参数）
