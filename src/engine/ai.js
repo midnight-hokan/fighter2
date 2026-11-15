@@ -2,6 +2,7 @@
 // createAI(level, seed, character) → (state, me) => input
 //   level：'easy' | 'normal' | 'hard'；character：角色数据（原始定义对象）
 // 只能用 seed 生成随机数，保证同种子可复现。
+import { PHYS, STAGE } from './constants.js';
 import { createRng } from './rng.js';
 import { parseCommand } from './input.js';
 
@@ -78,6 +79,9 @@ export function createAI(level = 'normal', seed = 1, character = null) {
     const back = self.facing > 0 ? 'left' : 'right';
     const dist = Math.abs(opp.x - self.x);
 
+    const linVsLei = level === 'normal' && ch.id === 'c01' && opp.charId === 'c03';
+    const leiVsLin = level === 'normal' && ch.id === 'c03' && opp.charId === 'c01';
+
     if (plan.length) return out(plan.shift(), fwd, back);
 
     // 不能动的时候：继续按后（保持防御姿态 / 蓄力）
@@ -99,7 +103,7 @@ export function createAI(level = 'normal', seed = 1, character = null) {
     const projIncoming = state.projectiles.some(p => p.owner !== me && Math.abs(p.x - self.x) < 140 && Math.sign(self.x - p.x) === Math.sign(p.vx));
     const jumpIn = !opp.grounded && opp.action !== 'airhit' && dist < 120;
 
-    if (jumpIn && r() < cfg.anti) {
+    if (jumpIn && r() < (linVsLei ? 0.55 : cfg.anti)) {
       if (antiAir && antiAir.parsed.type !== 'charge') return useCmd(antiAir, 'hp');
       const ccr = ch.normals?.['cr.hp'];
       if (ccr) return queue([{ down: true, hp: true }, { down: true }, {}]);
@@ -107,6 +111,24 @@ export function createAI(level = 'normal', seed = 1, character = null) {
     if ((oppAttacking || projIncoming || jumpIn) && r() < cfg.block) {
       const low = !!opp.move?.id?.startsWith('cr.');
       return queue(Array.from({ length: 12 }, () => ({ [back]: true, down: low })));
+    }
+
+    // 林啸在中远距离用矿灯压进路，空间足够时后撤，临近墙边改用普通技。
+    if (linVsLei && dist >= 135 && projectile && !state.projectiles.some(p => p.owner === me) && r() < 0.65) {
+      return useCmd(projectile, r() < 0.5 ? 'lp' : 'hp');
+    }
+    const wallBehind = self.facing > 0 ? self.x - STAGE.left : STAGE.right - self.x;
+    if (linVsLei && dist >= 80 && dist < 150 && wallBehind > PHYS.pushHalf + 20 && r() < 0.65) {
+      return queue(Array.from({ length: 10 }, () => ({ [back]: true })));
+    }
+
+    // 雷钧只在接近指令投的有效距离且对手落地可抓时尝试缠摔。
+    if (leiVsLin && grab && dist <= (grab.range ?? throwRange) - 6 && opp.grounded && !opp.invulnerable
+      && ['idle', 'walkf', 'walkb', 'crouch'].includes(opp.action) && r() < 0.65) {
+      return useCmd(grab, 'hp');
+    }
+    if (leiVsLin && dist > throwRange && dist <= 150 && !oppAttacking && r() < 0.55) {
+      return queue(Array.from({ length: 10 }, () => ({ [fwd]: true })));
     }
 
     // 气槽
