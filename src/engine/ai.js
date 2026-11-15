@@ -114,11 +114,11 @@ export function createAI(level = 'normal', seed = 1, character = null) {
     }
 
     // 林啸在中远距离用矿灯压进路，空间足够时后撤，临近墙边改用普通技。
-    if (linVsLei && dist >= 135 && projectile && !state.projectiles.some(p => p.owner === me) && r() < 0.65) {
+    if (linVsLei && dist >= 135 && projectile && !state.projectiles.some(p => p.owner === me) && r() < 0.1) {
       return useCmd(projectile, r() < 0.5 ? 'lp' : 'hp');
     }
     const wallBehind = self.facing > 0 ? self.x - STAGE.left : STAGE.right - self.x;
-    if (linVsLei && dist >= 80 && dist < 150 && wallBehind > PHYS.pushHalf + 20 && r() < 0.65) {
+    if (linVsLei && dist >= 80 && dist < 150 && wallBehind > PHYS.pushHalf + 20 && r() < 0.15) {
       return queue(Array.from({ length: 10 }, () => ({ [back]: true })));
     }
 
