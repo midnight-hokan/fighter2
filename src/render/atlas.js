@@ -69,7 +69,7 @@ export function animKeyFor(f) {
 }
 
 class Atlas {
-  constructor(json, image) { this.json = json; this.image = image; }
+  constructor(json, image, preview = null) { this.json = json; this.image = image; this.preview = preview; }
 
   frameIndex(key0, f) {
     const key = resolveAnim(this.json.animations, key0);
@@ -84,9 +84,20 @@ class Atlas {
 
   // tint：残影着色（'special' 青白 / 'super' 金色）。json.scale = 图集像素 / 逻辑像素（高清图集 256 帧用 2）
   draw(ctx, key, f, x, y, alt, flash = false, tint = null) {
-    const j = this.json;
+    let image = this.image;
+    let j = this.json;
+    let idx;
+    if (this.preview && (key === 'idle' || key === 'blockstun' || (key === this.preview.special && f.move))) {
+      image = this.preview.image;
+      j = { frameW: 256, frameH: 256, columns: 4, anchor: { x: 128, y: 224 }, scale: 2 };
+      if (key === 'idle') idx = 0;
+      else if (key === 'blockstun') idx = 1;
+      else if (f.move.frame <= f.move.startup) idx = 2;
+      else idx = f.move.frame <= f.move.startup + Math.max(f.move.active, 5) ? 3 : 0;
+    } else {
+      idx = this.frameIndex(key, f);
+    }
     const k = j.scale ?? 1;
-    const idx = this.frameIndex(key, f);
     const sx = (idx % j.columns) * j.frameW;
     const sy = Math.floor(idx / j.columns) * j.frameH;
     ctx.save();
@@ -96,11 +107,11 @@ class Atlas {
     if (tint === 'super') ctx.filter = 'brightness(1.5) sepia(1) saturate(4)';
     ctx.translate(x, y);
     if (f.facing < 0) ctx.scale(-1, 1);
-    ctx.drawImage(this.image, sx, sy, j.frameW, j.frameH, -j.anchor.x / k, -j.anchor.y / k, j.frameW / k, j.frameH / k);
+    ctx.drawImage(image, sx, sy, j.frameW, j.frameH, -j.anchor.x / k, -j.anchor.y / k, j.frameW / k, j.frameH / k);
     if (flash) {
       ctx.globalCompositeOperation = 'lighter';
       ctx.globalAlpha *= 0.85;
-      ctx.drawImage(this.image, sx, sy, j.frameW, j.frameH, -j.anchor.x / k, -j.anchor.y / k, j.frameW / k, j.frameH / k);
+      ctx.drawImage(image, sx, sy, j.frameW, j.frameH, -j.anchor.x / k, -j.anchor.y / k, j.frameW / k, j.frameH / k);
     }
     ctx.restore();
   }
@@ -136,16 +147,23 @@ export class AtlasStore {
       const getJson = async (p) => { const r = await fetch(p, { cache: 'no-cache' }); if (!r.ok) throw new Error(`${p} ${r.status}`); return r.json(); };
       const base = path.slice(0, path.lastIndexOf('/') + 1);
       let json = await getJson(path);
+      const previewSpec = json.preview;
       // 手机（粗指针）改用 json.sd 指向的 160 像素版（v3 打包才有），解码后内存约为高清版的 40%
       const coarse = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
       if (coarse && json.sd) json = await getJson(base + json.sd).catch(() => json);
       // 优先加载同名 .webp（体积约 PNG 的十分之一），失败再回退原图
       const load = (src) => new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = rej; im.src = src; });
       const src = base + json.image;
-      const image = /\.png$/.test(src) ? await load(src.replace(/\.png$/, '.webp')).catch(() => load(src)) : await load(src);
+      const [image, previewImage] = await Promise.all([
+        /\.png$/.test(src) ? load(src.replace(/\.png$/, '.webp')).catch(() => load(src)) : load(src),
+        previewSpec ? load(base + previewSpec.image).catch(() => null) : null,
+      ]);
       const errs = validateAtlas(json, ch, image);
       if (errs.length) { this.errors[id] = errs; console.warn(`精灵图 ${id} 不合格，改用占位小人：`, errs); return; }
-      this.map.set(id, new Atlas(json, image));
+      const preview = previewImage?.width === 1024 && previewImage.height === 256
+        ? { image: previewImage, special: previewSpec.special }
+        : null;
+      this.map.set(id, new Atlas(json, image, preview));
     } catch (e) {
       this.errors[id] = [String(e)];
       console.warn(`精灵图 ${id} 加载失败：`, e);
