@@ -27,8 +27,8 @@ export class Effects {
         if (sup) this.wave(e.x, e.y, '#ffe680', 70, 18);
       } else if (e.type === 'block') {
         this.shield(e.x, e.y);
-        this.glow(e.x, e.y, 14, '#9fe3ff', 6);
-        this.sparks(e.x, e.y, '#7ad7ff', 6, 2.2, e.defender);
+        this.glow(e.x, e.y, e.heavy ? 23 : 14, '#9fe3ff', 6);
+        this.sparks(e.x, e.y, '#7ad7ff', e.heavy ? 10 : 6, 2.2, e.defender);
       } else if (e.type === 'clash') {
         this.glow(e.x, e.y, 30, '#ffffff', 10);
         this.sparks(e.x, e.y, '#ffffff', 14, 3.5, 0);
@@ -37,6 +37,7 @@ export class Effects {
         const d = state.fighters[e.defender];
         this.glow(d.x, d.y + 50, 22, '#ffd8a0', 8);
         this.sparks(d.x, d.y + 50, '#ffb347', 10, 3, e.attacker);
+        if (e.id === 'zhongdan') this.wave(d.x, d.y + 45, '#ffe0a6', 32, 11);
       } else if (e.type === 'max') {
         const f = state.fighters[e.player];
         this.ring(f.x, f.y + 50, '#ff6a2b');

@@ -85,13 +85,14 @@ export class Renderer {
         const sup = e.kind === 'super';
         const big = sup || e.damage >= 90;
         if (big) this.shake = Math.max(this.shake, sup ? 9 : 5);
-        else this.shake = Math.max(this.shake, 2);
+        else this.shake = Math.max(this.shake, e.damage < 50 ? 0.8 : 2);
         this.hitFlash[e.defender] = sup ? 5 : 3;
         if (e.counter) { this.stats.counters = (this.stats.counters ?? 0) + 1; this.flash = Math.max(this.flash, 2); this.shake = Math.max(this.shake, 4); }
         this.jitter[e.defender] = sup ? 14 : big ? 10 : 6;
         if (big) this.punchZoom(sup ? 1.14 : 1.05, e.x, e.y);
       }
       if (e.type === 'block') this.shake = Math.max(this.shake, 1.5);
+      if (e.type === 'throw' && e.id === 'zhongdan') this.shake = Math.max(this.shake, 4);
       if (e.type === 'super') {
         this.flash = 5; this.darken = 44;
         const ch = chars[e.player];
