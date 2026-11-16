@@ -769,6 +769,7 @@ export class Game {
     d.combo = comboing ? d.combo + 1 : 1;
     // 反击（Counter）：对手出招的发生帧或持续帧中被打中 → 硬直和顿帧加长，便于追击
     const counter = !comboing && d.action === 'attack' && !!d.move && d.move.frame <= d.move.def.startup + d.move.def.active;
+    const punish = !comboing && d.action === 'attack' && !!d.move && !counter;
     // 连段伤害修正：第 3 击起每击 -10%，普通/必杀最低 50%，超必杀最低 60%
     const scale = d.combo >= 3 ? Math.max(kind === 'super' ? COMBO.superMinScale : COMBO.minScale, 1 - COMBO.scalePerHit * (d.combo - 2)) : 1;
     const dmg = Math.round(m.damage * mul * scale);
@@ -803,7 +804,7 @@ export class Game {
     this._gain(d, dmg * METER.gain.damagedPerPoint);
     this.emit('hit', {
       attacker: att.index, defender: d.index, damage: dmg, combo: d.combo, id: m.id, kind,
-      x: d.x, y: d.y + 60, sdm: !!att.move?.sdm && src === 'move', counter,
+      x: d.x, y: d.y + 60, sdm: !!att.move?.sdm && src === 'move', counter, punish,
     });
   }
 

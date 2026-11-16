@@ -359,7 +359,7 @@ export default {
       "desc": "一圈指令投，电缆缠抱摔砸地",
       "startup": 8,
       "active": 2,
-      "recovery": 30,
+      "recovery": 34,
       "damage": 160,
       "stun": 12,
       "throw": true,

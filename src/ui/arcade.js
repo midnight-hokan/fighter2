@@ -5,6 +5,11 @@ import { createRng } from '../engine/rng.js';
 
 // 7 战难度曲线：第 1 战简单、第 7 战困难，单调不减
 export const LEVELS = ['easy', 'easy', 'normal', 'normal', 'hard', 'hard', 'hard'];
+const OPENING_LESSONS = [
+  { tactic: 'recovery', hint: '等对手重招落空，再上前反击' },
+  { tactic: 'spacing', hint: '避开远程牵制，趁收招缩短距离' },
+  { tactic: 'throws', hint: '小心贴身投技，用后撤或跳跃拉开' },
+];
 
 // order（可选）：故事模式的固定挑战顺序（不含最后一关），必须是除玩家和 finalBoss 外的全部对手
 export function createArcade({ roster, player, seed, finalBoss, order = null }) {
@@ -41,7 +46,7 @@ export function createArcade({ roster, player, seed, finalBoss, order = null }) 
     get continues() { return continues; },
     // 当前这一战：opponent 角色 id、level 难度、stage 第几战（1–7）
     current() {
-      return { opponent: opponents[index], level: LEVELS[index], stage: index + 1 };
+      return { opponent: opponents[index], level: LEVELS[index], stage: index + 1, lesson: OPENING_LESSONS[index] };
     },
     level(i) { return LEVELS[i]; },
     // result: 'win' | 'lose' → 'next'（下一战）| 'continue'（可接关，对手不变）| 'ending'（7 战全胜）
