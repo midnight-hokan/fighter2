@@ -427,7 +427,7 @@ export default {
     },
     {
       "id": "gousao",
-      "name": "钩扫",
+      "name": "救援钩扫",
       "input": "3HK",
       "desc": "后下重脚，救援钩拖扫，下段击倒",
       "startup": 12,

@@ -11,7 +11,11 @@ export class Cutscene {
     this.root.id = 'cutscene-root';
     parent.appendChild(this.root);
     this.active = false;
-    this.root.addEventListener('pointerdown', (e) => { if (this.active) { e.preventDefault(); this.next(); } });
+    this.root.addEventListener('click', (e) => {
+      if (!this.active) return;
+      if (e.target.closest('.cs-skip')) this.skip();
+      else this.next();
+    });
   }
 
   get roster() { return this.theme.roster; }
@@ -55,7 +59,10 @@ export class Cutscene {
       </div>
       <div class="cs-portrait cs-left"></div><div class="cs-portrait cs-right"></div>
       <div class="cs-box"><div class="cs-name"></div><div class="cs-text"></div></div>
-      <div class="cs-hint">Enter 继续 · Esc 跳过</div>
+      <div class="cs-controls">
+        <button type="button" class="cs-skip" data-testid="cutscene-skip">跳过</button>
+        <button type="button" data-testid="cutscene-next">继续</button>
+      </div>
     </div>`;
     const img = this.root.querySelector('.cs-img');
     if (img) {
@@ -75,10 +82,15 @@ export class Cutscene {
     const c = this.roster.find(x => x.id === id);
     const color = c?.colors?.primary ?? '#888';
     el.innerHTML = `<div class="cs-silhouette" style="--c:${color}"><span>${c?.name ?? ''}</span></div>`;
+    const request = Symbol();
+    el.portraitRequest = request;
+    const current = () => el.isConnected && el.portraitRequest === request && el.dataset.id === id;
     const tryLoad = (e, fallback) => {
       const im = new Image();
-      im.onload = () => { if (el.dataset.id === id) el.innerHTML = ''; el.appendChild(im); };
+      im.alt = '';
+      im.onload = () => { if (current()) el.replaceChildren(im); };
       im.onerror = () => {
+        if (!current()) return;
         if (new URL(im.src).pathname.endsWith('.webp')) { im.src = this.portraitPath(id, e, 'png'); return; }
         if (fallback) tryLoad(fallback, null);
       };

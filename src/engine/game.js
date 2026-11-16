@@ -399,7 +399,10 @@ export class Game {
       this.freeze = SUPER_FREEZE;
       this.emit('super', { player: f.index, id: m.id, sdm });
     }
-    if (m.kind === 'special') this._gain(f, METER.gain.specialStart);
+    if (m.kind === 'special') {
+      this._gain(f, METER.gain.specialStart);
+      this.emit('special', { player: f.index, id: m.id });
+    }
     const mul = (f.meter.max > 0 ? METER.maxDamageMul : 1);
     f.action = 'attack';
     f.actionFrame = 0;

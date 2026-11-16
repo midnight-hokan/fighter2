@@ -11,6 +11,7 @@ export class Hud {
           <div class="info">
             <div class="bar"><div class="red" data-testid="hpred-p1"></div><div class="fill" data-testid="hp-p1"></div></div>
             <div class="row"><div class="name" data-testid="name-p1"></div><div class="wins" data-testid="wins-p1"></div></div>
+            <div class="move-call" data-testid="move-call-p1" hidden></div>
           </div>
         </div>
         <div class="timer" data-testid="timer">99</div>
@@ -19,6 +20,7 @@ export class Hud {
           <div class="info">
             <div class="bar"><div class="red" data-testid="hpred-p2"></div><div class="fill" data-testid="hp-p2"></div></div>
             <div class="row"><div class="name" data-testid="name-p2"></div><div class="wins" data-testid="wins-p2"></div></div>
+            <div class="move-call" data-testid="move-call-p2" hidden></div>
           </div>
         </div>
       </div>
@@ -48,6 +50,8 @@ export class Hud {
   }
 
   resetTraining() {
+    this.moveCallUntil = [0, 0];
+    for (const k of ['p1', 'p2']) this.q(`move-call-${k}`).hidden = true;
     this.lastMove = null;
     this.trainingStep = 0;
     this.trainingStartX = null;
@@ -67,10 +71,20 @@ export class Hud {
         this.counterText[e.attacker] = e.punish ? '抓住收招！' : '反击！COUNTER';
       }
       if (e.type === 'round') { this.flashBanner(T.round(e.number), 60); this.queue = [[T.fight, 40]]; }
-      // 超必杀的提示改由画布上的切入演出负责（renderer.drawCutin）
+      if (e.type === 'special' || e.type === 'super') {
+        const fighter = this.theme.roster.find(c => c.id === state.fighters[e.player].charId);
+        const move = (e.type === 'special' ? fighter?.specials : fighter?.supers)?.find(m => m.id === e.id);
+        if (move) {
+          const label = this.q(`move-call-p${e.player + 1}`);
+          label.textContent = move.name;
+          label.classList.toggle('super', e.type === 'super');
+          this.moveCallUntil[e.player] = e.frame + 100;
+        }
+      }
     }
     state.fighters.forEach((f, i) => {
       const k = i === 0 ? 'p1' : 'p2';
+      this.q(`move-call-${k}`).hidden = state.frame >= this.moveCallUntil[i];
       const ratio = Math.max(0, f.hp / f.maxHp);
       this.red[i] = Math.max(ratio, this.red[i] - 0.006);
       if (this.red[i] < ratio) this.red[i] = ratio;

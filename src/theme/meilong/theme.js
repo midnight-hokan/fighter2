@@ -28,6 +28,27 @@ export default {
     'c08:huiyan': { fx: 'needles' },
   },
   audio: {
+    moveVoice: {
+      c01: ['meiyan', 'dihuolong'],
+      c02: ['baokong', 'longxuantan'],
+      c03: ['zhongdan', 'chaozhong'],
+      c04: ['denghua', 'huaying'],
+      c05: ['denghuadan', 'denghuadrag'],
+      c06: ['shanfengt', 'jifenglong'],
+      c07: ['chongtiant', 'tongshoulong'],
+      c08: ['huiyan', 'huiyanlong'],
+    },
+    // 短促的职业提示音，安排在人声前：截齿、绳扣、电缆、仪表、喇叭、灯扣、蒸汽和器械。
+    moveCues: {
+      'c01:dihuolong': [140, 58, 'sawtooth'],
+      'c02:baokong': [610, 390, 'triangle'],
+      'c03:zhongdan': [92, 145, 'sawtooth'],
+      'c04:denghua': [1180, 1180, 'sine'],
+      'c05:denghuadan': [520, 310, 'square'],
+      'c06:jifengdan': [730, 1420, 'sine'],
+      'c07:chongtiant': [330, 165, 'triangle'],
+      'c08:huiyan': [1720, 950, 'sine'],
+    },
     title: 'assets/meilong/audio/title.ogg',
     sfx: {
       // 真实音效（AudioGen 生成，public/assets/meilong/sfx/）；加载失败时 audio.js 回退 WebAudio 合成音

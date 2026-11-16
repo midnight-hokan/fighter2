@@ -437,7 +437,7 @@ export default {
     },
     {
       "id": "fadanjia",
-      "name": "罚单夹击",
+      "name": "违章罚单夹击",
       "input": "6MP",
       "desc": "前突中拳，罚单本夹击，中段快",
       "startup": 5,
