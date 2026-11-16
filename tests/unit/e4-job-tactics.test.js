@@ -53,3 +53,44 @@ it('排查命中空挥收招才追加伤害', () => {
   expect(getHit(true)).toMatchObject({ id: 'denghua', damage: 125, inspection: true });
   expect(getHit(false)).toMatchObject({ id: 'denghua', damage: 105, inspection: false });
 });
+
+it('林啸光弹打中才推进，苏红声波被防时拉开身位', () => {
+  const lin = (guard) => simulate(duel('c01', 85), 60, frame => [
+    !frame ? { special: 'meiyan' } : {}, guard ? { right: true } : {},
+  ]);
+  expect(lin(false).at(-1).fighters[0].x).toBe(318);
+  expect(lin(true).at(-1).fighters[0].x).toBe(300);
+  const su = simulate(duel('c05', 60), 45, frame => [
+    !frame ? { special: 'denghuadan' } : {}, frame <= 22 ? { right: true } : {},
+  ]);
+  const block = su.flatMap(s => s.events).find(e => e.type === 'block');
+  expect(block).toMatchObject({ id: 'denghuadan', guardPush: true });
+  expect(su[block.frame + 12].fighters[1].x - su[block.frame].fighters[1].x).toBeCloseTo(24);
+});
+
+it('雷钧扛轻拳时照常扣血，重拳能打断扳手', () => {
+  const attempt = (button) => simulate(duel('c03', 36), 24, frame => [
+    !frame ? { special: 'suiluo' } : {}, !frame ? { [button]: true } : {},
+  ]).flatMap(s => s.events);
+  const light = attempt('lp');
+  expect(light).toContainEqual(expect.objectContaining({ type: 'armor', player: 0, damage: 30 }));
+  expect(light).toContainEqual(expect.objectContaining({ type: 'hit', id: 'suiluo' }));
+  expect(attempt('hp').some(e => e.type === 'armor' || e.id === 'suiluo' && e.type === 'hit')).toBe(false);
+});
+
+it('霍兰对空追加伤害，沈清通过打断出招回少量血', () => {
+  const huo = simulate(duel('c07', 60), 20, frame => [
+    !frame ? { special: 'chongtiant' } : {}, { up: true },
+  ]);
+  expect(huo.flatMap(s => s.events)).toContainEqual(expect.objectContaining({ type: 'hit', id: 'chongtiant', damage: 170, antiAir: true }));
+  const shen = (counter) => {
+    const game = duel('c08', 45);
+    game.fighters[0].hp -= 100;
+    game.fighters[0].lastHitFrame = 0;
+    return simulate(game, 16, frame => [
+      !frame ? { special: 'huayan' } : {}, frame === 5 && counter ? { hk: true, up: true } : {},
+    ]);
+  };
+  expect(shen(true).flatMap(s => s.events)).toContainEqual(expect.objectContaining({ type: 'hit', id: 'huayan', heal: 24 }));
+  expect(shen(false).flatMap(s => s.events)).toContainEqual(expect.objectContaining({ type: 'hit', id: 'huayan', heal: 0 }));
+});
