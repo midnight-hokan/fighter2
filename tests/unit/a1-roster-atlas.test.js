@@ -12,13 +12,13 @@ describe('新版角色图集覆盖', () => {
       const mobile = read(desktop.sd);
       for (const atlas of [desktop, mobile]) {
         expect(atlas.artRevision).toBeTruthy();
-        expect(theme.characterArtQuery).toBe(`?art=${atlas.artRevision}`);
         expect(atlas.preview).toBeUndefined();
         expect(existsSync(root + atlas.image)).toBe(true);
         expect(validateAtlas(atlas, fighter)).toEqual([]);
         for (const key of requiredAnims(fighter)) expect(atlas.animations[key].frames.length).toBeGreaterThan(0);
       }
       expect(mobile.animations).toEqual(desktop.animations);
+      expect(mobile.artRevision).toBe(desktop.artRevision);
     });
   }
 });

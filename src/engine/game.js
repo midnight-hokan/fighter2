@@ -555,9 +555,10 @@ export class Game {
     } else {
       f.move.connected = true;
     }
+    if (m.hitstop) this.hitstop = Math.max(this.hitstop, m.hitstop);
     this._gain(f, m.meterGain ?? METER.gain.throw);
     this._gain(t, dmg * METER.gain.damagedPerPoint);
-    this.emit('throw', { attacker: f.index, defender: t.index, damage: dmg, back, command: isCommand });
+    this.emit('throw', { attacker: f.index, defender: t.index, damage: dmg, back, command: isCommand, id: m.id });
   }
 
   // ============================================================ 物理
@@ -761,7 +762,7 @@ export class Game {
       this.hitstop = Math.max(this.hitstop, HITSTOP.block);
       this._gain(att, baseGain * METER.gain.blockMul);
       this._gain(d, 1);
-      this.emit('block', { attacker: att.index, defender: d.index, damage: dmg, id: m.id, x: d.x, y: d.y + 60 });
+      this.emit('block', { attacker: att.index, defender: d.index, damage: dmg, id: m.id, heavy: strength === 'h' || kind === 'super', x: d.x, y: d.y + 60 });
       return;
     }
 

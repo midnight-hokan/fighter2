@@ -42,7 +42,7 @@ export function validateAtlas(json, character, img) {
     if (!a) { errs.push(`缺少动画：${key}`); continue; }
     if (!Array.isArray(a.frames) || !a.frames.length) errs.push(`${key}：frames 为空`);
     else if (a.frames.some(i => !Number.isInteger(i) || i < 0 || i >= total)) errs.push(`${key}：帧序号越界`);
-    else if (a.phaseFrames && a.frames.length !== 3) errs.push(`${key}：需提供起手、命中和收招三个姿势`);
+    else if (a.phaseFrames && a.frames.length < 3) errs.push(`${key}：需提供起手、命中和收招姿势`);
   }
   if (!(json.anchor.x >= 0 && json.anchor.x <= json.frameW && json.anchor.y >= 0 && json.anchor.y <= json.frameH)) errs.push('anchor 超出单帧范围');
   return errs;
@@ -77,9 +77,12 @@ class Atlas {
     const a = this.json.animations[key];
     if (f.action === 'attack' && f.move && key !== 'idle') {
       if (a.phaseFrames) {
-        const { frame, startup, active } = f.move;
+        const { frame, startup, active, total } = f.move;
         const impact = startup + (a.release ? Math.max(active, 5) : active);
-        return a.frames[frame <= startup ? 0 : frame <= impact ? 1 : 2];
+        if (frame <= startup) return a.frames[0];
+        if (frame <= impact) return a.frames[1];
+        const recovery = Math.floor((frame - impact - 1) * (a.frames.length - 2) / Math.max(1, total - impact));
+        return a.frames[Math.min(a.frames.length - 1, 2 + recovery)];
       }
       const k = Math.min(a.frames.length - 1, Math.floor(((f.move.frame - 1) / Math.max(1, f.move.total)) * a.frames.length));
       return a.frames[k];

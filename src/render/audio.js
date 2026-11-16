@@ -249,6 +249,7 @@ export class Audio {
       else SOUNDS[e.type](this.ctx, this.bus?.sfx ?? this.out, e);
       // 重击和反击：叠一记低频闷响，打击更"沉"
       if (e.type === 'hit' && (e.damage >= 90 || e.counter || e.kind === 'super')) thump(this.ctx, this.bus?.sfx ?? this.out, e.kind === 'super' ? 1 : 0.7);
+      if (e.type === 'block' && e.heavy) thump(this.ctx, this.bus?.sfx ?? this.out, 0.25);
     }
   }
 

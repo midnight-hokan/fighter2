@@ -361,6 +361,7 @@ export default {
       "active": 2,
       "recovery": 34,
       "damage": 160,
+      "hitstop": 7,
       "stun": 12,
       "throw": true,
       "range": 56,
