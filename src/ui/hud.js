@@ -86,10 +86,15 @@ export class Hud {
         img.onerror = () => {
           // 慢网偶发失败：最多重试 3 次
           const n = +(img.dataset.retry || 0);
-          if (n < 3) { img.dataset.retry = n + 1; setTimeout(() => { img.src = img.src.split('?')[0] + '?r=' + (n + 1); }, 800 * (n + 1)); } else img.style.visibility = 'hidden';
+          if (n < 3) {
+            img.dataset.retry = n + 1;
+            const src = new URL(img.src);
+            src.searchParams.set('r', n + 1);
+            setTimeout(() => { if (this.faceId[i] === f.charId) img.src = src.href; }, 800 * (n + 1));
+          } else img.style.visibility = 'hidden';
         };
         img.dataset.retry = 0;
-        img.src = `assets/${this.theme.id}/select/${f.charId}.jpg`;
+        img.src = `assets/${this.theme.id}/select/${f.charId}.jpg${this.theme.characterArtQuery ?? ''}`;
       }
       this.q(`wins-${k}`).textContent = '◆'.repeat(state.round.wins[i]);
       this.q(`stocks-${k}`).textContent = String(f.meter.stocks);

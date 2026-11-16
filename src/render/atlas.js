@@ -42,6 +42,7 @@ export function validateAtlas(json, character, img) {
     if (!a) { errs.push(`缺少动画：${key}`); continue; }
     if (!Array.isArray(a.frames) || !a.frames.length) errs.push(`${key}：frames 为空`);
     else if (a.frames.some(i => !Number.isInteger(i) || i < 0 || i >= total)) errs.push(`${key}：帧序号越界`);
+    else if (a.phaseFrames && a.frames.length !== 3) errs.push(`${key}：需提供起手、命中和收招三个姿势`);
   }
   if (!(json.anchor.x >= 0 && json.anchor.x <= json.frameW && json.anchor.y >= 0 && json.anchor.y <= json.frameH)) errs.push('anchor 超出单帧范围');
   return errs;
@@ -75,6 +76,11 @@ class Atlas {
     const key = resolveAnim(this.json.animations, key0);
     const a = this.json.animations[key];
     if (f.action === 'attack' && f.move && key !== 'idle') {
+      if (a.phaseFrames) {
+        const { frame, startup, active } = f.move;
+        const impact = startup + (a.release ? Math.max(active, 5) : active);
+        return a.frames[frame <= startup ? 0 : frame <= impact ? 1 : 2];
+      }
       const k = Math.min(a.frames.length - 1, Math.floor(((f.move.frame - 1) / Math.max(1, f.move.total)) * a.frames.length));
       return a.frames[k];
     }
@@ -162,8 +168,9 @@ export class AtlasStore {
       // 优先加载同名 .webp（体积约 PNG 的十分之一），失败再回退原图
       const load = (src) => new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = rej; im.src = src; });
       const src = base + json.image;
+      const revision = json.artRevision ? `?art=${encodeURIComponent(json.artRevision)}` : '';
       const [image, previewImage] = await Promise.all([
-        /\.png$/.test(src) ? load(src.replace(/\.png$/, '.webp')).catch(() => load(src)) : load(src),
+        /\.png$/.test(src) ? load(src.replace(/\.png$/, '.webp') + revision).catch(() => load(src + revision)) : load(src + revision),
         previewSpec ? load(base + previewSpec.image).catch(() => null) : null,
       ]);
       const errs = validateAtlas(json, ch, image);
