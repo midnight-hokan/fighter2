@@ -19,3 +19,6 @@ jobs:
           export CHROME_PATH="$(command -v google-chrome)"
           export CHROME_ARGS="--disable-gpu"
           npm run check -- --upto E8
+      - name: Check all fighter assets and story portraits
+        run: |
+          node --input-type=module -e 'import fs from "node:fs"; import assert from "node:assert/strict"; const report = JSON.parse(fs.readFileSync(".check/status.json")); for (const id of ["A1","C2"]) { const result = report.milestones.find(m => m.m === id); console.log(result); assert.equal(result.green, true); }'
