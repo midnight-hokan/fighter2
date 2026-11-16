@@ -88,12 +88,16 @@ class Atlas {
     let j = this.json;
     let idx;
     const walking = this.preview?.hasWalk && (key === 'walkf' || key === 'walkb');
-    if (this.preview && (walking || key === 'idle' || key === 'blockstun' || (key === this.preview.special && f.move))) {
+    const basic = this.preview?.hasBasics ? { crouch: 8, prejump: 8, jump: 9, 'st.lp': 10, hitstun: 11 }[key] : undefined;
+    if (this.preview && (walking || basic !== undefined || key === 'idle' || key === 'blockstun' || (key === this.preview.special && f.move))) {
       image = this.preview.image;
       j = { frameW: 256, frameH: 256, columns: 4, anchor: { x: 128, y: 224 }, scale: 2 };
       if (walking) {
         const phase = Math.floor(f.actionFrame / (key === 'walkb' ? 8 : 6)) % 4;
         idx = 4 + (key === 'walkb' ? (4 - phase) % 4 : phase);
+      } else if (basic !== undefined) {
+        idx = basic;
+        if (key === 'st.lp' && f.move && (f.move.frame <= f.move.startup || f.move.frame > f.move.startup + f.move.active)) idx = 0;
       } else if (key === 'idle') idx = 0;
       else if (key === 'blockstun') idx = 1;
       else if (f.move.frame <= f.move.startup) idx = 2;
@@ -164,8 +168,8 @@ export class AtlasStore {
       ]);
       const errs = validateAtlas(json, ch, image);
       if (errs.length) { this.errors[id] = errs; console.warn(`精灵图 ${id} 不合格，改用占位小人：`, errs); return; }
-      const preview = previewImage?.width === 1024 && [256, 512].includes(previewImage.height)
-        ? { image: previewImage, special: previewSpec.special, hasWalk: previewImage.height === 512 }
+      const preview = previewImage?.width === 1024 && [256, 512, 768].includes(previewImage.height)
+        ? { image: previewImage, special: previewSpec.special, hasWalk: previewImage.height >= 512, hasBasics: previewImage.height === 768 }
         : null;
       this.map.set(id, new Atlas(json, image, preview));
     } catch (e) {
