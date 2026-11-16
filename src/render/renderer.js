@@ -22,14 +22,15 @@ export function defaultRenderScale() {
 
 // 立绘缓存（超必杀切入用），没有就跳过立绘只画色带和招式名
 const PORTRAITS = new Map();
-function portrait(themeId, charId) {
-  const src = `assets/${themeId}/portraits/${charId}/angry.png`;
+function portrait(theme, charId) {
+  const src = `assets/${theme.id}/portraits/${charId}/angry.png`;
+  const query = theme.characterArtQuery ?? '';
   if (!PORTRAITS.has(src)) {
     const im = new Image();
     const rec = { im, ok: false };
     im.onload = () => { rec.ok = true; };
-    im.onerror = () => { if (im.src.endsWith('.webp')) im.src = src; };
-    im.src = src.replace(/\.png$/, '.webp');
+    im.onerror = () => { if (new URL(im.src).pathname.endsWith('.webp')) im.src = src + query; };
+    im.src = src.replace(/\.png$/, '.webp') + query;
     PORTRAITS.set(src, rec);
   }
   const r = PORTRAITS.get(src);
@@ -290,7 +291,7 @@ export class Renderer {
       ctx.beginPath(); ctx.moveTo(xx, yy); ctx.lineTo(xx + (left ? 60 : -60), yy - 4); ctx.stroke();
     }
     // 立绘
-    const im = portrait(this.theme.id, c.charId);
+    const im = portrait(this.theme, c.charId);
     if (im) {
       const ph = bandH * 1.9, pw = ph * im.width / im.height;
       const px = left ? 10 + (1 - ease) * -40 : W - pw - 10 + (1 - ease) * 40;
@@ -505,6 +506,10 @@ function glowDot(ctx, x, y, r, color, a = 0.9) {
 }
 
 const PROJ_FX = {
+  headlamp(ctx, x, y, dir) {
+    trail(ctx, x, y, dir, '#ffbb48', 9);
+    glowDot(ctx, x, y, 16, '#ffd77c');
+  },
   // 林啸：旋转飞出的矿灯安全帽，灯头朝前打出光束
   helmet(ctx, x, y, dir, p, t) {
     trail(ctx, x, y, dir, '#ffd34d', 9);
@@ -528,14 +533,18 @@ const PROJ_FX = {
     ctx.beginPath(); ctx.moveTo(x + dir * 8, y - 3); ctx.lineTo(x + dir * 46, y - 12); ctx.lineTo(x + dir * 46, y + 8); ctx.closePath(); ctx.fill();
     ctx.restore();
   },
-  // 罗铮：甩出去旋转的救生绳圈，前端带救援钩
+  // 罗铮：轻细救援绳末端的救援钩
   rope(ctx, x, y, dir, p) {
     trail(ctx, x, y, dir, '#ff9a40', 8);
     ctx.save();
     ctx.translate(x, y);
-    ctx.rotate(p.x * 0.2 * dir);
-    ctx.lineWidth = 2.2;
-    ['#f07a1e', '#ffb04a', '#d95e10'].forEach((c, i) => { ctx.strokeStyle = c; ctx.beginPath(); ctx.ellipse(0, 0, 12 - i * 3, 9 - i * 2.4, i * 0.6, 0, Math.PI * 2); ctx.stroke(); });
+    ctx.scale(dir, 1);
+    ctx.lineWidth = 1.4;
+    ctx.strokeStyle = '#e5b86b';
+    ctx.beginPath();
+    ctx.moveTo(-17, 5);
+    ctx.bezierCurveTo(-9, -7, -5, 5, 11, 1);
+    ctx.stroke();
     ctx.restore();
     ctx.save();
     ctx.strokeStyle = '#d8dde2'; ctx.lineWidth = 2;

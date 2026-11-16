@@ -32,7 +32,7 @@ export class Cutscene {
 
   // 优先 .webp（小得多），加载失败回退 .png
   imgPath(id, ext = 'webp') { return `assets/${this.theme.id}/scenes/${id}.${ext}`; }
-  portraitPath(id, expr, ext = 'webp') { return `assets/${this.theme.id}/portraits/${id}/${expr || 'normal'}.${ext}`; }
+  portraitPath(id, expr, ext = 'webp') { return `assets/${this.theme.id}/portraits/${id}/${expr || 'normal'}.${ext}${this.theme.characterArtQuery ?? ''}`; }
 
   // 提前把这段过场要用的场景图和立绘拉进浏览器缓存，避免慢网下边播边等
   preload(scenes) {
@@ -79,7 +79,7 @@ export class Cutscene {
       const im = new Image();
       im.onload = () => { if (el.dataset.id === id) el.innerHTML = ''; el.appendChild(im); };
       im.onerror = () => {
-        if (im.src.endsWith('.webp')) { im.src = this.portraitPath(id, e, 'png'); return; }
+        if (new URL(im.src).pathname.endsWith('.webp')) { im.src = this.portraitPath(id, e, 'png'); return; }
         if (fallback) tryLoad(fallback, null);
       };
       im.src = this.portraitPath(id, e);
