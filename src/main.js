@@ -8,7 +8,7 @@ import { loadStageImages } from './render/stage.js';
 import { Audio, SOUNDS } from './render/audio.js';
 import { Hud } from './ui/hud.js';
 import { Controls } from './ui/controls.js';
-import { Menus, Pause } from './ui/menus.js';
+import { Menus, Pause, prettyInput } from './ui/menus.js';
 import { createArcade } from './ui/arcade.js';
 import { Cutscene } from './ui/cutscene.js';
 import { Versus } from './ui/versus.js';
@@ -115,6 +115,7 @@ function newGame({ characters, seed = 1, training = false, p1x, p2x }) {
   const defs = characters.map(id => (typeof id === 'string' ? getCharacter(id) : id));
   game = new Game({ seed, characters: defs, training, p1x, p2x });
   chars = defs;
+  hud.resetTraining();
   audio.setFighters(defs); // 角色语音：告诉音频系统当前对局双方
   prevMove = Array(2).fill(null);
   queued[0].length = 0;
@@ -153,7 +154,12 @@ const moveName = (id) => {
 
 function draw(state) {
   renderer.render(state, chars, renderer.showBoxes ? game.boxes() : null);
-  hud.update(state, chars.map(c => c.name), { dummy: DUMMY[dummy], moveName });
+  touch?.updateFight(chars[0], state.fighters[0], state.training);
+  const signature = chars[0].specials?.[0];
+  hud.update(state, chars.map(c => c.name), {
+    dummy: DUMMY[dummy], moveName, signature, touch: !!touch,
+    signatureInput: touch ? '松开摇杆，按必杀' : signature && prettyInput(signature.input),
+  });
 }
 
 const menus = TEST_MODE ? null : new Menus(document.getElementById('menu-root'), theme, controls, {

@@ -43,7 +43,13 @@ export class Hud {
     this.comboText = ['', ''];
     this.bannerTimer = 0;
     this.bannerText = '';
+    this.resetTraining();
+  }
+
+  resetTraining() {
     this.lastMove = null;
+    this.trainingStep = 0;
+    this.trainingStartX = null;
   }
 
   flashBanner(text, frames = 60) { this.bannerText = text; this.bannerTimer = frames; this.queue = []; }
@@ -111,9 +117,24 @@ export class Hud {
 
     const info = this.q('training-info');
     if (state.training) {
-      for (const f of state.fighters) if (f.index === 0 && f.move && f.move.frame === 1) this.lastMove = f.move;
+      const player = state.fighters[0];
+      if (player.move?.frame === 1) this.lastMove = player.move;
+      this.trainingStartX ??= player.x;
+      if (this.trainingStep === 0 && Math.abs(player.x - this.trainingStartX) >= 24) this.trainingStep = 1;
+      if (this.trainingStep === 1 && extra.signature && player.move?.id === extra.signature.id
+        && player.move.frame > player.move.startup) this.trainingStep = 2;
+      if (this.trainingStep === 2 && state.events.some(e => e.type === 'block' && e.defender === 0)) this.trainingStep = 3;
+      const lessons = [
+        '练习 1/3　向前或向后走几步，找准距离',
+        extra.signature && `练习 2/3　用一次「${extra.signature.name}」（${extra.signatureInput}）${player.charId === 'c03' ? '，先贴近对手' : ''}`,
+        `练习 3/3　${extra.touch ? '点「切换对手」' : '按 F2'}把对手切到电脑，按住身后方向挡一次攻击`,
+        '练习完成　试着在挡下重击后还手',
+      ];
       const m = this.lastMove;
-      info.textContent = `训练模式　对手：${extra.dummy ?? ''}　${m ? `｜上一招 ${extra.moveName?.(m.id) ?? m.id}：发生 ${m.startup} 持续 ${m.active} 总 ${m.total} 帧` : ''}　｜F1 判定框　F2 对手行为　Esc 出招表`;
+      const details = m ? `｜上一招 ${extra.moveName?.(m.id) ?? m.id}：发生 ${m.startup} 持续 ${m.active} 总 ${m.total} 帧` : '';
+      const lesson = lessons[this.trainingStep];
+      const text = `训练模式　对手：${extra.dummy ?? ''}${details}　｜F1 判定框　F2 对手行为　Esc 出招表${lesson ? '\n' + lesson : ''}`;
+      if (info.textContent !== text) info.textContent = text;
     } else {
       info.textContent = '';
     }

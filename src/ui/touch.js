@@ -20,12 +20,16 @@ export class TouchPad {
         <div class="tp-btn tp-sp" data-testid="touch-sp">必杀</div>
       </div>
       <div class="tp-menu" data-testid="touch-menu">☰</div>
+      <button type="button" class="tp-dummy" hidden>切换对手</button>
       <div class="tp-rotate">请把手机横过来玩</div>`;
     parent.appendChild(this.root);
     document.body.classList.add('touch');
     this.bindStick();
     this.root.querySelectorAll('.tp-btn[data-b]').forEach((el) => this.bindButton(el, el.dataset.b));
     this.bindButton(this.root.querySelector('.tp-sp'), null, () => this.onSpecial?.(this.dir()));
+    this.specialButton = this.root.querySelector('.tp-sp');
+    this.dummyButton = this.root.querySelector('.tp-dummy');
+    this.dummyButton.addEventListener('click', () => this.onKey?.('F2'));
     this.root.querySelector('.tp-menu').addEventListener('pointerdown', (e) => { e.preventDefault(); this.onKey?.('Escape'); });
   }
 
@@ -33,6 +37,16 @@ export class TouchPad {
   dir() { return { x: this.state.right ? 1 : this.state.left ? -1 : 0, y: this.state.down ? 1 : this.state.up ? -1 : 0 }; }
 
   read() { return { ...this.state }; }
+
+  updateFight(character, fighter, training) {
+    const { x, y } = this.dir();
+    const relative = x * fighter.facing;
+    const id = simpleSpecialFor(character, { forward: relative > 0, back: relative < 0, down: y > 0 });
+    const move = (y > 0 ? character.supers : character.specials)?.find(entry => entry.id === id);
+    const label = move ? move.name + (y > 0 && fighter.meter.stocks < 1 ? '（需1豆）' : '') : '必杀';
+    if (this.specialButton.textContent !== label) this.specialButton.textContent = label;
+    this.dummyButton.hidden = !training;
+  }
 
   setVisible(v) { this.root.style.display = v ? '' : 'none'; }
 

@@ -27,7 +27,7 @@ export default {
   "normals": {
     "st.lp": {
       "name": "快拳",
-      "startup": 5,
+      "startup": 4,
       "active": 3,
       "recovery": 10,
       "damage": 31,
@@ -37,7 +37,7 @@ export default {
       "hitbox": {
         "x": 12,
         "y": 62,
-        "w": 42,
+        "w": 36,
         "h": 14
       },
       "cancel": true,
@@ -92,7 +92,7 @@ export default {
       "hitbox": {
         "x": 10,
         "y": 30,
-        "w": 48,
+        "w": 41,
         "h": 14
       },
       "anim": "kick"
@@ -190,7 +190,7 @@ export default {
       "name": "低踢",
       "startup": 6,
       "active": 3,
-      "recovery": 12,
+      "recovery": 10,
       "damage": 31,
       "stun": 3,
       "hitstun": 11,
@@ -199,7 +199,7 @@ export default {
       "hitbox": {
         "x": 10,
         "y": 0,
-        "w": 50,
+        "w": 43,
         "h": 12
       },
       "cancel": true,
