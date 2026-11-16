@@ -39,6 +39,7 @@ export class Hud {
     this.red = [1, 1];
     this.comboShow = [0, 0];
     this.counterShow = [0, 0];
+    this.counterText = ['', ''];
     this.shownCounter = ['', ''];
     this.comboText = ['', ''];
     this.bannerTimer = 0;
@@ -61,7 +62,10 @@ export class Hud {
     const T = this.theme.text;
     for (const e of state.events) {
       if (e.type === 'hit' && e.combo >= 2) { this.comboText[e.attacker] = `${e.combo} 连击`; this.comboShow[e.attacker] = 70; }
-      if (e.type === 'hit' && e.counter) this.counterShow[e.attacker] = 50;
+      if (e.type === 'hit' && (e.counter || e.punish)) {
+        this.counterShow[e.attacker] = 50;
+        this.counterText[e.attacker] = e.punish ? '抓住收招！' : '反击！COUNTER';
+      }
       if (e.type === 'round') { this.flashBanner(T.round(e.number), 60); this.queue = [[T.fight, 40]]; }
       // 超必杀的提示改由画布上的切入演出负责（renderer.drawCutin）
     }
@@ -95,7 +99,7 @@ export class Hud {
       const ct = this.comboShow[i]-- > 0 ? this.comboText[i] : '';
       if (ct !== this.shownCombo[i]) { this.shownCombo[i] = ct; c.textContent = ct; this.pop(c); }
       const cnt = this.q(`counter-${k}`);
-      const txt = this.counterShow[i]-- > 0 ? '反击！COUNTER' : '';
+      const txt = this.counterShow[i]-- > 0 ? this.counterText[i] : '';
       if (txt !== this.shownCounter[i]) { this.shownCounter[i] = txt; cnt.textContent = txt; if (txt) this.pop(cnt); }
     });
     this.q('timer').textContent = state.training ? '∞' : String(state.round.timer);

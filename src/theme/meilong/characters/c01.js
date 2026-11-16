@@ -40,7 +40,7 @@ export default {
   specials: [
     {
       id: 'meiyan', name: '矿灯光弹', input: '236P', desc: '打出一团矿灯光弹，轻中重决定速度',
-      startup: 12, active: 1, recovery: 30, damage: 70, chip: 12, stun: 10, hitstun: 18, blockstun: 14,
+      startup: 12, active: 1, recovery: 34, damage: 70, chip: 12, stun: 10, hitstun: 18, blockstun: 14,
       projectile: { speed: 3.5, x: 34, y: 58, w: 26, h: 18, life: 220 }, anim: 'fireball',
       strength: {
         l: { projectile: { speed: 2.4, x: 34, y: 58, w: 26, h: 18, life: 260 } },
