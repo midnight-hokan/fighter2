@@ -66,9 +66,14 @@ export class Hud {
     const T = this.theme.text;
     for (const e of state.events) {
       if (e.type === 'hit' && e.combo >= 2) { this.comboText[e.attacker] = `${e.combo} 连击`; this.comboShow[e.attacker] = 70; }
-      if (e.type === 'hit' && (e.counter || e.punish)) {
+      if (e.type === 'hit' && (e.counter || e.punish || e.antiAir || e.advance)) {
         this.counterShow[e.attacker] = 50;
-        this.counterText[e.attacker] = e.inspection ? '发现隐患！' : e.punish ? '抓住收招！' : '反击！COUNTER';
+        this.counterText[e.attacker] = e.heal ? `急救回稳 +${e.heal}` : e.antiAir ? '蒸汽拦截！' : e.advance ? '推进一步！' : e.inspection ? '发现隐患！' : e.punish ? '抓住收招！' : '反击！COUNTER';
+      }
+      if (e.type === 'armor' || (e.type === 'block' && e.guardPush)) {
+        const i = e.type === 'armor' ? e.player : e.attacker;
+        this.counterShow[i] = 50;
+        this.counterText[i] = e.type === 'armor' ? '稳住扳手！' : '声波逼退！';
       }
       if (e.type === 'round') { this.flashBanner(T.round(e.number), 60); this.queue = [[T.fight, 40]]; }
       if (e.type === 'special' || e.type === 'super') {

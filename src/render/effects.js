@@ -26,12 +26,17 @@ export class Effects {
         this.sparks(e.x, e.y, sup ? '#fff27a' : '#ffb347', sup ? 22 : big ? 14 : 7, sup ? 4.2 : big ? 3.2 : 2.4, e.attacker);
         if (sup) this.wave(e.x, e.y, '#ffe680', 70, 18);
         if (e.inspection) this.shield(e.x, e.y, '#a5ff8a');
+        if (e.heal) this.ring(state.fighters[e.attacker].x, state.fighters[e.attacker].y + 45, '#83e9b5');
+        if (e.antiAir) this.dust(e.x, e.y, 8, 1, '#e6f0f7');
+      } else if (e.type === 'armor') {
+        this.sparks(e.x, e.y, '#aee8ff', 8, 1.8, e.player);
       } else if (e.type === 'rescuepull') {
         const f = state.fighters[e.attacker];
         const d = state.fighters[e.defender];
         this.items.push({ kind: 'rescue-rope', x: f.x, y: f.y + 50, targetX: d.x, targetY: d.y + 50, life: 16, max: 16 });
       } else if (e.type === 'block') {
         this.shield(e.x, e.y);
+        if (e.guardPush) this.wave(e.x, e.y, '#ff9c91', 30, 14);
         this.glow(e.x, e.y, e.heavy ? 23 : 14, '#9fe3ff', 6);
         this.sparks(e.x, e.y, '#7ad7ff', e.heavy ? 10 : 6, 2.2, e.defender);
       } else if (e.type === 'clash') {

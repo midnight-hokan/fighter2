@@ -776,14 +776,29 @@ export class Game {
       d.actionFrame = 0;
       d.blockstun = m.blockstun;
       d.blockLow = !!this.inputs[d.index].down;
-      this._push(d, att, m.pushback, fromX);
+      this._push(d, att, m.guardPushback ?? m.pushback, fromX);
       this.hitstop = Math.max(this.hitstop, HITSTOP.block);
       this._gain(att, baseGain * METER.gain.blockMul);
       this._gain(d, 1);
-      this.emit('block', { attacker: att.index, defender: d.index, damage: dmg, id: m.id, heavy: strength === 'h' || kind === 'super', x: d.x, y: d.y + 60 });
+      this.emit('block', { attacker: att.index, defender: d.index, damage: dmg, id: m.id, guardPush: m.guardPushback != null, heavy: strength === 'h' || kind === 'super', x: d.x, y: d.y + 60 });
       return;
     }
 
+    const armoredMove = d.move;
+    if (armoredMove?.def.lightArmor && armoredMove.frame <= armoredMove.def.startup
+        && !armoredMove.armorUsed && kind === 'normal' && strength === 'l' && !m.knockdown) {
+      const damage = Math.round(m.damage * mul);
+      if (d.hp > damage) {
+        armoredMove.armorUsed = true;
+        d.hp -= damage;
+        d.lastHitFrame = this.frame;
+        this.hitstop = Math.max(this.hitstop, 4);
+        this._gain(att, baseGain);
+        this._gain(d, damage * METER.gain.damagedPerPoint);
+        this.emit('armor', { player: d.index, attacker: att.index, damage, x: d.x, y: d.y + 55 });
+        return;
+      }
+    }
     const comboing = HIT_STATES.has(d.action);
     d.combo = comboing ? d.combo + 1 : 1;
     // 反击（Counter）：对手出招的发生帧或持续帧中被打中 → 硬直和顿帧加长，便于追击
@@ -792,7 +807,8 @@ export class Game {
     const inspection = punish && !d.move.connected && !d.move.spawned ? m.inspectOnPunish : null;
     // 连段伤害修正：第 3 击起每击 -10%，普通/必杀最低 50%，超必杀最低 60%
     const scale = d.combo >= 3 ? Math.max(kind === 'super' ? COMBO.superMinScale : COMBO.minScale, 1 - COMBO.scalePerHit * (d.combo - 2)) : 1;
-    const dmg = Math.round((m.damage + (inspection?.damage ?? 0)) * mul * scale);
+    const antiAir = d.grounded ? 0 : m.antiAirDamage;
+    const dmg = Math.round((m.damage + antiAir + (inspection?.damage ?? 0)) * mul * scale);
     d.hp = Math.max(0, d.hp - dmg);
     d.lastHitFrame = this.frame;
     if (d.action === 'dizzy') {
@@ -829,11 +845,19 @@ export class Game {
       } else this._push(d, att, m.pushback, fromX);
     }
     this.hitstop = Math.max(this.hitstop, (m.hitstop ?? (kind === 'super' ? HITSTOP.super : HITSTOP[strength] ?? HITSTOP.m)) + (counter ? COMBO.counterHitstop : 0));
+    let advance = 0;
+    if (m.advanceOnHit && att.grounded && d.grounded && (CONTROLLABLE.has(att.action) || att.move?.def.id === m.id)) {
+      const gap = d.x - att.x;
+      advance = Math.min(m.advanceOnHit, Math.max(0, Math.abs(gap) - PHYS.pushHalf * 2));
+      if (advance > 0) att.slide = { vx: Math.sign(gap) * advance / 6, frames: 6 };
+    }
+    const heal = counter && m.healOnCounter > 0 && att.hp > 0 ? Math.min(m.healOnCounter, att.maxHp - att.hp) : 0;
+    att.hp += heal;
     this._gain(att, baseGain);
     this._gain(d, dmg * METER.gain.damagedPerPoint);
     this.emit('hit', {
       attacker: att.index, defender: d.index, damage: dmg, combo: d.combo, id: m.id, kind,
-      x: d.x, y: d.y + 60, sdm: !!att.move?.sdm && src === 'move', counter, punish, inspection: !!inspection,
+      x: d.x, y: d.y + 60, sdm: !!att.move?.sdm && src === 'move', counter, punish, inspection: !!inspection, antiAir: !!antiAir, advance, heal,
     });
   }
 

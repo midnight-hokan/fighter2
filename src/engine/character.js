@@ -25,6 +25,11 @@ function withDefaults(move, kind, id) {
     projectile: move.projectile ?? null, // { speed, x, y, w, h, life }
     pullOnHit: move.pullOnHit ?? null,
     inspectOnPunish: move.inspectOnPunish ?? null,
+    advanceOnHit: move.advanceOnHit ?? 0,
+    lightArmor: !!move.lightArmor,
+    guardPushback: move.guardPushback ?? null,
+    antiAirDamage: move.antiAirDamage ?? 0,
+    healOnCounter: move.healOnCounter ?? 0,
     throw: !!move.throw,
     range: move.range ?? null,
     meterGain: move.meterGain ?? null,
