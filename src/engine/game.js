@@ -287,7 +287,12 @@ export class Game {
   _trySimple(f, id) {
     const ch = this.ch(f);
     const sp = ch.specials.find(m => m.id === id);
-    if (sp) { this._startMove(f, resolveStrength(sp, 'm')); return true; }
+    if (sp) {
+      const move = resolveStrength(sp, 'm');
+      if (move.projectile && this.projectiles.some(p => p.owner === f.index)) return false;
+      this._startMove(f, move);
+      return true;
+    }
     const su = ch.supers.find(m => m.id === id);
     if (su && f.meter.stocks >= 1) { this._startMove(f, resolveStrength(su, 'm'), { sdm: f.meter.max > 0 }); return true; }
     return false;
@@ -473,10 +478,18 @@ export class Game {
     if (m.projectile && !mv.spawned && mv.frame === m.startup + 1) {
       mv.spawned = true;
       const p = m.projectile;
-      this.projectiles.push({
+      const projectile = {
         owner: f.index, id: m.id, x: f.x + f.facing * (p.x ?? 30), y: f.y + (p.y ?? 58),
         vx: f.facing * (p.speed ?? 4), w: p.w ?? 24, h: p.h ?? 20, life: p.life ?? 200, mul: mv.mul, def: m,
-      });
+      };
+      this.projectiles.push(projectile);
+      if (p.followup) {
+        const { delay, speed, damage, chip, hitstun, blockstun, stun } = p.followup;
+        this.projectiles.push({
+          ...projectile, delay, second: true, vx: f.facing * speed,
+          def: { ...m, damage, chip, hitstun, blockstun, stun, meterGain: 0 },
+        });
+      }
       this.emit('projectile', { player: f.index, id: m.id });
     }
     // 指令投
@@ -687,6 +700,7 @@ export class Game {
     // 飞行道具
     const alive = [];
     for (const p of this.projectiles) {
+      if (p.delay > 0 && --p.delay > 0) { alive.push(p); continue; }
       p.x += p.vx;
       p.life--;
       if (p.life <= 0 || p.x < STAGE.left - 40 || p.x > STAGE.right + 40) continue;
@@ -696,7 +710,7 @@ export class Game {
     for (let i = 0; i < alive.length; i++) {
       for (let j = i + 1; j < alive.length; j++) {
         const a = alive[i], b = alive[j];
-        if (a.dead || b.dead || a.owner === b.owner) continue;
+        if (a.dead || b.dead || a.delay > 0 || b.delay > 0 || a.owner === b.owner) continue;
         if (Math.abs(a.x - b.x) < (a.w + b.w) / 2) {
           a.dead = b.dead = true;
           this.emit('clash', { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
@@ -704,6 +718,7 @@ export class Game {
       }
     }
     this.projectiles = alive.filter(p => !p.dead).filter((p) => {
+      if (p.delay > 0) return true;
       const d = this.fighters[1 - p.owner];
       if (this._invulnerable(d)) return true;
       const box = { x1: p.x - p.w / 2, x2: p.x + p.w / 2, y1: p.y - p.h / 2, y2: p.y + p.h / 2 };
@@ -774,9 +789,10 @@ export class Game {
     // 反击（Counter）：对手出招的发生帧或持续帧中被打中 → 硬直和顿帧加长，便于追击
     const counter = !comboing && d.action === 'attack' && !!d.move && d.move.frame <= d.move.def.startup + d.move.def.active;
     const punish = !comboing && d.action === 'attack' && !!d.move && !counter;
+    const inspection = punish && !d.move.connected && !d.move.spawned ? m.inspectOnPunish : null;
     // 连段伤害修正：第 3 击起每击 -10%，普通/必杀最低 50%，超必杀最低 60%
     const scale = d.combo >= 3 ? Math.max(kind === 'super' ? COMBO.superMinScale : COMBO.minScale, 1 - COMBO.scalePerHit * (d.combo - 2)) : 1;
-    const dmg = Math.round(m.damage * mul * scale);
+    const dmg = Math.round((m.damage + (inspection?.damage ?? 0)) * mul * scale);
     d.hp = Math.max(0, d.hp - dmg);
     d.lastHitFrame = this.frame;
     if (d.action === 'dizzy') {
@@ -800,15 +816,24 @@ export class Game {
     } else {
       d.action = 'hitstun';
       d.actionFrame = 0;
-      d.hitstun = m.hitstun + (counter ? COMBO.counterHitstun : 0);
-      this._push(d, att, m.pushback, fromX);
+      d.hitstun = m.hitstun + (counter ? COMBO.counterHitstun : 0) + (inspection?.hitstun ?? 0);
+      const pull = m.pullOnHit;
+      if (pull && att.grounded) {
+        const gap = d.x - att.x;
+        const distance = Math.min(pull.max, Math.max(0, Math.abs(gap) - pull.spacing));
+        d.slide = { vx: -Math.sign(gap) * distance / pull.frames, frames: pull.frames };
+        if (att.move?.def.id === m.id && att.move.frame >= m.startup + m.active) {
+          att.move.frame = Math.max(att.move.frame, totalFrames(m) - pull.recovery);
+        }
+        if (distance > 0) this.emit('rescuepull', { attacker: att.index, defender: d.index });
+      } else this._push(d, att, m.pushback, fromX);
     }
     this.hitstop = Math.max(this.hitstop, (m.hitstop ?? (kind === 'super' ? HITSTOP.super : HITSTOP[strength] ?? HITSTOP.m)) + (counter ? COMBO.counterHitstop : 0));
     this._gain(att, baseGain);
     this._gain(d, dmg * METER.gain.damagedPerPoint);
     this.emit('hit', {
       attacker: att.index, defender: d.index, damage: dmg, combo: d.combo, id: m.id, kind,
-      x: d.x, y: d.y + 60, sdm: !!att.move?.sdm && src === 'move', counter, punish,
+      x: d.x, y: d.y + 60, sdm: !!att.move?.sdm && src === 'move', counter, punish, inspection: !!inspection,
     });
   }
 
@@ -839,7 +864,7 @@ export class Game {
       frame: this.frame, seed: this.seed, training: this.training,
       hitstop: this.hitstop, freeze: this.freeze,
       fighters,
-      projectiles: this.projectiles.map(p => ({ owner: p.owner, id: p.id, x: p.x, y: p.y, vx: p.vx, w: p.w, h: p.h })),
+      projectiles: this.projectiles.filter(p => !p.delay).map(p => ({ owner: p.owner, id: p.id, x: p.x, y: p.y, vx: p.vx, w: p.w, h: p.h, second: p.second })),
       round: this.round,
       events: this.events,
     }));

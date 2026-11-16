@@ -23,6 +23,8 @@ function withDefaults(move, kind, id) {
     invuln: move.invuln ?? null,
     move: move.move ?? null,         // { vx, vy, at }：在第 at 帧给自身速度（升龙上升、突进）
     projectile: move.projectile ?? null, // { speed, x, y, w, h, life }
+    pullOnHit: move.pullOnHit ?? null,
+    inspectOnPunish: move.inspectOnPunish ?? null,
     throw: !!move.throw,
     range: move.range ?? null,
     meterGain: move.meterGain ?? null,

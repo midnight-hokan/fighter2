@@ -592,18 +592,13 @@ const PROJ_FX = {
     ctx.fillStyle = '#7a4a1a'; ctx.fillRect(x + dir * w / 2 - 1.5, y - h / 2 - 2 + wave, 3, h + 4);
     ctx.restore();
   },
-  // 方萤：两盏旋转着飞出去的矿灯
+  // 方萤：先后射出一冷一暖的矿灯光束
   lamps(ctx, x, y, dir, p) {
-    for (const [dy, ph] of [[-6, 0], [7, 1.6]]) {
-      const lx = x - dir * (dy > 0 ? 6 : 0), ly = y + dy;
-      trail(ctx, lx, ly, dir, '#bfe9ff', 5);
-      ctx.save();
-      ctx.translate(lx, ly); ctx.rotate(p.x * 0.25 * dir + ph);
-      ctx.fillStyle = '#3a4a5a'; ctx.fillRect(-4, -5, 8, 10);
-      ctx.fillStyle = '#ffe9a0'; ctx.fillRect(-3, -4, 6, 4);
-      ctx.restore();
-      glowDot(ctx, lx, ly - 1, 9, '#ffe9a0');
-    }
+    const color = p.second ? '#ffe498' : '#bfe9ff';
+    trail(ctx, x, y, dir, color, p.second ? 9 : 14);
+    glowDot(ctx, x, y, p.second ? 10 : 13, color);
+    ctx.fillStyle = '#fffdf4';
+    ctx.fillRect(x - 4, y - 1, 8, 2);
   },
   // 沈清：一排银针
   needles(ctx, x, y, dir, p, t) {

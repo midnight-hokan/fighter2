@@ -42,8 +42,9 @@ export class TouchPad {
     const { x, y } = this.dir();
     const relative = x * fighter.facing;
     const id = simpleSpecialFor(character, { forward: relative > 0, back: relative < 0, down: y > 0 });
-    const move = (y > 0 ? character.supers : character.specials)?.find(entry => entry.id === id);
-    const label = move ? move.name + (y > 0 && fighter.meter.stocks < 1 ? '（需1豆）' : '') : '必杀';
+    const superMove = character.supers?.find(entry => entry.id === id);
+    const move = superMove ?? character.specials?.find(entry => entry.id === id);
+    const label = move ? move.name + (superMove && fighter.meter.stocks < 1 ? '（需1豆）' : '') : '必杀';
     if (this.specialButton.textContent !== label) this.specialButton.textContent = label;
     this.dummyButton.hidden = !training;
   }
@@ -98,6 +99,7 @@ export class TouchPad {
 export function simpleSpecialFor(character, { forward, back, down }) {
   const sp = character.specials ?? [];
   const su = character.supers ?? [];
+  if (down && forward && character.id === 'c02') return 'gousao';
   if (down) return su[0]?.id ?? null;
   if (forward) return sp[1]?.id ?? sp[0]?.id ?? null;
   if (back) return sp[2]?.id ?? sp[0]?.id ?? null;
