@@ -1,0 +1,21 @@
+name: Fighter2 release verification
+on:
+  push:
+    branches: [qa/release-bc16896]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm ci
+      - name: Run E1–E8 release checks
+        run: |
+          export CHROME_PATH="$(command -v google-chrome)"
+          export CHROME_ARGS="--disable-gpu"
+          npm run check -- --upto E8
