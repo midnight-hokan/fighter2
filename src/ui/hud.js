@@ -140,7 +140,8 @@ export class Hud {
       const text = `训练模式　对手：${extra.dummy ?? ''}${details}　｜F1 判定框　F2 对手行为　Esc 出招表${lesson ? '\n' + lesson : ''}`;
       if (info.textContent !== text) info.textContent = text;
     } else {
-      info.textContent = '';
+      const text = extra.arcadeHint ?? '';
+      if (info.textContent !== text) info.textContent = text;
     }
   }
 }

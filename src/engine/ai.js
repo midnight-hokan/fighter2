@@ -48,7 +48,7 @@ export function commandToInputs(cmd, facing, opts = {}) {
 
 const reachOf = (m) => (m?.hitbox ? m.hitbox.x + m.hitbox.w + 14 : 0);
 
-export function createAI(level = 'normal', seed = 1, character = null) {
+export function createAI(level = 'normal', seed = 1, character = null, tactic) {
   const cfg = LEVELS[level] ?? LEVELS.normal;
   const rng = createRng(seed);
   let plan = [];
@@ -65,6 +65,7 @@ export function createAI(level = 'normal', seed = 1, character = null) {
   const grab = specials.find(s => s.throw);
   const rush = specials.find(s => !s.projectile && !s.throw && s !== antiAir);
   const throwRange = ch.stats?.throwRange ?? 44;
+  const heavy = ground.find(n => n.id === 'st.hk');
 
   const out = (input, fwd, back) => {
     if (input[back]) backHeld++; else backHeld = 0;
@@ -103,6 +104,11 @@ export function createAI(level = 'normal', seed = 1, character = null) {
     const projIncoming = state.projectiles.some(p => p.owner !== me && Math.abs(p.x - self.x) < 140 && Math.sign(self.x - p.x) === Math.sign(p.vx));
     const jumpIn = !opp.grounded && opp.action !== 'airhit' && dist < 120;
 
+    // 第一战在重脚的边缘距离出招，玩家后撤半步即可制造落空。
+    if (tactic === 'recovery' && heavy && dist <= heavy.reach + 13 && r() < 0.7) {
+      return queue([{ hk: true }, {}]);
+    }
+
     if (jumpIn && r() < (linVsLei ? 0.55 : cfg.anti)) {
       if (antiAir && antiAir.parsed.type !== 'charge') return useCmd(antiAir, 'hp');
       const ccr = ch.normals?.['cr.hp'];
@@ -118,6 +124,31 @@ export function createAI(level = 'normal', seed = 1, character = null) {
       return useCmd(projectile, r() < 0.5 ? 'lp' : 'hp');
     }
     const wallBehind = self.facing > 0 ? self.x - STAGE.left : STAGE.right - self.x;
+    if (tactic === 'spacing') {
+      if (projectile && dist >= 115 && !state.projectiles.some(p => p.owner === me) && r() < 0.8) {
+        if (projectile.parsed.type === 'charge' && backHeld < 42) {
+          return queue(Array.from({ length: 16 }, () => ({ [back]: true })));
+        }
+        return useCmd(projectile, projectile.parsed.button === 'K' ? 'lk' : 'lp');
+      }
+      if (!projectile && heavy && dist >= heavy.reach - 18 && dist <= heavy.reach && r() < 0.75) {
+        return queue([{ hk: true }, {}]);
+      }
+      const spacingRange = projectile ? 115 : (heavy?.reach ?? 90) - 18;
+      if (dist < spacingRange && wallBehind > PHYS.pushHalf + 24 && r() < 0.6) {
+        return queue(Array.from({ length: 10 }, () => ({ [back]: true })));
+      }
+    }
+
+    if (tactic === 'throws' && opp.grounded && !opp.invulnerable
+      && ['idle', 'walkf', 'walkb', 'crouch'].includes(opp.action)) {
+      if (dist <= (grab?.range ?? throwRange) - 6 && r() < 0.7) {
+        return grab ? useCmd(grab, 'hp') : queue([{ [fwd]: true, hp: true }, {}]);
+      }
+      if (dist > throwRange && dist <= 150 && r() < 0.7) {
+        return queue(Array.from({ length: 10 }, () => ({ [fwd]: true })));
+      }
+    }
     if (linVsLei && dist >= 80 && dist < 150 && wallBehind > PHYS.pushHalf + 20 && r() < 0.15) {
       return queue(Array.from({ length: 10 }, () => ({ [back]: true })));
     }

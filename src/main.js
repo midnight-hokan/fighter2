@@ -158,6 +158,7 @@ function draw(state) {
   const signature = chars[0].specials?.[0];
   hud.update(state, chars.map(c => c.name), {
     dummy: DUMMY[dummy], moveName, signature, touch: !!touch,
+    arcadeHint: mode === 'arcade' && running && state.frame <= 480 ? arcade?.current().lesson?.hint : undefined,
     signatureInput: touch ? '松开摇杆，按必杀' : signature && prettyInput(signature.input),
   });
 }
@@ -183,7 +184,7 @@ const menus = TEST_MODE ? null : new Menus(document.getElementById('menu-root'),
     dummyAI = createAI('normal', 99, chars[1]);
     controllers = [
       () => controls.read(0),
-      m === '2p' ? () => controls.read(1) : training ? dummyController : createAI(level, Date.now() % 1000, chars[1]),
+      m === '2p' ? () => controls.read(1) : training ? dummyController : createAI(level, Date.now() % 1000, chars[1], arcade?.current().lesson?.tactic),
     ];
     document.getElementById('hud-root').style.display = '';
     audio.ensure();
@@ -277,7 +278,7 @@ function startArcadeRound() {
   const cur = arcade.current();
   const opp = getCharacter(cur.opponent);
   newGame({ characters: [arcadePlayer, cur.opponent], seed: Date.now() % 100000 });
-  controllers[1] = createAI(cur.level, Date.now() % 1000, chars[1]);
+  controllers[1] = createAI(cur.level, Date.now() % 1000, chars[1], cur.lesson?.tactic);
   document.getElementById('hud-root').style.display = '';
   arcadeScreen = null;
   arcadeIntroFrames = 0;
