@@ -385,7 +385,7 @@ export default {
     },
     {
       "id": "zhongdanluo",
-      "name": "木盆扣顶",
+      "name": "澡堂木盆扣",
       "input": "421P",
       "desc": "后下下后木盆大扣，下段击倒",
       "startup": 14,

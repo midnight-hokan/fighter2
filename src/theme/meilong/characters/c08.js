@@ -404,7 +404,7 @@ export default {
     },
     {
       "id": "huayan",
-      "name": "点穴上挑",
+      "name": "急诊探针挑",
       "input": "623K",
       "desc": "点穴手法上挑旋踢，对空",
       "startup": 9,

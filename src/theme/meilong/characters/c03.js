@@ -369,7 +369,7 @@ export default {
     },
     {
       "id": "suiluo",
-      "name": "扳手砸",
+      "name": "检修扳手砸",
       "input": "421P",
       "desc": "后下下后大扳手下砸，下段击倒",
       "startup": 10,

@@ -47,6 +47,9 @@ export class Effects {
         const f = state.fighters[e.player];
         this.charge(f.x, f.y + 55, e.sdm ? '#ff6a2b' : '#fff27a');
         this.glow(f.x, f.y + 55, 50, e.sdm ? '#ff9a50' : '#fff4b0', 30);
+        if (f.charId === 'c01' && e.id === 'dihuolong') this.sparks(f.x + 24 * f.facing, f.y + 20, '#ff993f', 14, 3, e.player);
+      } else if (e.type === 'special') {
+        this.jobEffect(state.fighters[e.player], e.id);
       } else if (e.type === 'knockdown') {
         const f = state.fighters[e.player];
         this.dust(f.x, 0, 10, 1.6);
@@ -64,12 +67,28 @@ export class Effects {
     this.items = this.items.filter(it => --it.life > 0);
   }
 
+  jobEffect(f, id) {
+    const x = f.x + 18 * f.facing, y = f.y + 49;
+    switch (`${f.charId}:${id}`) {
+      case 'c02:baokong': this.impact(x, y, '#ffd072', 17); break;
+      case 'c03:zhongdan': this.sparks(x, y, '#99e6ff', 9, 2.2, f.index); break;
+      case 'c04:denghua': this.star(x, y, '#a5ff8a', 13, 11); break;
+      case 'c05:denghuadan': this.wave(x, y, '#ff9c91', 26, 12); break;
+      case 'c06:jifengdan':
+        this.glow(x, y + 9, 16, '#d9f4ff', 10);
+        this.glow(x + 10 * f.facing, y - 4, 14, '#d9f4ff', 10);
+        break;
+      case 'c07:chongtiant': this.dust(x, f.y + 12, 8, 1, '#e6f0f7'); break;
+      case 'c08:huiyan': this.sparks(x, y + 4, '#d4ffeb', 5, 1.7, f.index); break;
+    }
+  }
+
   // 落地扬尘（渲染器检测到落地时也会调用）
-  dust(x, y, n = 6, power = 1) {
+  dust(x, y, n = 6, power = 1, color = '#b8a890') {
     const r = prng(Math.round(x * 31 + this.seq++));
     for (let i = 0; i < n; i++) {
       const dir = i % 2 ? 1 : -1;
-      this.items.push({ kind: 'dust', x: x + dir * r() * 10, y: y + 2, vx: dir * (0.4 + r() * 1.2) * power, vy: 0.2 + r() * 0.5, r: 4 + r() * 4 * power, life: 26, max: 26 });
+      this.items.push({ kind: 'dust', x: x + dir * r() * 10, y: y + 2, vx: dir * (0.4 + r() * 1.2) * power, vy: 0.2 + r() * 0.5, r: 4 + r() * 4 * power, life: 26, max: 26, color });
     }
   }
 
@@ -192,7 +211,7 @@ export class Effects {
           const x = cx + it.vx * age, y = cy - it.vy * age - age * 0.15;
           ctx.save();
           ctx.globalAlpha = 0.45 * (1 - t);
-          ctx.fillStyle = '#b8a890';
+          ctx.fillStyle = it.color;
           ctx.beginPath(); ctx.arc(x, y, it.r * (0.6 + t * 1.2), 0, Math.PI * 2); ctx.fill();
           ctx.restore();
           break;

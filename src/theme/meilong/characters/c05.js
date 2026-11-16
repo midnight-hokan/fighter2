@@ -377,7 +377,7 @@ export default {
     },
     {
       "id": "daiteng",
-      "name": "标语封顶",
+      "name": "班前会横幅",
       "input": "623K",
       "desc": "高抛标语横幅，飞行道具，命中击退大",
       "startup": 18,

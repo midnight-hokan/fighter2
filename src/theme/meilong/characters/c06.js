@@ -429,7 +429,7 @@ export default {
     },
     {
       "id": "dengliandian",
-      "name": "灯链点",
+      "name": "矿灯链点",
       "input": "6MP",
       "desc": "前点中拳，矿灯链轻点，中段可取消",
       "startup": 4,

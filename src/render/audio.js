@@ -110,6 +110,8 @@ export class Audio {
     this.announcer = {};
     this.announcerLog = [];
     this.voice = {};            // 角色语音：{ c01: { intro, special, super, ko } }
+    this.moveVoice = {};
+    this.moveCues = {};
     this.fighters = [];         // 当前对局双方角色定义（含 id），由 main 在对局开始时设置
     this.now = null;            // 当前背景音乐 { mode: 'file' | 'synth', src }
     this.decoder = null;
@@ -120,14 +122,28 @@ export class Audio {
   async preload(theme, { bgm = true } = {}) {
     this.sfx = theme.audio?.sfx ?? {};
     this.voice = theme.audio?.voice ?? {};
+    this.moveCues = theme.audio?.moveCues ?? {};
+    this.moveVoice = Object.fromEntries(Object.entries(theme.audio?.moveVoice ?? {}).flatMap(([id, moves]) =>
+      moves.map(move => [`${id}:${move}`, `assets/${theme.id}/voice/${id}_${move}.ogg`])));
     this.announcer = theme.audio?.announcer ?? {};
-    const voicePaths = [...Object.values(this.voice).flatMap(v => Object.values(v)), ...Object.values(this.announcer)];
+    const voicePaths = [
+      ...Object.values(this.voice).flatMap(v => [v.intro, v.ko]),
+      ...Object.values(this.moveVoice), ...Object.values(this.announcer),
+    ];
     const paths = [theme.audio?.title, ...Object.values(this.sfx), ...voicePaths, ...(bgm ? (theme.stages ?? []).map(s => s.bgm?.file) : [])].filter(Boolean);
     await Promise.all([...new Set(paths)].map(p => this.loadFile(p)));
   }
 
   // 对局开始时由 main 注入双方角色定义（用于按角色播语音）
-  setFighters(defs) { this.fighters = defs ?? []; }
+  setFighters(defs) {
+    this.fighters = defs ?? [];
+    this.callout?.source.stop();
+    this.callout = null;
+    for (const gain of Object.values(this.duck ?? {})) {
+      gain.cancelScheduledValues(this.ctx.currentTime);
+      gain.setValueAtTime(1, this.ctx.currentTime);
+    }
+  }
 
   async loadFile(path) {
     if (this.buffers.has(path)) return this.buffers.get(path);
@@ -162,13 +178,40 @@ export class Audio {
     return s;
   }
 
-  // 角色语音：按角色 id + 台词名（intro/special/super/ko）播放对应文件
+  // 对局开场和 KO 台词
   playVoice(charId, line, { delay = 0 } = {}) {
     const path = this.voice?.[charId]?.[line];
     const buf = path && this.buffers.get(path);
     if (!buf || this.ctx?.state !== 'running') return;
-    // 喊招压低到音效之下（光哥试玩反馈：喊招太响）；开场白和 KO 台词稍响一点
-    this.playBuffer(buf, { vol: line === 'special' ? 0.38 : line === 'super' ? 0.5 : 0.6, delay, bus: 'voice' });
+    this.playBuffer(buf, { vol: 0.6, delay, bus: 'voice' });
+  }
+
+  playMove(e) {
+    if (this.ctx?.state !== 'running') return;
+    const key = `${this.fighters[e.player]?.id}:${e.id}`;
+    const cue = this.moveCues[key];
+    if (cue) tone(this.ctx, this.bus.sfx, cue[0], cue[1], 0.07, cue[2], 0.18);
+    const buf = this.buffers.get(this.moveVoice[key]);
+    if (!buf || this.volume.voice <= 0) return;
+    const now = this.ctx.currentTime;
+    const incomingSuper = e.type === 'super';
+    const playing = this.callout?.end > now;
+    // 同时出招时优先留出一条完整的人声。超必杀可以打断普通必杀。
+    if (playing && (!incomingSuper || this.callout.super)) return;
+    if (playing) this.callout.source.stop();
+    const delay = 0.08;
+    const end = now + delay + buf.duration;
+    for (const [bus, level] of [['bgm', 0.55], ['sfx', 0.65]]) {
+      const gain = this.duck[bus];
+      gain.cancelScheduledValues(now);
+      gain.setValueAtTime(playing ? level : 1, now);
+      gain.linearRampToValueAtTime(level, now + delay);
+      gain.setValueAtTime(level, end);
+      gain.linearRampToValueAtTime(1, end + 0.2);
+    }
+    const source = this.playBuffer(buf, { vol: 0.78, delay, bus: 'voice' });
+    this.callout = { source, end, super: incomingSuper };
+    source.onended = () => { if (this.callout?.source === source) this.callout = null; };
   }
 
   // 播报员：round1/round2/round3/final/fight/ko/timeup/perfect/win（theme.audio.announcer，缺文件就不播）
@@ -190,15 +233,15 @@ export class Audio {
     else if (e.type === 'matchover' && e.winner !== 'draw') this.playAnnouncer('win', { delay: 1.2 });
   }
 
-  // 角色语音与引擎事件挂钩：round 1 开场白、超必杀喊招、KO 台词（必杀喊招由 main 检出招式开始时调 playVoice）
+  // 按实际发动的招式播报，未录制的招式由 HUD 显示名称。
   handleVoice(e) {
     if (e.type === 'round' && e.number === 1) {
       const [a, b] = this.fighters;
       if (a?.id) this.playVoice(a.id, 'intro');
       if (b?.id) this.playVoice(b.id, 'intro', { delay: 0.8 });
-    } else if (e.type === 'super') {
-      if (this.fighters[e.player]?.id) this.playVoice(this.fighters[e.player].id, 'super', { delay: 0.15 });
-    } else if (e.type === 'ko' && e.loser && e.loser !== 'both') {
+    } else if (e.type === 'special' || e.type === 'super') {
+      this.playMove(e);
+    } else if (e.type === 'ko' && e.loser !== 'both') {
       if (this.fighters[e.loser]?.id) this.playVoice(this.fighters[e.loser].id, 'ko', { delay: 0.7 });
     }
   }
@@ -210,10 +253,16 @@ export class Audio {
     this.out.gain.value = this.muted ? 0 : 0.6;
     this.out.connect(this.ctx.destination);
     this.bus = {};
+    this.duck = {};
     for (const k of ['bgm', 'sfx', 'voice']) {
       this.bus[k] = this.ctx.createGain();
       this.bus[k].gain.value = this.volume[k];
-      this.bus[k].connect(this.out);
+      if (k === 'voice') this.bus[k].connect(this.out);
+      else {
+        const node = this.ctx.createGain();
+        this.duck[k] = node.gain;
+        this.bus[k].connect(node).connect(this.out);
+      }
     }
     return this.ctx;
   }

@@ -106,7 +106,18 @@ html, body { margin: 0; height: 100%; background: #0b0908; overflow: hidden; col
 .cs-name { position: absolute; top: -18px; left: 20px; padding: 2px 14px; background: #c8452c; font-weight: 900; letter-spacing: 3px; }
 .cs-text { font-size: 24px; line-height: 1.7; color: #fff3c4; white-space: pre-line; }
 .cs-box.narration .cs-text { color: #e8d9b8; font-style: italic; }
-.cs-hint { position: absolute; right: 3vw; top: 2vh; font-size: 13px; color: #8d7a63; z-index: 2; }
+.cs-controls { position: absolute; top: max(10px, env(safe-area-inset-top)); right: max(12px, env(safe-area-inset-right)); z-index: 3; display: flex; gap: 8px; }
+.cs-controls button { min-height: 44px; padding: 0 16px; border: 1px solid #e0ba6e; border-radius: 5px; background: #1c1510; color: #fff3c4; font: inherit; cursor: pointer; }
+.cs-controls button:last-child { background: #f2c14e; color: #211709; }
+@media (pointer: coarse), (max-height: 500px) {
+  .cs-box { bottom: max(12px, env(safe-area-inset-bottom)); padding: 12px 15px; }
+  .cs-text { font-size: clamp(16px, 3.8vmin, 22px); line-height: 1.5; }
+  .cs-name { left: 12px; }
+}
+@media (prefers-reduced-motion: reduce) { .cs-bg { animation: none; } }
+.hud .move-call { display: inline-block; max-width: 100%; margin-top: 3px; padding: 2px 6px; color: #fff4d6; background: #261b16; border: 1px solid #977d54; border-radius: 3px; font: 700 clamp(12px, 2.6vmin, 17px)/1.25 system-ui, sans-serif; }
+.hud .move-call[hidden] { display: none; }
+.hud .move-call.super { color: #211709; background: #f2c14e; border-color: #ffe899; }
 
 /* —— 触屏（src/ui/touch.js） —— */
 body.touch { touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
