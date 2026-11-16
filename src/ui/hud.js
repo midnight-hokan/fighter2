@@ -68,7 +68,7 @@ export class Hud {
       if (e.type === 'hit' && e.combo >= 2) { this.comboText[e.attacker] = `${e.combo} 连击`; this.comboShow[e.attacker] = 70; }
       if (e.type === 'hit' && (e.counter || e.punish)) {
         this.counterShow[e.attacker] = 50;
-        this.counterText[e.attacker] = e.punish ? '抓住收招！' : '反击！COUNTER';
+        this.counterText[e.attacker] = e.inspection ? '发现隐患！' : e.punish ? '抓住收招！' : '反击！COUNTER';
       }
       if (e.type === 'round') { this.flashBanner(T.round(e.number), 60); this.queue = [[T.fight, 40]]; }
       if (e.type === 'special' || e.type === 'super') {

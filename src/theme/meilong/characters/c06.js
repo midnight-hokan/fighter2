@@ -408,11 +408,11 @@ export default {
       "id": "jifengdan",
       "name": "双灯连闪",
       "input": "236P",
-      "desc": "短程快弹，飞行道具，存在时间短",
+      "desc": "两盏灯先后打出短程光弹，第一束逼防，第二束掩护走位",
       "startup": 9,
       "active": 1,
-      "recovery": 22,
-      "damage": 55,
+      "recovery": 16,
+      "damage": 42,
       "chip": 8,
       "stun": 8,
       "hitstun": 14,
@@ -423,7 +423,8 @@ export default {
         "y": 56,
         "w": 22,
         "h": 14,
-        "life": 110
+        "life": 34,
+        "followup": { "delay": 14, "speed": 4.6, "damage": 22, "chip": 3, "hitstun": 10, "blockstun": 8, "stun": 3 }
       },
       "anim": "fireball"
     },

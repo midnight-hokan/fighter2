@@ -25,6 +25,11 @@ export class Effects {
         this.impact(e.x, e.y, '#ffffff', sup ? 40 : big ? 24 : 14);
         this.sparks(e.x, e.y, sup ? '#fff27a' : '#ffb347', sup ? 22 : big ? 14 : 7, sup ? 4.2 : big ? 3.2 : 2.4, e.attacker);
         if (sup) this.wave(e.x, e.y, '#ffe680', 70, 18);
+        if (e.inspection) this.shield(e.x, e.y, '#a5ff8a');
+      } else if (e.type === 'rescuepull') {
+        const f = state.fighters[e.attacker];
+        const d = state.fighters[e.defender];
+        this.items.push({ kind: 'rescue-rope', x: f.x, y: f.y + 50, targetX: d.x, targetY: d.y + 50, life: 16, max: 16 });
       } else if (e.type === 'block') {
         this.shield(e.x, e.y);
         this.glow(e.x, e.y, e.heavy ? 23 : 14, '#9fe3ff', 6);
@@ -130,7 +135,7 @@ export class Effects {
   glow(x, y, r, color, life) { this.items.push({ kind: 'glow', x, y, r, color, life, max: life }); }
 
   // 防御护盾
-  shield(x, y) { this.items.push({ kind: 'shield', x, y, color: '#9fe3ff', life: 10, max: 10 }); }
+  shield(x, y, color = '#9fe3ff') { this.items.push({ kind: 'shield', x, y, color, life: 10, max: 10 }); }
 
   ring(x, y, color) {
     for (let i = 0; i < 24; i++) {
@@ -160,6 +165,18 @@ export class Effects {
       const t = age / it.max;
       const cx = it.x - cam, cy = GROUND - it.y;
       switch (it.kind) {
+        case 'rescue-rope': {
+          ctx.save();
+          ctx.globalAlpha = 1 - t;
+          ctx.strokeStyle = '#ffd072';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(cx, cy);
+          ctx.lineTo(cx + (it.targetX - it.x) * (1 - t), GROUND - it.targetY);
+          ctx.stroke();
+          ctx.restore();
+          break;
+        }
         case 'glow': {
           ctx.save();
           ctx.globalCompositeOperation = 'lighter';
