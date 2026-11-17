@@ -15,8 +15,8 @@ export class Controls {
     this.down = new Set();
     this.listeners = [];
     window.addEventListener('keydown', (e) => {
-      if (e.code === 'Tab' && document.querySelector('.cs-controls')) return;
-      if ((e.code === 'Enter' || e.code === 'Space') && e.target.closest?.('.cs-controls')) return;
+      if (e.code === 'Tab' && document.querySelector('.cs-controls, [data-pilot-choice]')) return;
+      if ((e.code === 'Enter' || e.code === 'Space') && e.target.closest?.('.cs-controls, [data-pilot-choice]')) return;
       if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'Tab'].includes(e.code)) e.preventDefault();
       if (!e.repeat) this.listeners.forEach(fn => fn(e.code, e));
       this.down.add(e.code);
