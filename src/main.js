@@ -2,6 +2,7 @@
 import './style.css';
 import theme, { getCharacter } from './theme/index.js';
 import { Game } from './engine/game.js';
+import { linPilot } from './theme/meilong/lin-pilot.js';
 import { createAI } from './engine/ai.js';
 import { Renderer } from './render/renderer.js';
 import { loadStageImages } from './render/stage.js';
@@ -73,6 +74,7 @@ let mode = 'test';
 // 街机模式状态：arcade 为 createArcade 实例（非街机模式为 null）；arcadeScreen 是当前覆盖画面（接关/结局）
 let arcade = null;
 let arcadePlayer = null;
+let activePilot = null;
 let arcadeScreen = null;
 let arcadeIntroFrames = 0; // 第 1 战开场白倒计时（rAF 帧），>0 时游戏冻结
 
@@ -162,9 +164,15 @@ const menus = TEST_MODE ? null : new Menus(document.getElementById('menu-root'),
     if (m === 'arcade') {
       // 街机模式：P2 由电脑按 createArcade 的顺序安排，选人页上的 P2 光标忽略
       arcadePlayer = characters[0];
-      arcade = createArcade({ roster: theme.roster, player: arcadePlayer, seed: Date.now() % 100000, finalBoss: finalBossId(arcadePlayer), order: storyOrder(theme.story, arcadePlayer) });
+      activePilot = params.get('story') === 'lin-pilot' && arcadePlayer === 'c01' ? linPilot : null;
+      arcade = createArcade({
+        roster: theme.roster, player: arcadePlayer, seed: Date.now() % 100000,
+        finalBoss: activePilot?.finalBoss ?? finalBossId(arcadePlayer),
+        order: activePilot?.order ?? storyOrder(theme.story, arcadePlayer),
+      });
       characters = [arcadePlayer, arcade.current().opponent];
     } else {
+      activePilot = null;
       arcade = null;
     }
     newGame({ characters, seed: Date.now() % 100000, training });
@@ -179,10 +187,11 @@ const menus = TEST_MODE ? null : new Menus(document.getElementById('menu-root'),
     document.getElementById('hud-root').style.display = '';
     audio.ensure();
     audio.playBgm(theme.stages[renderer.stageIndex].bgm);
-    if (m === 'arcade' && cutscenesOn) {
+    if (m === 'arcade' && (cutscenesOn || activePilot)) {
       // 过场：角色序章 + 第 1 战对战前对话，播完开打
       const cur = arcade.current();
-      playStory([...prologueScenes(theme.story, arcadePlayer), ...preFightScenes(theme.story, arcadePlayer, cur.opponent, { stage: 1 })]).then(beginArcadeMatch);
+      if (activePilot) cutscene.play([...activePilot.intro, ...activePilot.before(cur.opponent)]).then(beginArcadeMatch);
+      else playStory([...prologueScenes(theme.story, arcadePlayer), ...preFightScenes(theme.story, arcadePlayer, cur.opponent, { stage: 1 })]).then(beginArcadeMatch);
     } else if (m === 'arcade') {
       // 第 1 战开场白（docs/故事设定.md）：显示所选角色开场白 + 参赛缘由，倒计时结束或 Enter 开打
       const me = getCharacter(arcadePlayer);
@@ -222,6 +231,7 @@ controls.onKey((code) => {
   if (code === 'F1') renderer.showBoxes = !renderer.showBoxes;
   // 第 1 战开场白：Enter/空格 跳过
   if (arcadeIntroFrames > 0 && (code === 'Enter' || code === 'Space')) { arcadeIntroFrames = 1; return; }
+  if (arcadeScreen === 'pilot-choice') return;
   if (arcadeScreen) {
     if (code === 'Enter') { if (arcadeScreen === 'continue') startArcadeRound(); else quitArcade(); }
     else if (code === 'KeyQ' || code === 'Escape') quitArcade();
@@ -301,14 +311,26 @@ function showContinueScreen() {
     <div class="blink">Enter 接关再战　｜　Q 返回标题</div></div>`);
 }
 
+function showPilotChoices() {
+  arcadeScreen = 'pilot-choice';
+  showArcadeOverlay(`<div class="screen ending" data-testid="pilot-choice" data-arcade-overlay>
+    <h2>这次谁先开口？</h2>
+    ${activePilot.choices.map(({ label }, i) => `<button type="button" data-pilot-choice="${i}">${label}</button>`).join('')}
+  </div>`);
+  document.querySelector('[data-pilot-choice]')?.focus();
+  document.querySelectorAll('[data-pilot-choice]').forEach((button) => {
+    button.addEventListener('click', () => showEndingScreen(activePilot.choices[Number(button.dataset.pilotChoice)].result));
+  });
+}
+
 // 7 战全胜：结局画面（Enter 回标题）
-function showEndingScreen() {
+function showEndingScreen(result = arcade.ending()) {
   running = false;
   arcadeScreen = 'ending';
   audio.stopBgm();
   showArcadeOverlay(`<div class="screen ending" data-testid="ending" data-arcade-overlay>
     <h2>通关 · ${getCharacter(arcadePlayer).name}</h2>
-    <p class="ending-text">${arcade.ending()}</p>
+    <p class="ending-text">${result}</p>
     <div class="blink">按 Enter 返回标题</div></div>`);
 }
 
@@ -323,6 +345,18 @@ function quitArcade() {
 function handleArcadeResult() {
   const r = arcade.report(game.round.matchWinner === 0 ? 'win' : 'lose');
   if (r === 'continue') return showContinueScreen();
+  if (activePilot) {
+    running = false;
+    if (r === 'next') {
+      const { stage, opponent } = arcade.current();
+      const midpoint = stage === 4 ? activePilot.midpoint : [];
+      cutscene.play([...midpoint, ...activePilot.before(opponent)]).then(startArcadeRound);
+    } else {
+      audio.stopBgm();
+      cutscene.play(activePilot.ending).then(showPilotChoices);
+    }
+    return;
+  }
   if (!cutscenesOn) return r === 'next' ? startArcadeRound() : showEndingScreen();
   running = false;
   if (r === 'next') {
