@@ -20,6 +20,7 @@ import { ROUND } from './engine/constants.js';
 // eslint-disable-next-line no-undef
 const VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : 'dev';
 const params = new URLSearchParams(location.search);
+const LIN_PILOT_MODE = params.get('story') === 'lin-pilot';
 const TEST_MODE = params.has('test');
 
 document.title = theme.title;
@@ -164,7 +165,7 @@ const menus = TEST_MODE ? null : new Menus(document.getElementById('menu-root'),
     if (m === 'arcade') {
       // 街机模式：P2 由电脑按 createArcade 的顺序安排，选人页上的 P2 光标忽略
       arcadePlayer = characters[0];
-      activePilot = params.get('story') === 'lin-pilot' && arcadePlayer === 'c01' ? linPilot : null;
+      activePilot = LIN_PILOT_MODE && arcadePlayer === 'c01' ? linPilot : null;
       arcade = createArcade({
         roster: theme.roster, player: arcadePlayer, seed: Date.now() % 100000,
         finalBoss: activePilot?.finalBoss ?? finalBossId(arcadePlayer),
@@ -210,7 +211,7 @@ const menus = TEST_MODE ? null : new Menus(document.getElementById('menu-root'),
 
 // 开场动画：每个浏览器首次打开时播放一次（标题页上按 O 可重看）
 function playOpening() { cutscene.play(openingScenes(theme.story)); }
-if (menus && cutscenesOn) {
+if (menus && cutscenesOn && !LIN_PILOT_MODE) {
   let seen = false;
   try { seen = localStorage.getItem('opening-seen') === '1'; localStorage.setItem('opening-seen', '1'); } catch { /* 无痕模式 */ }
   if (!seen || params.has('cutscenes')) playOpening();
@@ -224,7 +225,7 @@ controls.onKey((code) => {
     else if (code === 'Escape') cutscene.skip();
     return;
   }
-  if (code === 'KeyO' && !running && menus?.stage === 'title') { playOpening(); return; }
+  if (code === 'KeyO' && !LIN_PILOT_MODE && !running && menus?.stage === 'title') { playOpening(); return; }
   if (code === 'KeyM') audio.toggleMute();
   // 菜单界面放标题音乐（有文件才放）
   if (!running && !audio.now && theme.audio?.title && !TEST_MODE) audio.playBgm({ file: theme.audio.title });
@@ -245,6 +246,7 @@ controls.onKey((code) => {
 window.addEventListener('pointerdown', () => audio.ensure());
 // 触屏：街机模式的开场白 / 接关 / 结局画面，点一下 = Enter
 document.getElementById('menu-root').addEventListener('pointerdown', (e) => {
+  if (arcadeScreen === 'pilot-choice') return;
   if (arcadeScreen || arcadeIntroFrames > 0) { e.preventDefault(); controls.listeners.forEach(fn => fn('Enter', {})); }
 });
 
